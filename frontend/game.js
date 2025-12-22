@@ -4,7 +4,7 @@ let velocity = 0;
 let score = 0;
 let running = true;
 
-export async function startGame() {
+export function startGame() {
   canvas = document.getElementById("game-canvas");
   if (!canvas) return console.error("Canvas не найден!");
   ctx = canvas.getContext("2d");
@@ -37,7 +37,7 @@ export async function startGame() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Рисуем птицу
+  // Птица
   ctx.beginPath();
   ctx.arc(80, birdY, 12, 0, Math.PI * 2);
   ctx.fillStyle = "#facc15";

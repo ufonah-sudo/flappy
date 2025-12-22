@@ -21,7 +21,7 @@
     </header>
 
     <main class="game-container">
-      <canvas id="game-canvas" width="360" height="520"></canvas>
+      <canvas id="game-canvas"></canvas>
       <div class="hud">
         <div>Score: <span id="score">0</span></div>
         <div>Coins: <span id="coins">0</span></div>
@@ -37,23 +37,23 @@
     </div>
   </div>
 
-  <!-- Скрипты -->
   <script type="module">
     import * as game from "./game.js";
 
-    // Ждём загрузки DOM и Telegram WebApp
     document.addEventListener("DOMContentLoaded", () => {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
 
-      // Сохраняем startGame в window
-      window.startGame = game.startGame;
-
-      // Ждём немного, чтобы canvas точно появился
+      // Ждём немного, чтобы WebView и canvas точно получили размеры
       setTimeout(() => {
+        const canvas = document.getElementById("game-canvas");
+        canvas.width = 360;   // фиксированная ширина
+        canvas.height = 520;  // фиксированная высота
+
+        window.startGame = game.startGame;
         window.startGame();
-      }, 100); // 100ms задержка
+      }, 200);
     });
   </script>
 </body>
