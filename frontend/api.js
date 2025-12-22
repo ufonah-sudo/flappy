@@ -5,13 +5,13 @@ const BASE_URL = window.location.origin;
 
 // Универсальный метод для запросов к нашему API на Vercel
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
-    const initData = tg.initData; // Берем подпись Telegram
+    // ВАЖНО: Берем initData прямо в момент запроса, а не заранее
+    const initData = window.Telegram.WebApp.initData || ""; 
 
-    // Отладочный лог: покажет в vConsole, есть ли данные инициализации
-    console.log(`[API Request] ${endpoint}:`, { hasInitData: !!initData, ...extraData });
+    // Отладочный лог: покажет в vConsole длину строки. Если 0 — значит данных нет.
+    console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
-        // Используем полный URL, чтобы избежать проблем с путями
         const response = await fetch(`${BASE_URL}/api/${endpoint}`, {
             method: method,
             headers: {
@@ -24,7 +24,6 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
         });
 
         if (!response.ok) {
-            // Если ошибка 403, 500 и т.д., пытаемся прочитать текст ошибки от сервера
             const errorText = await response.text();
             throw new Error(`Server ${response.status}: ${errorText}`);
         }
