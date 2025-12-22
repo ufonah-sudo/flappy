@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Flappy TON</title>
-
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#0f172a" />
-
-  <link rel="stylesheet" href="./style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <div id="app">
@@ -21,13 +21,14 @@
     </header>
 
     <main class="game-container">
-      <canvas id="game-canvas"></canvas>
+      <canvas id="game-canvas" width="360" height="520"></canvas>
       <div class="hud">
         <div>Score: <span id="score">0</span></div>
         <div>Coins: <span id="coins">0</span></div>
       </div>
     </main>
 
+    <!-- Modals -->
     <div class="modal hidden" id="gameover-modal">
       <div class="modal-content">
         <h2>Game Over</h2>
@@ -38,22 +39,25 @@
   </div>
 
   <script type="module">
-    import * as game from "./game.js";
+    import * as game from './game.js';
+    import * as wallet from './wallet.js';
+    import * as storage from './storage.js';
+    import * as api from './api.js';
+    import * as ui from './ui.js';
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
+      document.body.style.overscrollBehavior = "none";
 
-      // Ждём немного, чтобы WebView и canvas точно получили размеры
-      setTimeout(() => {
-        const canvas = document.getElementById("game-canvas");
-        canvas.width = 360;   // фиксированная ширина
-        canvas.height = 520;  // фиксированная высота
+      // Инициализация кошелька и Coins
+      await wallet.initWallet();
+      await storage.initCoins();
 
-        window.startGame = game.startGame;
-        window.startGame();
-      }, 200);
+      // Назначаем и запускаем игру
+      window.startGame = game.startGame;
+      window.startGame();
     });
   </script>
 </body>

@@ -1,11 +1,4 @@
-// Только session cache, НЕ экономика
-
-export const storage = {
-  getInitData() {
-    return window.Telegram.WebApp.initData;
-  },
-
-  getUser() {
-    return window.Telegram.WebApp.initDataUnsafe?.user || null;
-  }
-};
+export async function initCoins() {
+  const coinsEl = document.getElementById("coins");
+  coinsEl.textContent = 1; // стартовый Coin
+}
