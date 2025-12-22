@@ -5,11 +5,10 @@ import { WalletManager } from './wallet.js';
 // Инициализация Telegram WebApp
 const tg = window.Telegram.WebApp;
 
-// Безопасная инициализация для старых версий (v6.0)
+// Безопасная инициализация
 try {
-    tg.expand();
-    tg.ready();
-    // Красим хедер только если версия поддерживает это (v6.1+)
+    tg.ready(); // Сообщаем, что приложение готово
+    tg.expand(); // Разворачиваем
     if (tg.isVersionAtLeast('6.1')) {
         tg.setHeaderColor('#4ec0ca'); 
     }
@@ -22,7 +21,6 @@ const state = {
     coins: 0
 };
 
-// Универсальная функция оповещений (вместо падучего showAlert)
 const notify = (msg) => {
     if (tg.showAlert) {
         tg.showAlert(msg);
@@ -47,7 +45,14 @@ const ui = {
 };
 
 async function init() {
-    // 1. Авторизация и загрузка данных пользователя
+    // --- ИСПРАВЛЕНИЕ: Ждем initData перед авторизацией ---
+    let attempts = 0;
+    while (!tg.initData && attempts < 10) {
+        console.log("Waiting for Telegram data... Attempt:", attempts);
+        await new Promise(r => setTimeout(r, 200));
+        attempts++;
+    }
+
     const startParam = tg.initDataUnsafe.start_param;
     
     try {
@@ -63,6 +68,7 @@ async function init() {
         }
     } catch (err) {
         console.error("Critical Auth Error:", err);
+        // Если сервер вернул 403, значит токен в Vercel не подходит к этому боту
         notify("Server 403: Please check BOT_TOKEN in Vercel.");
     }
 
@@ -92,7 +98,7 @@ async function init() {
             const top = await api.getLeaderboard();
             ui.ldbList.innerHTML = top.map((entry, i) => `
                 <div class="leader-item" style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee;">
-                    <span>${i + 1}. ${entry.users.username || 'Player'}</span>
+                    <span>${i + 1}. ${entry.username || 'Player'}</span>
                     <span style="font-weight: bold;">${entry.score}</span>
                 </div>
             `).join('') || '<p>No scores yet</p>';
@@ -103,8 +109,11 @@ async function init() {
 
     document.getElementById('btn-invite').onclick = () => {
         if (!state.user) return;
-        const link = `https://t.me/share/url?url=https://t.me/ВАШ_БОТ_NAME/app?startapp=${state.user.telegram_id}&text=Play Flappy TON and get coins!`;
-        tg.openTelegramLink(link);
+        // Используем id из базы данных для реферальной ссылки
+        const botUsername = 'ВАШ_БОТ_NAME'; // ЗАМЕНИ НА ЮЗЕРНЕЙМ СВОЕГО БОТА
+        const inviteLink = `https://t.me/${botUsername}/app?startapp=${state.user.id}`;
+        const shareLink = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play Flappy TON and get coins!`;
+        tg.openTelegramLink(shareLink);
     };
 
     document.getElementById('btn-shop').onclick = () => {
@@ -157,7 +166,8 @@ async function init() {
 
     document.getElementById('btn-share').onclick = () => {
         const score = ui.finalScore.innerText;
-        const shareLink = `https://t.me/share/url?url=https://t.me/ВАШ_БОТ_NAME/app&text=I scored ${score} in Flappy TON!`;
+        const botUsername = 'ВАШ_БОТ_NAME'; // ЗАМЕНИ НА ЮЗЕРНЕЙМ СВОЕГО БОТА
+        const shareLink = `https://t.me/share/url?url=https://t.me/${botUsername}/app&text=I scored ${score} in Flappy TON!`;
         tg.openTelegramLink(shareLink);
     };
 
@@ -179,4 +189,5 @@ function updateUI() {
     ui.reviveBalance.innerText = state.coins;
 }
 
-init();
+// Запуск после полной загрузки страницы
+window.onload = init;
