@@ -1,0 +1,83 @@
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #fff;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #020617;
+  align-items: center;
+}
+
+.logo {
+  font-weight: 700;
+}
+
+.wallet button {
+  background: #22c55e;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.game-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+canvas {
+  background: linear-gradient(#38bdf8, #e0f2fe);
+  border-radius: 12px;
+}
+
+.hud {
+  position: absolute;
+  top: 60px;
+  display: flex;
+  gap: 20px;
+  font-weight: bold;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #020617;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.modal-content button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #334155;
+  color: #fff;
+}
