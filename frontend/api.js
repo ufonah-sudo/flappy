@@ -5,10 +5,15 @@ const BASE_URL = window.location.origin;
 
 // Универсальный метод для запросов к нашему API на Vercel
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
-    // ВАЖНО: Берем initData прямо в момент запроса, а не заранее
-    const initData = window.Telegram.WebApp.initData || ""; 
+    // ВАЖНО: Пытаемся взять данные из WebApp, а если там пусто — берем напрямую из URL (hash)
+    // Это решает проблему "Missing initData" в старых версиях Telegram
+    let initData = window.Telegram.WebApp.initData || ""; 
+    
+    if (!initData && window.location.hash) {
+        initData = window.location.hash.substring(1);
+    }
 
-    // Отладочный лог: покажет в vConsole длину строки. Если 0 — значит данных нет.
+    // Отладочный лог: покажет в vConsole длину строки. Если 0 — значит данных все еще нет.
     console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
@@ -64,7 +69,6 @@ export async function saveScore(score) {
 
 // 6. Получение топ-игроков
 export async function getLeaderboard() {
-    // Исправлено: используем apiRequest, чтобы передать initData, иначе сервер может отклонить запрос
     const data = await apiRequest('scores', 'POST', { action: 'get_leaderboard' });
     return data.leaderboard || [];
 }

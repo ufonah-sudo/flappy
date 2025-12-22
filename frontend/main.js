@@ -21,8 +21,10 @@ const state = {
     coins: 0
 };
 
+// ИСПРАВЛЕНО: Безопасный notify для старых версий (v6.0)
 const notify = (msg) => {
-    if (tg.showAlert) {
+    // Метод showAlert появился в v6.2. Если версия ниже, используем обычный alert
+    if (tg.isVersionAtLeast('6.2')) {
         tg.showAlert(msg);
     } else {
         alert(msg);
@@ -47,7 +49,8 @@ const ui = {
 async function init() {
     // --- ИСПРАВЛЕНИЕ: Ждем initData перед авторизацией ---
     let attempts = 0;
-    while (!tg.initData && attempts < 10) {
+    // Проверяем и tg.initData, и наличие данных в URL (hash)
+    while (!tg.initData && !window.location.hash && attempts < 10) {
         console.log("Waiting for Telegram data... Attempt:", attempts);
         await new Promise(r => setTimeout(r, 200));
         attempts++;
@@ -69,7 +72,7 @@ async function init() {
     } catch (err) {
         console.error("Critical Auth Error:", err);
         // Если сервер вернул 403, значит токен в Vercel не подходит к этому боту
-        notify("Server 403: Please check BOT_TOKEN in Vercel.");
+        notify("Server error. Please check your connection.");
     }
 
     // 2. Инициализация кошелька TON
