@@ -8,6 +8,8 @@ const supabase = createClient(
 );
 
 function verifyTelegramData(initData) {
+    console.log("DEBUG: Computed Hash:", _hash);
+console.log("DEBUG: Telegram Hash:", hash);
     if (!initData) return null;
 
     const urlParams = new URLSearchParams(initData);
