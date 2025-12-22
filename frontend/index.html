@@ -2,25 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Flappy Bird TON</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
 <body>
     <div id="app">
         <div id="header">
             <div id="ton-connect"></div>
-            <div class="coins-display">🪙 <span id="coin-balance">0</span></div>
+            <div class="coins-display">
+                <span class="coin-icon">🪙</span>
+                <span id="coin-balance">0</span>
+            </div>
         </div>
 
         <div id="menu" class="screen">
-            <h1>Flappy TON</h1>
-            <button id="btn-start" class="primary-btn">Play</button>
-            <button id="btn-leaderboard" class="secondary-btn">Leaderboard</button>
-            <button id="btn-shop" class="secondary-btn">Shop</button>
-            <button id="btn-invite" class="secondary-btn">Invite (+2 Coins)</button>
+            <h1 class="game-title">FLAPPY TON</h1>
+            <div class="menu-buttons">
+                <button id="btn-start" class="primary-btn">PLAY</button>
+                <button id="btn-leaderboard" class="secondary-btn">LEADERBOARD</button>
+                <button id="btn-shop" class="secondary-btn">SHOP</button>
+                <button id="btn-invite" class="secondary-btn">INVITE FRIENDS</button>
+            </div>
+            <p class="promo-text">Invite friends & get +2 Coins</p>
         </div>
 
         <div id="game-container" class="hidden">
@@ -29,22 +37,41 @@
         </div>
 
         <div id="game-over" class="screen hidden">
-            <h2>Game Over</h2>
-            <p>Score: <span id="final-score">0</span></p>
-            <div id="revive-container">
-                <button id="btn-revive" class="primary-btn">Revive (1 Coin)</button>
-                <p class="small-text">Balance: <span id="revive-balance">0</span></p>
+            <h2 class="status-title">GAME OVER</h2>
+            <div class="result-box">
+                <p>Your Score</p>
+                <span id="final-score">0</span>
             </div>
-            <button id="btn-restart" class="secondary-btn">Menu</button>
-            <button id="btn-share" class="secondary-btn">Share Result</button>
+            
+            <div id="revive-container">
+                <button id="btn-revive" class="primary-btn">REVIVE (1 Coin)</button>
+                <p class="balance-info">Balance: <span id="revive-balance">0</span></p>
+            </div>
+
+            <div class="post-game-buttons">
+                <button id="btn-restart" class="secondary-btn">MAIN MENU</button>
+                <button id="btn-share" class="secondary-btn">SHARE RESULT</button>
+            </div>
         </div>
         
         <div id="shop-modal" class="modal hidden">
             <div class="modal-content">
-                <h3>Buy Coins</h3>
-                <p>1 TON = 10 Coins</p>
-                <button id="btn-buy-1ton" class="primary-btn">Buy for 1 TON</button>
-                <button id="btn-close-shop" class="text-btn">Close</button>
+                <h3>COIN SHOP</h3>
+                <div class="shop-item">
+                    <p>1 TON = 10 Coins</p>
+                    <button id="btn-buy-1ton" class="primary-btn">BUY FOR 1 TON</button>
+                </div>
+                <button id="btn-close-shop" class="text-link">Close</button>
+            </div>
+        </div>
+
+        <div id="leaderboard-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>TOP PLAYERS</h3>
+                <div id="leaderboard-list" class="list-container">
+                    <p class="loading-text">Loading...</p>
+                </div>
+                <button id="btn-close-leaderboard" class="text-link">Close</button>
             </div>
         </div>
     </div>

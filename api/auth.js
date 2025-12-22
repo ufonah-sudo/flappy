@@ -1,45 +1,40 @@
-const { supabase, verifyTelegramWebAppData, allowCors } = require('./_utils');
+const { supabase, verifyTelegramData, cors } = require('./_utils');
 
 const handler = async (req, res) => {
     const { initData, startParam } = req.body;
-    const user = verifyTelegramWebAppData(initData);
+    // Используем имя функции из твоего _utils.js
+    const user = verifyTelegramData(initData);
 
     if (!user) return res.status(403).json({ error: 'Invalid signature' });
 
-    // Проверяем, существует ли пользователь
-    let { data: dbUser } = await supabase.from('users').select('*').eq('telegram_id', user.id).single();
+    let { data: dbUser } = await supabase.from('users').select('*').eq('telegram_id', user.id).maybeSingle();
 
     if (!dbUser) {
-        // Регистрация нового
-        const { data: newUser, error } = await supabase
+        const { data: newUser, error: createError } = await supabase
             .from('users')
-            .insert({ telegram_id: user.id, username: user.username, coins: 1 }) // 1 бесплатный коин
+            .insert({ telegram_id: user.id, username: user.username || 'Player', coins: 1 })
             .select()
             .single();
         
+        if (createError) return res.status(500).json({ error: 'Failed to create user' });
         dbUser = newUser;
 
-        // Обработка рефералки
-        if (startParam && startParam != user.id) {
+        if (startParam && String(startParam) !== String(user.id)) {
             const inviterId = parseInt(startParam);
-            // Проверяем, есть ли инвайтер
-            const { data: inviter } = await supabase.from('users').select('*').eq('telegram_id', inviterId).single();
+            const { data: inviter } = await supabase.from('users').select('telegram_id').eq('telegram_id', inviterId).maybeSingle();
             
             if (inviter) {
-                // Записываем связь
                 const { error: refError } = await supabase.from('referrals').insert({ inviter_id: inviterId, invited_id: user.id });
                 
                 if (!refError) {
-                    // Награда инвайтеру (+2)
+                    // Убедись, что функция increment_coins создана в Supabase SQL
                     await supabase.rpc('increment_coins', { user_id: inviterId, amount: 2 }); 
-                    // Награда приглашенному за вход (+1 уже дали при регистрации, можно добавить логику здесь если нужно)
                 }
             }
         }
     }
 
-    // Возвращаем данные пользователя
     res.status(200).json({ user: dbUser });
 };
 
-module.exports = allowCors(handler);
+module.exports = cors(handler);

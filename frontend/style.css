@@ -2,7 +2,9 @@
     --bg-color: #1c1c1e;
     --text-color: #ffffff;
     --primary: #0088cc;
+    --primary-hover: #00aaff;
     --secondary: #3d3d3d;
+    --accent: #f39c12; /* Золотой для монет */
 }
 
 body {
@@ -10,59 +12,71 @@ body {
     overflow: hidden;
     background: var(--bg-color);
     color: var(--text-color);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, system-ui, sans-serif;
     user-select: none;
+    /* Учет безопасных зон для Telegram iOS */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
-#header {
+/* Красивое оформление баланса */
+.coins-display {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 15px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+/* Оверлей счета во время игры */
+#score-overlay {
     position: absolute;
-    top: 10px;
+    top: 70px;
     width: 100%;
+    text-align: center;
+    font-size: 48px;
+    font-weight: 900;
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+}
+
+/* Эффект нажатия кнопок */
+button {
+    transition: transform 0.1s ease, background 0.2s ease;
+    outline: none;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+.primary-btn {
+    background: var(--primary);
+    box-shadow: 0 4px 0 #006699;
+    margin-bottom: 4px;
+}
+
+.primary-btn:active {
+    box-shadow: none;
+    transform: translateY(4px) scale(0.95);
+}
+
+/* Стили для списка лидеров */
+#leaderboard-list {
+    max-height: 250px;
+    overflow-y: auto;
+    margin: 15px 0;
+    text-align: left;
+}
+
+.leader-item {
     display: flex;
     justify-content: space-between;
-    padding: 0 15px;
-    box-sizing: border-box;
-    z-index: 10;
+    padding: 8px 10px;
+    border-bottom: 1px solid #3d3d3d;
 }
 
-.screen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    background: var(--bg-color);
-    z-index: 5;
-}
-
-.hidden { display: none !important; }
-
-canvas { display: block; width: 100%; height: 100%; }
-
-button {
-    padding: 12px 24px;
-    border-radius: 12px;
-    border: none;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    width: 200px;
-}
-
-.primary-btn { background: var(--primary); color: white; }
-.secondary-btn { background: var(--secondary); color: white; }
-
-.modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 20;
-}
-.modal-content {
-    background: #2c2c2e; padding: 20px; border-radius: 15px; text-align: center;
-}
+.leader-item:last-child { border: none; }
