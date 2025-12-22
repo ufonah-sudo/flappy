@@ -1,16 +1,24 @@
 const { supabase, verifyTelegramData, cors } = require('./_utils');
 
 const handler = async (req, res) => {
-    // В Vercel req.body иногда приходит строкой, если не настроены заголовки
+    // Добавляем логирование входящих данных (увидишь в логах Vercel)
+    console.log("Body received:", req.body);
+
     const { initData, startParam } = req.body;
-    
-    // Проверка Telegram данных
+
+    if (!initData) {
+        return res.status(400).json({ error: 'Missing initData' });
+    }
+
     const user = verifyTelegramData(initData);
 
     if (!user) {
-        console.error("Auth Failed: Invalid initData");
+        // Если проверка не прошла, мы теперь увидим это в логах более детально
+        console.error("Verification failed for initData:", initData);
         return res.status(403).json({ error: 'Invalid signature' });
     }
+    
+    // ... остальной код (поиск и создание юзера) ...
 
     // Ищем пользователя. Используем 'id', так как в SQL мы сделали его PRIMARY KEY
     let { data: dbUser, error: fetchError } = await supabase

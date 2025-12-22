@@ -1,11 +1,18 @@
 const tg = window.Telegram.WebApp;
 
+// Автоматически определяем базовый URL для запросов
+const BASE_URL = window.location.origin;
+
 // Универсальный метод для запросов к нашему API на Vercel
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     const initData = tg.initData; // Берем подпись Telegram
 
+    // Отладочный лог: покажет в vConsole, есть ли данные инициализации
+    console.log(`[API Request] ${endpoint}:`, { hasInitData: !!initData, ...extraData });
+
     try {
-        const response = await fetch(`/api/${endpoint}`, {
+        // Используем полный URL, чтобы избежать проблем с путями
+        const response = await fetch(`${BASE_URL}/api/${endpoint}`, {
             method: method,
             headers: {
                 'Content-Type': 'application/json'
@@ -17,7 +24,9 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
         });
 
         if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
+            // Если ошибка 403, 500 и т.д., пытаемся прочитать текст ошибки от сервера
+            const errorText = await response.text();
+            throw new Error(`Server ${response.status}: ${errorText}`);
         }
 
         return await response.json();
@@ -32,21 +41,19 @@ export async function authPlayer(startParam) {
     return await apiRequest('auth', 'POST', { startParam });
 }
 
-// 2. Получение актуального баланса (если нужно отдельно)
+// 2. Получение актуального баланса
 export async function fetchBalance() {
-    // В нашей структуре баланс возвращается при auth, 
-    // но можно сделать отдельный запрос в coins.js если нужно
     const data = await apiRequest('auth', 'POST'); 
-    return data.user ? data.user.coins : 0;
+    return (data && data.user) ? data.user.coins : 0;
 }
 
 // 3. Трата монеты на оживление
 export async function spendCoin() {
     const data = await apiRequest('coins', 'POST', { action: 'spend' });
-    return data.success ? data.newBalance : null;
+    return (data && data.success) ? data.newBalance : null;
 }
 
-// 4. Покупка монет (уведомление сервера после транзакции TON)
+// 4. Покупка монет
 export async function buyCoins(amount) {
     return await apiRequest('coins', 'POST', { action: 'buy', amount: amount });
 }
@@ -58,12 +65,12 @@ export async function saveScore(score) {
 
 // 6. Получение топ-игроков
 export async function getLeaderboard() {
-    // Лидерборд - единственный GET запрос, не требующий подписи
     try {
-        const response = await fetch('/api/scores');
+        const response = await fetch(`${BASE_URL}/api/scores`);
         const data = await response.json();
         return data.leaderboard || [];
     } catch (e) {
+        console.error("Leaderboard fetch error:", e);
         return [];
     }
 }
