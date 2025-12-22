@@ -1,57 +1,41 @@
-* {
-  box-sizing: border-box;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
-}
-
 body {
   margin: 0;
-  background: #0f172a;
-  color: #fff;
+  background-color: #87ceeb;
+  font-family: Arial, sans-serif;
 }
 
 .top-bar {
   display: flex;
   justify-content: space-between;
-  padding: 10px 14px;
-  background: #020617;
-  align-items: center;
-}
-
-.logo {
-  font-weight: 700;
-}
-
-.wallet button {
-  background: #22c55e;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+  padding: 10px;
+  background-color: #0f172a;
+  color: #fff;
 }
 
 .game-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-canvas {
-  background: linear-gradient(#38bdf8, #e0f2fe);
-  border-radius: 12px;
+  position: relative;
+  text-align: center;
+  margin-top: 20px;
 }
 
 .hud {
   position: absolute;
-  top: 60px;
-  display: flex;
-  gap: 20px;
+  top: 10px;
+  left: 10px;
+  color: #fff;
   font-weight: bold;
+}
+
+canvas {
+  border: 2px solid #000;
+  display: block;
+  margin: 0 auto;
 }
 
 .modal {
   position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.7);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -62,22 +46,8 @@ canvas {
 }
 
 .modal-content {
-  background: #020617;
+  background: #fff;
   padding: 20px;
-  border-radius: 12px;
   text-align: center;
-}
-
-.modal-content button {
-  margin-top: 10px;
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
-
-button.secondary {
-  background: #334155;
-  color: #fff;
+  border-radius: 10px;
 }

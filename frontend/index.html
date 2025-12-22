@@ -4,21 +4,12 @@
   <meta charset="UTF-8" />
   <title>Flappy TON</title>
 
-  <!-- Telegram Mini App -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0f172a" />
 
-  <!-- Styles -->
   <link rel="stylesheet" href="./style.css" />
-
-  <!-- TON Connect -->
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-
-  <!-- Telegram SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-
 <body>
   <div id="app">
     <header class="top-bar">
@@ -33,58 +24,36 @@
       <canvas id="game-canvas" width="360" height="520"></canvas>
       <div class="hud">
         <div>Score: <span id="score">0</span></div>
-        <div>Coins: <span id="coins">...</span></div>
+        <div>Coins: <span id="coins">0</span></div>
       </div>
     </main>
 
-    <!-- Modals -->
     <div class="modal hidden" id="gameover-modal">
       <div class="modal-content">
         <h2>Game Over</h2>
         <p>Your score: <span id="final-score"></span></p>
-        <button id="continue-btn">Continue (1 Coin)</button>
         <button id="restart-btn">Restart</button>
-      </div>
-    </div>
-
-    <div class="modal hidden" id="buy-modal">
-      <div class="modal-content">
-        <h2>Buy Coins</h2>
-        <p>1 TON = 10 Coins</p>
-        <button id="buy-coins-btn">Buy</button>
-        <button class="secondary" id="close-buy-modal">Cancel</button>
-      </div>
-    </div>
-
-    <div class="modal hidden" id="share-modal">
-      <div class="modal-content">
-        <h2>Share your score</h2>
-        <button id="share-btn">Share</button>
       </div>
     </div>
   </div>
 
-  <!-- Scripts: подключаем после DOMContentLoaded -->
+  <!-- Скрипты -->
   <script type="module">
-    document.addEventListener("DOMContentLoaded", async () => {
-      // Инициализация Telegram WebApp
+    import * as game from "./game.js";
+
+    // Ждём загрузки DOM и Telegram WebApp
+    document.addEventListener("DOMContentLoaded", () => {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
-      document.body.style.overscrollBehavior = "none";
 
-      // Подключение модулей и получение экспортов
-      const storage = await import("./storage.js");
-      const api = await import("./api.js");
-      const wallet = await import("./wallet.js");
-      const ui = await import("./ui.js");
-      const game = await import("./game.js");
+      // Сохраняем startGame в window
+      window.startGame = game.startGame;
 
-      // Назначаем функцию startGame на window, чтобы её можно было вызвать
-      if (game.startGame) window.startGame = game.startGame;
-
-      // Запуск игры
-      window.startGame();
+      // Ждём немного, чтобы canvas точно появился
+      setTimeout(() => {
+        window.startGame();
+      }, 100); // 100ms задержка
     });
   </script>
 </body>
