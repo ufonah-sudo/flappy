@@ -73,15 +73,18 @@
       tg.expand();
       document.body.style.overscrollBehavior = "none";
 
-      // Подключение модулей
-      await import("./storage.js");
-      await import("./api.js");
-      await import("./wallet.js");
-      await import("./ui.js");
-      await import("./game.js");
+      // Подключение модулей и получение экспортов
+      const storage = await import("./storage.js");
+      const api = await import("./api.js");
+      const wallet = await import("./wallet.js");
+      const ui = await import("./ui.js");
+      const game = await import("./game.js");
+
+      // Назначаем функцию startGame на window, чтобы её можно было вызвать
+      if (game.startGame) window.startGame = game.startGame;
 
       // Запуск игры
-      if (window.startGame) window.startGame();
+      window.startGame();
     });
   </script>
 </body>
