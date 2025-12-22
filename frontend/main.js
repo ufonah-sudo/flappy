@@ -4,14 +4,31 @@ import { WalletManager } from './wallet.js';
 
 // Инициализация Telegram WebApp
 const tg = window.Telegram.WebApp;
-tg.expand();
-tg.ready();
-// Устанавливаем цвет хедера под фон игры
-tg.setHeaderColor('#4ec0ca'); 
+
+// Безопасная инициализация для старых версий (v6.0)
+try {
+    tg.expand();
+    tg.ready();
+    // Красим хедер только если версия поддерживает это (v6.1+)
+    if (tg.isVersionAtLeast('6.1')) {
+        tg.setHeaderColor('#4ec0ca'); 
+    }
+} catch (e) {
+    console.warn("Telegram WebApp init warning:", e);
+}
 
 const state = {
     user: null,
     coins: 0
+};
+
+// Универсальная функция оповещений (вместо падучего showAlert)
+const notify = (msg) => {
+    if (tg.showAlert) {
+        tg.showAlert(msg);
+    } else {
+        alert(msg);
+    }
 };
 
 // UI Элементы
@@ -32,14 +49,21 @@ const ui = {
 async function init() {
     // 1. Авторизация и загрузка данных пользователя
     const startParam = tg.initDataUnsafe.start_param;
-    const authData = await api.authPlayer(startParam);
     
-    if (authData && authData.user) {
-        state.user = authData.user;
-        state.coins = authData.user.coins;
-        updateUI();
-    } else {
-        tg.showAlert("Failed to connect to server.");
+    try {
+        const authData = await api.authPlayer(startParam);
+        
+        if (authData && authData.user) {
+            state.user = authData.user;
+            state.coins = authData.user.coins;
+            updateUI();
+        } else {
+            console.error("Auth failed: No user data returned");
+            notify("Connection error. Please open via Telegram Bot.");
+        }
+    } catch (err) {
+        console.error("Critical Auth Error:", err);
+        notify("Server 403: Please check BOT_TOKEN in Vercel.");
     }
 
     // 2. Инициализация кошелька TON
@@ -52,68 +76,64 @@ async function init() {
 
     // --- ОБРАБОТЧИКИ КНОПОК ---
 
-    // Старт игры
     document.getElementById('btn-start').onclick = () => {
         ui.menu.classList.add('hidden');
-        ui.gameOver.classList.add('hidden'); // На случай рестарта
+        ui.gameOver.classList.add('hidden');
         ui.gameContainer.classList.remove('hidden');
         ui.scoreOverlay.innerText = '0';
-        game.resize(); // Важно для корректных координат
+        game.resize();
         game.start();
     };
 
-    // Лидерборд
     document.getElementById('btn-leaderboard').onclick = async () => {
         ui.ldbModal.classList.remove('hidden');
         ui.ldbList.innerHTML = '<p>Loading...</p>';
-        const top = await api.getLeaderboard();
-        ui.ldbList.innerHTML = top.map((entry, i) => `
-            <div class="leader-item" style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee;">
-                <span>${i + 1}. ${entry.users.username || 'Player'}</span>
-                <span style="font-weight: bold;">${entry.score}</span>
-            </div>
-        `).join('') || '<p>No scores yet</p>';
+        try {
+            const top = await api.getLeaderboard();
+            ui.ldbList.innerHTML = top.map((entry, i) => `
+                <div class="leader-item" style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee;">
+                    <span>${i + 1}. ${entry.users.username || 'Player'}</span>
+                    <span style="font-weight: bold;">${entry.score}</span>
+                </div>
+            `).join('') || '<p>No scores yet</p>';
+        } catch (e) {
+            ui.ldbList.innerHTML = '<p>Error loading leaderboard</p>';
+        }
     };
 
-    // Инвайт (Рефералка)
     document.getElementById('btn-invite').onclick = () => {
         if (!state.user) return;
         const link = `https://t.me/share/url?url=https://t.me/ВАШ_БОТ_NAME/app?startapp=${state.user.telegram_id}&text=Play Flappy TON and get coins!`;
         tg.openTelegramLink(link);
     };
 
-    // Магазин
     document.getElementById('btn-shop').onclick = () => {
-        // Убрал жесткую блокировку "без кошелька", чтобы просто показать цены, 
-        // но проверку оставил на кнопке покупки
         ui.shopModal.classList.remove('hidden');
     };
 
     document.getElementById('btn-close-shop').onclick = () => ui.shopModal.classList.add('hidden');
     document.getElementById('btn-close-leaderboard').onclick = () => ui.ldbModal.classList.add('hidden');
 
-    // Покупка 10 монет за 1 TON
     document.getElementById('btn-buy-1ton').onclick = async () => {
         if (!wallet.isConnected) {
-            tg.showAlert('Please connect TON wallet first');
+            notify('Please connect TON wallet first');
             return;
         }
-        const tx = await wallet.sendTransaction(1); // Отправляем 1 TON
+        const tx = await wallet.sendTransaction(1);
         if (tx.success) {
             const res = await api.buyCoins(1);
             if (res.success) {
                 state.coins = res.newBalance;
                 updateUI();
-                tg.showAlert('Purchase successful! +10 Coins');
+                notify('Purchase successful! +10 Coins');
                 ui.shopModal.classList.add('hidden');
             }
         }
     };
 
-    // Возрождение за монету
     document.getElementById('btn-revive').onclick = async () => {
         if (state.coins < 1) {
-            tg.showAlert("Not enough coins!");
+            notify("Not enough coins!");
             return;
         }
         
@@ -125,48 +145,38 @@ async function init() {
             ui.gameContainer.classList.remove('hidden');
             game.revive();
         } else {
-            tg.showAlert("Error spending coin.");
+            notify("Error spending coin.");
         }
     };
 
-    // Вернуться в меню
     document.getElementById('btn-restart').onclick = () => {
         ui.gameOver.classList.add('hidden');
         ui.menu.classList.remove('hidden');
         ui.gameContainer.classList.add('hidden');
     };
 
-    // Шаринг результата (из твоей первой версии)
     document.getElementById('btn-share').onclick = () => {
         const score = ui.finalScore.innerText;
-        const shareLink = `https://t.me/share/url?url=https://t.me/ВАШ_БОТ_NAME/app&text=I scored ${score} in Flappy TON! Can you beat me?`;
+        const shareLink = `https://t.me/share/url?url=https://t.me/ВАШ_БОТ_NAME/app&text=I scored ${score} in Flappy TON!`;
         tg.openTelegramLink(shareLink);
     };
 
-    // Слушатель обновления счета во время игры
     window.addEventListener('scoreUpdate', (e) => {
         ui.scoreOverlay.innerText = e.detail;
     });
 
-    // Функция завершения игры
     function handleGameOver(score, reviveUsed) {
         ui.gameContainer.classList.add('hidden');
         ui.gameOver.classList.remove('hidden');
         ui.finalScore.innerText = score;
-        
-        // Скрываем кнопку revive, если она уже была использована в этом раунде
         ui.btnRevive.style.display = reviveUsed ? 'none' : 'block';
-        
-        // Отправляем результат на сервер
         api.saveScore(score);
     }
 }
 
-// Функция обновления баланса в интерфейсе
 function updateUI() {
     ui.coinBalance.innerText = state.coins;
     ui.reviveBalance.innerText = state.coins;
 }
 
-// Запуск приложения
 init();
