@@ -1,64 +1,54 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Flappy TON</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0f172a">
-  <link rel="stylesheet" href="./style.css">
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Flappy Bird TON</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
 <body>
-  <div id="app">
-    <header class="top-bar">
-      <div class="logo">🐦 Flappy TON</div>
-      <div class="wallet">
-        <span id="wallet-status">Wallet: not connected</span>
-        <button id="connect-wallet-btn">Connect</button>
-      </div>
-    </header>
+    <div id="app">
+        <div id="header">
+            <div id="ton-connect"></div>
+            <div class="coins-display">🪙 <span id="coin-balance">0</span></div>
+        </div>
 
-    <main class="game-container">
-      <canvas id="game-canvas" width="360" height="520"></canvas>
-      <div class="hud">
-        <div>Score: <span id="score">0</span></div>
-        <div>Coins: <span id="coins">0</span></div>
-      </div>
-    </main>
+        <div id="menu" class="screen">
+            <h1>Flappy TON</h1>
+            <button id="btn-start" class="primary-btn">Play</button>
+            <button id="btn-leaderboard" class="secondary-btn">Leaderboard</button>
+            <button id="btn-shop" class="secondary-btn">Shop</button>
+            <button id="btn-invite" class="secondary-btn">Invite (+2 Coins)</button>
+        </div>
 
-    <!-- Modals -->
-    <div class="modal hidden" id="gameover-modal">
-      <div class="modal-content">
-        <h2>Game Over</h2>
-        <p>Your score: <span id="final-score"></span></p>
-        <button id="restart-btn">Restart</button>
-      </div>
+        <div id="game-container" class="hidden">
+            <canvas id="game-canvas"></canvas>
+            <div id="score-overlay">0</div>
+        </div>
+
+        <div id="game-over" class="screen hidden">
+            <h2>Game Over</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <div id="revive-container">
+                <button id="btn-revive" class="primary-btn">Revive (1 Coin)</button>
+                <p class="small-text">Balance: <span id="revive-balance">0</span></p>
+            </div>
+            <button id="btn-restart" class="secondary-btn">Menu</button>
+            <button id="btn-share" class="secondary-btn">Share Result</button>
+        </div>
+        
+        <div id="shop-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Buy Coins</h3>
+                <p>1 TON = 10 Coins</p>
+                <button id="btn-buy-1ton" class="primary-btn">Buy for 1 TON</button>
+                <button id="btn-close-shop" class="text-btn">Close</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script type="module">
-    import * as game from './game.js';
-    import * as wallet from './wallet.js';
-    import * as storage from './storage.js';
-    import * as api from './api.js';
-    import * as ui from './ui.js';
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-      document.body.style.overscrollBehavior = "none";
-
-      // Инициализация кошелька и Coins
-      await wallet.initWallet();
-      await storage.initCoins();
-
-      // Назначаем и запускаем игру
-      window.startGame = game.startGame;
-      window.startGame();
-    });
-  </script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
