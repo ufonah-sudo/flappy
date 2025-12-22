@@ -64,12 +64,7 @@ export async function saveScore(score) {
 
 // 6. Получение топ-игроков
 export async function getLeaderboard() {
-    try {
-        const response = await fetch(`${BASE_URL}/api/scores`);
-        const data = await response.json();
-        return data.leaderboard || [];
-    } catch (e) {
-        console.error("Leaderboard fetch error:", e);
-        return [];
-    }
+    // Исправлено: используем apiRequest, чтобы передать initData, иначе сервер может отклонить запрос
+    const data = await apiRequest('scores', 'POST', { action: 'get_leaderboard' });
+    return data.leaderboard || [];
 }
