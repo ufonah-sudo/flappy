@@ -1,9 +1,7 @@
 import { submitScore, fetchCoins } from "./api.js";
 import { showGameOver } from "./ui.js";
 
-const canvas = document.getElementById("game-canvas");
-const ctx = canvas.getContext("2d");
-
+let canvas, ctx;
 let birdY = 250;
 let velocity = 0;
 let score = 0;
@@ -23,16 +21,13 @@ function draw() {
 
   if (birdY > canvas.height || birdY < 0) endGame();
 
+  // score
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "16px Arial";
   ctx.fillText(`Score: ${score}`, 10, 20);
 
   if (running) requestAnimationFrame(draw);
 }
-
-canvas.onclick = () => {
-  velocity = -8;
-  score++;
-  document.getElementById("score").textContent = score;
-};
 
 function endGame() {
   running = false;
@@ -49,12 +44,26 @@ window.restartGame = () => {
 };
 
 window.resumeGame = () => {
-  running = true;
-  draw();
+  if (!running) {
+    running = true;
+    draw();
+  }
 };
 
-(async () => {
+export async function startGame() {
+  canvas = document.getElementById("game-canvas");
+  if (!canvas) return console.error("Canvas not found!");
+  ctx = canvas.getContext("2d");
+
   const data = await fetchCoins();
   document.getElementById("coins").textContent = data.coins;
+
+  // клик для прыжка
+  canvas.addEventListener("click", () => {
+    velocity = -8;
+    score++;
+    document.getElementById("score").textContent = score;
+  });
+
   draw();
-})();
+}

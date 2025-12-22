@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#0f172a" />
 
   <!-- Styles -->
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="./style.css" />
 
   <!-- TON Connect -->
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -20,80 +20,69 @@
 </head>
 
 <body>
-  <!-- ===== APP ROOT ===== -->
   <div id="app">
-
-    <!-- ===== HEADER ===== -->
     <header class="top-bar">
       <div class="logo">🐦 Flappy TON</div>
-
       <div class="wallet">
         <span id="wallet-status">Wallet: not connected</span>
         <button id="connect-wallet-btn">Connect</button>
       </div>
     </header>
 
-    <!-- ===== GAME CANVAS ===== -->
     <main class="game-container">
       <canvas id="game-canvas" width="360" height="520"></canvas>
-
-      <!-- HUD -->
       <div class="hud">
         <div>Score: <span id="score">0</span></div>
         <div>Coins: <span id="coins">...</span></div>
       </div>
     </main>
 
-    <!-- ===== MODALS ===== -->
-
-    <!-- Game Over -->
+    <!-- Modals -->
     <div class="modal hidden" id="gameover-modal">
       <div class="modal-content">
         <h2>Game Over</h2>
         <p>Your score: <span id="final-score"></span></p>
-
         <button id="continue-btn">Continue (1 Coin)</button>
         <button id="restart-btn">Restart</button>
       </div>
     </div>
 
-    <!-- Buy Coins -->
     <div class="modal hidden" id="buy-modal">
       <div class="modal-content">
         <h2>Buy Coins</h2>
         <p>1 TON = 10 Coins</p>
-
         <button id="buy-coins-btn">Buy</button>
         <button class="secondary" id="close-buy-modal">Cancel</button>
       </div>
     </div>
 
-    <!-- Share -->
     <div class="modal hidden" id="share-modal">
       <div class="modal-content">
         <h2>Share your score</h2>
         <button id="share-btn">Share</button>
       </div>
     </div>
-
   </div>
 
-  <!-- ===== SCRIPTS ===== -->
-  <script type="module" src="storage.js"></script>
-  <script type="module" src="api.js"></script>
-  <script type="module" src="wallet.js"></script>
-  <script type="module" src="ui.js"></script>
-  <script type="module" src="game.js"></script>
+  <!-- Scripts: подключаем после DOMContentLoaded -->
+  <script type="module">
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Инициализация Telegram WebApp
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      document.body.style.overscrollBehavior = "none";
 
-  <!-- ===== INIT TELEGRAM ===== -->
-  <script>
-    const tg = window.Telegram.WebApp;
+      // Подключение модулей
+      await import("./storage.js");
+      await import("./api.js");
+      await import("./wallet.js");
+      await import("./ui.js");
+      await import("./game.js");
 
-    tg.ready();
-    tg.expand();
-
-    // Disable unwanted gestures
-    document.body.style.overscrollBehavior = "none";
+      // Запуск игры
+      if (window.startGame) window.startGame();
+    });
   </script>
 </body>
 </html>
