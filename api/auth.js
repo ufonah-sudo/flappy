@@ -1,40 +1,80 @@
 const { supabase, verifyTelegramData, cors } = require('./_utils');
 
 const handler = async (req, res) => {
+    // В Vercel req.body иногда приходит строкой, если не настроены заголовки
     const { initData, startParam } = req.body;
-    // Используем имя функции из твоего _utils.js
+    
+    // Проверка Telegram данных
     const user = verifyTelegramData(initData);
 
-    if (!user) return res.status(403).json({ error: 'Invalid signature' });
+    if (!user) {
+        console.error("Auth Failed: Invalid initData");
+        return res.status(403).json({ error: 'Invalid signature' });
+    }
 
-    let { data: dbUser } = await supabase.from('users').select('*').eq('telegram_id', user.id).maybeSingle();
+    // Ищем пользователя. Используем 'id', так как в SQL мы сделали его PRIMARY KEY
+    let { data: dbUser, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
 
+    if (fetchError) {
+        console.error("Supabase Fetch Error:", fetchError);
+        return res.status(500).json({ error: 'DB Fetch Error' });
+    }
+
+    // Если пользователя нет — создаем
     if (!dbUser) {
         const { data: newUser, error: createError } = await supabase
             .from('users')
-            .insert({ telegram_id: user.id, username: user.username || 'Player', coins: 1 })
+            .insert({ 
+                id: user.id, 
+                username: user.username || 'Player', 
+                coins: 10 // Даем 10 монет при регистрации
+            })
             .select()
             .single();
         
-        if (createError) return res.status(500).json({ error: 'Failed to create user' });
+        if (createError) {
+            console.error("User Creation Error:", createError);
+            return res.status(500).json({ error: 'Failed to create user' });
+        }
+        
         dbUser = newUser;
 
+        // Логика рефералов
         if (startParam && String(startParam) !== String(user.id)) {
             const inviterId = parseInt(startParam);
-            const { data: inviter } = await supabase.from('users').select('telegram_id').eq('telegram_id', inviterId).maybeSingle();
+            
+            // Проверяем, существует ли пригласивший
+            const { data: inviter } = await supabase
+                .from('users')
+                .select('id')
+                .eq('id', inviterId)
+                .maybeSingle();
             
             if (inviter) {
-                const { error: refError } = await supabase.from('referrals').insert({ inviter_id: inviterId, invited_id: user.id });
+                // ВАЖНО: Названия колонок должны совпадать с SQL (referrer_id, referred_id)
+                const { error: refError } = await supabase
+                    .from('referrals')
+                    .insert({ 
+                        referrer_id: inviterId, 
+                        referred_id: user.id 
+                    });
                 
                 if (!refError) {
-                    // Убедись, что функция increment_coins создана в Supabase SQL
-                    await supabase.rpc('increment_coins', { user_id: inviterId, amount: 2 }); 
+                    // Вызываем RPC функцию. Параметр должен называться user_id_param (как в SQL)
+                    await supabase.rpc('increment_coins', { 
+                        user_id_param: inviterId, 
+                        amount: 5 // Бонус пригласившему
+                    }); 
                 }
             }
         }
     }
 
-    res.status(200).json({ user: dbUser });
+    return res.status(200).json({ user: dbUser });
 };
 
 module.exports = cors(handler);
