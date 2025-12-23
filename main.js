@@ -12,14 +12,19 @@ try {
         tg.setHeaderColor('#4ec0ca'); 
     }
 } catch (e) {
-    console.warn("Telegram WebApp init warning:", e);
+    console.error("TG Init Error:", e);
 }
 
-const state = {
-    user: null,
-    coins: 0
+const state = { user: null, coins: 0 };
+
+// Безопасный поиск элементов
+const getEl = (id) => {
+    const el = document.getElementById(id);
+    if (!el) console.warn(`Element with id "${id}" not found!`);
+    return el;
 };
 
+// Вспомогательный UI метод
 const notify = (msg) => {
     if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
         tg.showAlert(msg);
@@ -28,149 +33,145 @@ const notify = (msg) => {
     }
 };
 
+// UI Элементы
 const ui = {
-    menu: document.getElementById('menu'),
-    gameContainer: document.getElementById('game-container'),
-    gameOver: document.getElementById('game-over'),
-    scoreOverlay: document.getElementById('score-overlay'),
-    coinBalance: document.getElementById('coin-balance'),
-    reviveBalance: document.getElementById('revive-balance'),
-    finalScore: document.getElementById('final-score'),
-    btnRevive: document.getElementById('btn-revive'),
-    shopModal: document.getElementById('shop-modal'),
-    ldbModal: document.getElementById('leaderboard-modal'),
-    ldbList: document.getElementById('leaderboard-list')
+    menu: getEl('menu'),
+    gameContainer: getEl('game-container'),
+    gameOver: getEl('game-over'),
+    scoreOverlay: getEl('score-overlay'),
+    coinBalance: getEl('coin-balance'),
+    reviveBalance: getEl('revive-balance'),
+    finalScore: getEl('final-score'),
+    btnRevive: getEl('btn-revive'),
+    shopModal: getEl('shop-modal'),
+    ldbModal: getEl('leaderboard-modal'),
+    ldbList: getEl('leaderboard-list')
 };
 
+function updateUI() {
+    if (ui.coinBalance) ui.coinBalance.innerText = state.coins;
+    if (ui.reviveBalance) ui.reviveBalance.innerText = state.coins;
+}
+
 async function init() {
-    console.log("App initializing...");
+    console.log("Starting initialization...");
 
-    // 1. Ждем данные (максимум 3 секунды), чтобы не вешать приложение
-    let attempts = 0;
-    while (!tg.initData && !window.location.hash && attempts < 15) {
-        await new Promise(r => setTimeout(r, 200));
-        attempts++;
-    }
-
-    // 2. Инициализация кошелька и игры (делаем СРАЗУ, чтобы кнопки работали)
+    // 1. Инициализируем кошелек и игру СРАЗУ
     const wallet = new WalletManager((isConnected) => {
         console.log("Wallet connected:", isConnected);
     });
 
-    const canvas = document.getElementById('game-canvas');
+    const canvas = getEl('game-canvas');
     let game = null;
     if (canvas) {
         game = new Game(canvas, handleGameOver);
-    } else {
-        console.error("Canvas not found!");
     }
 
-    // 3. Пытаемся авторизоваться
-    const startParam = tg.initDataUnsafe ? tg.initDataUnsafe.start_param : null;
-    try {
-        const authData = await api.authPlayer(startParam);
-        if (authData && authData.user) {
-            state.user = authData.user;
-            state.coins = authData.user.coins;
-            updateUI();
-        } else {
-            console.warn("Auth failed, continuing as guest");
-        }
-    } catch (err) {
-        console.error("Auth Error:", err);
+    function handleGameOver(score, reviveUsed) {
+        ui.gameContainer?.classList.add('hidden');
+        ui.gameOver?.classList.remove('hidden');
+        if (ui.finalScore) ui.finalScore.innerText = score;
+        ui.btnRevive.style.display = reviveUsed ? 'none' : 'block';
+        api.saveScore(score);
     }
 
-    // 4. ОБРАБОТЧИКИ КНОПОК (Вынесено из условий, чтобы работали всегда)
-    const btnStart = document.getElementById('btn-start');
+    // 2. Назначаем клики (ВСЕ важные функции возвращены)
+    const btnStart = getEl('btn-start');
     if (btnStart) {
         btnStart.onclick = () => {
-            console.log("Game Start Clicked");
-            ui.menu.classList.add('hidden');
-            ui.gameOver.classList.add('hidden');
-            ui.gameContainer.classList.remove('hidden');
-            ui.scoreOverlay.innerText = '0';
-            if (game) {
-                game.resize();
-                game.start();
-            }
+            ui.menu?.classList.add('hidden');
+            ui.gameOver?.classList.add('hidden');
+            ui.gameContainer?.classList.remove('hidden');
+            if (ui.scoreOverlay) ui.scoreOverlay.innerText = '0';
+            game?.resize();
+            game?.start();
         };
     }
 
-    document.getElementById('btn-leaderboard').onclick = async () => {
-        ui.ldbModal.classList.remove('hidden');
-        ui.ldbList.innerHTML = '<p>Loading...</p>';
+    getEl('btn-leaderboard').onclick = async () => {
+        ui.ldbModal?.classList.remove('hidden');
+        if (ui.ldbList) ui.ldbList.innerHTML = 'Loading...';
         try {
             const top = await api.getLeaderboard();
-            ui.ldbList.innerHTML = top.map((entry, i) => `
-                <div class="leader-item" style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee;">
+            if (ui.ldbList) ui.ldbList.innerHTML = top.map((entry, i) => 
+                `<div class="leader-item" style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee;">
                     <span>${i + 1}. ${entry.username || 'Player'}</span>
                     <span style="font-weight: bold;">${entry.score}</span>
-                </div>
-            `).join('') || '<p>No scores yet</p>';
+                </div>`
+            ).join('') || '<p>No scores yet</p>';
         } catch (e) {
-            ui.ldbList.innerHTML = '<p>Error loading leaderboard</p>';
+            if (ui.ldbList) ui.ldbList.innerHTML = 'Error loading leaderboard';
         }
     };
 
-    document.getElementById('btn-invite').onclick = () => {
+    getEl('btn-invite').onclick = () => {
         const botUsername = 'ВАШ_БОТ_NAME'; // ЗАМЕНИТЬ!
         const userId = state.user ? state.user.id : '0';
         const inviteLink = `https://t.me/${botUsername}/app?startapp=${userId}`;
-        const shareLink = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play Flappy TON!`;
+        const shareLink = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play Flappy TON and get coins!`;
         tg.openTelegramLink(shareLink);
     };
 
-    document.getElementById('btn-shop').onclick = () => ui.shopModal.classList.remove('hidden');
-    document.getElementById('btn-close-shop').onclick = () => ui.shopModal.classList.add('hidden');
-    document.getElementById('btn-close-leaderboard').onclick = () => ui.ldbModal.classList.add('hidden');
+    getEl('btn-shop').onclick = () => ui.shopModal?.classList.remove('hidden');
+    getEl('btn-close-shop').onclick = () => ui.shopModal?.classList.add('hidden');
+    getEl('btn-close-leaderboard').onclick = () => ui.ldbModal?.classList.add('hidden');
 
-    document.getElementById('btn-buy-1ton').onclick = async () => {
-        if (!wallet.isConnected) return notify('Connect wallet first');
+    getEl('btn-buy-1ton').onclick = async () => {
+        if (!wallet.isConnected) return notify('Please connect TON wallet first');
         const tx = await wallet.sendTransaction(1);
         if (tx && tx.success) {
             const res = await api.buyCoins(1);
             if (res && res.success) {
                 state.coins = res.newBalance;
                 updateUI();
-                notify('Success! +10 Coins');
+                notify('Purchase successful! +10 Coins');
             }
         }
     };
 
-    document.getElementById('btn-revive').onclick = async () => {
+    getEl('btn-revive').onclick = async () => {
         if (state.coins < 1) return notify("Not enough coins!");
         const newBalance = await api.spendCoin();
         if (newBalance !== null && typeof newBalance !== 'undefined' && !newBalance.error) {
             state.coins = newBalance;
             updateUI();
-            ui.gameOver.classList.add('hidden');
-            ui.gameContainer.classList.remove('hidden');
-            if (game) game.revive();
+            ui.gameOver?.classList.add('hidden');
+            ui.gameContainer?.classList.remove('hidden');
+            game?.revive();
+        } else {
+            notify("Error spending coin.");
         }
     };
 
-    document.getElementById('btn-restart').onclick = () => {
-        ui.gameOver.classList.add('hidden');
-        ui.menu.classList.remove('hidden');
-        ui.gameContainer.classList.add('hidden');
+    getEl('btn-restart').onclick = () => {
+        ui.gameOver?.classList.add('hidden');
+        ui.menu?.classList.remove('hidden');
+        ui.gameContainer?.classList.add('hidden');
+    };
+
+    getEl('btn-share').onclick = () => {
+        const score = ui.finalScore?.innerText || '0';
+        const botUsername = 'ВАШ_БОТ_NAME'; // ЗАМЕНИТЬ!
+        const shareLink = `https://t.me/share/url?url=https://t.me/${botUsername}/app&text=I scored ${score} in Flappy TON!`;
+        tg.openTelegramLink(shareLink);
     };
 
     window.addEventListener('scoreUpdate', (e) => {
-        ui.scoreOverlay.innerText = e.detail;
+        if (ui.scoreOverlay) ui.scoreOverlay.innerText = e.detail;
     });
 
-    function handleGameOver(score, reviveUsed) {
-        ui.gameContainer.classList.add('hidden');
-        ui.gameOver.classList.remove('hidden');
-        ui.finalScore.innerText = score;
-        ui.btnRevive.style.display = reviveUsed ? 'none' : 'block';
-        api.saveScore(score);
+    // 3. Авторизация в фоне
+    try {
+        const startParam = tg.initDataUnsafe?.start_param;
+        const authData = await api.authPlayer(startParam);
+        if (authData?.user) {
+            state.user = authData.user;
+            state.coins = authData.user.coins;
+            updateUI();
+        }
+    } catch (e) {
+        console.error("Auth failed:", e);
     }
-}
-
-function updateUI() {
-    if (ui.coinBalance) ui.coinBalance.innerText = state.coins;
-    if (ui.reviveBalance) ui.reviveBalance.innerText = state.coins;
 }
 
 window.onload = init;
