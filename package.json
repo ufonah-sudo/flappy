@@ -1,13 +1,8 @@
 {
-  "name": "flappy-ton-backend",
+  "name": "flappy-bird-tg",
   "version": "1.0.0",
-  "description": "Backend for Flappy Bird Telegram Mini App",
   "type": "module",
-  "main": "api/auth.js",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
-  },
-  "engines": {
-    "node": "20.x"
   }
 }
