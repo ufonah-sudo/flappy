@@ -1,23 +1,27 @@
 const tg = window.Telegram.WebApp;
 
-// Автоматически определяем базовый URL для запросов
-const BASE_URL = window.location.origin;
-
-// Универсальный метод для запросов к нашему API на Vercel
+// Универсальный метод для запросов к нашему API
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     // ВАЖНО: Пытаемся взять данные из WebApp, а если там пусто — берем напрямую из URL (hash)
-    // Это решает проблему "Missing initData" в старых версиях Telegram
     let initData = window.Telegram.WebApp.initData || ""; 
     
     if (!initData && window.location.hash) {
-        initData = window.location.hash.substring(1);
+        // Убираем решетку и ищем параметры initData в hash
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        if (params.has('tgWebAppData')) {
+            initData = params.get('tgWebAppData');
+        } else {
+            initData = hash; // запасной вариант
+        }
     }
 
-    // Отладочный лог: покажет в vConsole длину строки. Если 0 — значит данных все еще нет.
     console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
-        const response = await fetch(`${BASE_URL}/api/${endpoint}`, {
+        // ИСПРАВЛЕНИЕ: Используем относительный путь '/api/...' вместо полного URL
+        // Это помогает избежать проблем с CORS и протоколами (http/https)
+        const response = await fetch(`/api/${endpoint}`, {
             method: method,
             headers: {
                 'Content-Type': 'application/json'
@@ -28,14 +32,22 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
             })
         });
 
+        // Если сервер ответил ошибкой (400, 403, 500)
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server ${response.status}: ${errorText}`);
+            let errorDetail = "Unknown error";
+            try {
+                const errorJson = await response.json();
+                errorDetail = errorJson.error || JSON.stringify(errorJson);
+            } catch (e) {
+                errorDetail = await response.text();
+            }
+            throw new Error(`Server ${response.status}: ${errorDetail}`);
         }
 
         return await response.json();
     } catch (error) {
-        console.error(`Fetch error (${endpoint}):`, error);
+        // Теперь мы увидим реальный текст ошибки в консоли
+        console.error(`Fetch error (${endpoint}):`, error.message);
         return { error: true, message: error.message };
     }
 }
@@ -70,5 +82,5 @@ export async function saveScore(score) {
 // 6. Получение топ-игроков
 export async function getLeaderboard() {
     const data = await apiRequest('scores', 'POST', { action: 'get_leaderboard' });
-    return data.leaderboard || [];
+    return (data && data.leaderboard) ? data.leaderboard : [];
 }
