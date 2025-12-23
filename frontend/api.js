@@ -12,8 +12,8 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
-        // УБРАНО .js — Vercel сам найдет файл благодаря нашему vercel.json
-        const response = await fetch(`/api/${endpoint}`, {
+        // ИСПРАВЛЕНО: Добавлено расширение .js, чтобы обойти ошибку 404
+        const response = await fetch(`/api/${endpoint}.js`, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
