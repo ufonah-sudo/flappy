@@ -1,7 +1,7 @@
 const { supabase, verifyTelegramData, cors } = require('./_utils');
 
 const handler = async (req, res) => {
-    // Добавляем логирование входящих данных (увидишь в логах Vercel)
+    // Добавляем логирование входящих данных
     console.log("Body received:", req.body);
 
     const { initData, startParam } = req.body;
@@ -13,14 +13,12 @@ const handler = async (req, res) => {
     const user = verifyTelegramData(initData);
 
     if (!user) {
-        // Если проверка не прошла, мы теперь увидим это в логах более детально
+        // Если проверка не прошла, логируем детали
         console.error("Verification failed for initData:", initData);
         return res.status(403).json({ error: 'Invalid signature' });
     }
-    
-    // ... остальной код (поиск и создание юзера) ...
 
-    // Ищем пользователя. Используем 'id', так как в SQL мы сделали его PRIMARY KEY
+    // Ищем пользователя по 'id' (PRIMARY KEY в Supabase)
     let { data: dbUser, error: fetchError } = await supabase
         .from('users')
         .select('*')
@@ -55,33 +53,40 @@ const handler = async (req, res) => {
         if (startParam && String(startParam) !== String(user.id)) {
             const inviterId = parseInt(startParam);
             
-            // Проверяем, существует ли пригласивший
-            const { data: inviter } = await supabase
-                .from('users')
-                .select('id')
-                .eq('id', inviterId)
-                .maybeSingle();
-            
-            if (inviter) {
-                // ВАЖНО: Названия колонок должны совпадать с SQL (referrer_id, referred_id)
-                const { error: refError } = await supabase
-                    .from('referrals')
-                    .insert({ 
-                        referrer_id: inviterId, 
-                        referred_id: user.id 
-                    });
+            if (!isNaN(inviterId)) {
+                // Проверяем, существует ли пригласивший
+                const { data: inviter } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('id', inviterId)
+                    .maybeSingle();
                 
-                if (!refError) {
-                    // Вызываем RPC функцию. Параметр должен называться user_id_param (как в SQL)
-                    await supabase.rpc('increment_coins', { 
-                        user_id_param: inviterId, 
-                        amount: 5 // Бонус пригласившему
-                    }); 
+                if (inviter) {
+                    // ВАЖНО: Названия колонок должны совпадать с SQL (referrer_id, referred_id)
+                    const { error: refError } = await supabase
+                        .from('referrals')
+                        .insert({ 
+                            referrer_id: inviterId, 
+                            referred_id: user.id 
+                        });
+                    
+                    if (!refError) {
+                        // Вызываем RPC функцию. Оборачиваем в try/catch, чтобы не сломать вход если RPC упадет
+                        try {
+                            await supabase.rpc('increment_coins', { 
+                                user_id_param: inviterId, 
+                                amount: 5 // Бонус пригласившему
+                            }); 
+                        } catch (rpcErr) {
+                            console.error("RPC increment_coins error:", rpcErr);
+                        }
+                    }
                 }
             }
         }
     }
 
+    // Возвращаем данные пользователя
     return res.status(200).json({ user: dbUser });
 };
 
