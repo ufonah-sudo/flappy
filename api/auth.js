@@ -1,7 +1,7 @@
 import { supabase, verifyTelegramData, cors } from './_utils.js';
 
 const handler = async (req, res) => {
-    // 1. Сразу применяем CORS (обязательно через await внутри handler)
+    // 1. CORS (обязательно через await)
     try {
         if (typeof cors === 'function') {
             await cors(req, res);
@@ -10,7 +10,7 @@ const handler = async (req, res) => {
         console.warn("CORS warning:", e.message);
     }
 
-    // 2. Логируем входящий запрос для диагностики
+    // 2. Логирование входящего запроса
     console.log("Incoming request body:", JSON.stringify(req.body));
 
     if (req.method !== 'POST') {
@@ -36,7 +36,6 @@ const handler = async (req, res) => {
 
     // 4. Работа с базой данных (Users)
     try {
-        // Проверяем наличие пользователя
         let { data: dbUser, error: fetchError } = await supabase
             .from('users')
             .select('*')
@@ -48,7 +47,6 @@ const handler = async (req, res) => {
             return res.status(500).json({ error: 'Database access error' });
         }
 
-        // Если пользователя нет — создаем его
         if (!dbUser) {
             console.log("Creating new user...");
             const { data: newUser, error: createError } = await supabase
@@ -69,18 +67,16 @@ const handler = async (req, res) => {
             dbUser = newUser;
             console.log("New user created successfully!");
 
-            // 5. Логика рефералов (оборачиваем в try/catch, чтобы не ломать вход)
+            // 5. Логика рефералов
             if (startParam && String(startParam) !== String(user.id)) {
                 try {
                     const inviterId = parseInt(startParam);
                     if (!isNaN(inviterId)) {
-                        // Пишем в таблицу рефералов
                         const { error: refError } = await supabase
                             .from('referrals')
                             .insert({ referrer_id: inviterId, referred_id: user.id });
                         
                         if (!refError) {
-                            // Начисляем монеты через RPC
                             await supabase.rpc('increment_coins', { 
                                 user_id_param: inviterId, 
                                 amount: 5 
@@ -93,7 +89,6 @@ const handler = async (req, res) => {
             }
         }
 
-        // Возвращаем результат
         return res.status(200).json({ user: dbUser });
 
     } catch (globalErr) {
@@ -102,4 +97,5 @@ const handler = async (req, res) => {
     }
 };
 
-export default handler;
+// ВАЖНО: Оборачиваем экспорт в CORS, чтобы работали запросы с фронтенда
+export default cors(handler);
