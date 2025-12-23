@@ -1,6 +1,5 @@
 const tg = window.Telegram.WebApp;
 
-// Универсальный метод для запросов к нашему API
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     let initData = window.Telegram.WebApp.initData || ""; 
     
@@ -21,17 +20,23 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
             })
         });
 
-        // Читаем тело ответа ОДИН раз
-        const responseData = await response.json();
+        // ПРОВЕРКА: Что нам прислал сервер?
+        const contentType = response.headers.get("content-type");
 
-        if (!response.ok) {
-            // Если сервер вернул ошибку (например, 403), берем текст ошибки из JSON
-            throw new Error(responseData.error || `Server error ${response.status}`);
+        if (contentType && contentType.includes("application/json")) {
+            // Если это JSON, читаем как обычно
+            const responseData = await response.json();
+            if (!response.ok) {
+                throw new Error(responseData.error || `Server error ${response.status}`);
+            }
+            return responseData;
+        } else {
+            // Если это НЕ JSON (например, HTML страница ошибки Vercel)
+            const textError = await response.text();
+            console.error("КРИТИЧЕСКАЯ ОШИБКА СЕРВЕРА (HTML):", textError.substring(0, 200));
+            throw new Error(`Server returned HTML instead of JSON (Status: ${response.status})`);
         }
-
-        return responseData;
     } catch (error) {
-        // Теперь здесь будет реальная причина: "Invalid signature" или "DB Error"
         console.error(`Fetch error (${endpoint}):`, error.message);
         return { error: true, message: error.message };
     }
