@@ -1,7 +1,7 @@
-const { supabase, verifyTelegramData, cors } = require('./_utils');
+import { supabase, verifyTelegramData, cors } from './_utils.js';
 
 const handler = async (req, res) => {
-    // Добавляем логирование входящих данных
+    // Логирование входящих данных
     console.log("Body received:", req.body);
 
     const { initData, startParam } = req.body;
@@ -62,7 +62,7 @@ const handler = async (req, res) => {
                     .maybeSingle();
                 
                 if (inviter) {
-                    // ВАЖНО: Названия колонок должны совпадать с SQL (referrer_id, referred_id)
+                    // Колонки: referrer_id, referred_id
                     const { error: refError } = await supabase
                         .from('referrals')
                         .insert({ 
@@ -71,7 +71,6 @@ const handler = async (req, res) => {
                         });
                     
                     if (!refError) {
-                        // Вызываем RPC функцию. Оборачиваем в try/catch, чтобы не сломать вход если RPC упадет
                         try {
                             await supabase.rpc('increment_coins', { 
                                 user_id_param: inviterId, 
@@ -90,4 +89,4 @@ const handler = async (req, res) => {
     return res.status(200).json({ user: dbUser });
 };
 
-module.exports = cors(handler);
+export default cors(handler);

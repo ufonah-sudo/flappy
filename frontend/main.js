@@ -3,8 +3,9 @@ import { Game } from './game.js';
 import { WalletManager } from './wallet.js';
 
 const tg = window.Telegram.WebApp;
+const BOT_USERNAME = 'FlappyTonBird_bot'; // Твой ник зафиксирован
 
-// Безопасная инициализация TG
+// Безопасная инициализация интерфейса Telegram
 try {
     tg.ready();
     tg.expand();
@@ -17,23 +18,20 @@ try {
 
 const state = { user: null, coins: 0 };
 
-// Безопасный поиск элементов
 const getEl = (id) => {
     const el = document.getElementById(id);
     if (!el) console.warn(`Element with id "${id}" not found!`);
     return el;
 };
 
-// Вспомогательный UI метод
 const notify = (msg) => {
-    if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+    if (tg && tg.showAlert) {
         tg.showAlert(msg);
     } else {
         alert(msg);
     }
 };
 
-// UI Элементы
 const ui = {
     menu: getEl('menu'),
     gameContainer: getEl('game-container'),
@@ -54,11 +52,11 @@ function updateUI() {
 }
 
 async function init() {
-    console.log("Starting initialization...");
+    console.log("App initializing...");
 
-    // 1. Инициализируем кошелек и игру СРАЗУ
+    // 1. Кошелек и Игра
     const wallet = new WalletManager((isConnected) => {
-        console.log("Wallet connected:", isConnected);
+        console.log("Wallet connection state:", isConnected);
     });
 
     const canvas = getEl('game-canvas');
@@ -71,43 +69,48 @@ async function init() {
         ui.gameContainer?.classList.add('hidden');
         ui.gameOver?.classList.remove('hidden');
         if (ui.finalScore) ui.finalScore.innerText = score;
-        ui.btnRevive.style.display = reviveUsed ? 'none' : 'block';
-        api.saveScore(score);
+        
+        // Кнопка воскрешения доступна только 1 раз за игру
+        if (ui.btnRevive) {
+            ui.btnRevive.style.display = reviveUsed ? 'none' : 'block';
+        }
+        
+        // Сохраняем результат в БД
+        api.saveScore(score).catch(err => console.error("Save score error:", err));
     }
 
-    // 2. Назначаем клики (ВСЕ важные функции возвращены)
-    const btnStart = getEl('btn-start');
-    if (btnStart) {
-        btnStart.onclick = () => {
-            ui.menu?.classList.add('hidden');
-            ui.gameOver?.classList.add('hidden');
-            ui.gameContainer?.classList.remove('hidden');
-            if (ui.scoreOverlay) ui.scoreOverlay.innerText = '0';
-            game?.resize();
-            game?.start();
-        };
-    }
+    // 2. Обработка кнопок
+    getEl('btn-start').onclick = () => {
+        ui.menu?.classList.add('hidden');
+        ui.gameOver?.classList.add('hidden');
+        ui.gameContainer?.classList.remove('hidden');
+        if (ui.scoreOverlay) ui.scoreOverlay.innerText = '0';
+        game?.resize();
+        game?.start();
+    };
 
     getEl('btn-leaderboard').onclick = async () => {
         ui.ldbModal?.classList.remove('hidden');
-        if (ui.ldbList) ui.ldbList.innerHTML = 'Loading...';
+        if (ui.ldbList) ui.ldbList.innerHTML = '<p>Loading...</p>';
         try {
             const top = await api.getLeaderboard();
-            if (ui.ldbList) ui.ldbList.innerHTML = top.map((entry, i) => 
-                `<div class="leader-item" style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee;">
-                    <span>${i + 1}. ${entry.username || 'Player'}</span>
-                    <span style="font-weight: bold;">${entry.score}</span>
-                </div>`
-            ).join('') || '<p>No scores yet</p>';
+            if (ui.ldbList) {
+                ui.ldbList.innerHTML = (top && top.length > 0) 
+                    ? top.map((entry, i) => `
+                        <div class="leader-item" style="display:flex; justify-content:space-between; margin: 10px 0;">
+                            <span>${i + 1}. ${entry.username}</span>
+                            <b>${entry.score}</b>
+                        </div>`).join('')
+                    : '<p>No records yet</p>';
+            }
         } catch (e) {
-            if (ui.ldbList) ui.ldbList.innerHTML = 'Error loading leaderboard';
+            if (ui.ldbList) ui.ldbList.innerHTML = 'Failed to load';
         }
     };
 
     getEl('btn-invite').onclick = () => {
-        const botUsername = 'ВАШ_БОТ_NAME'; // ЗАМЕНИТЬ!
-        const userId = state.user ? state.user.id : '0';
-        const inviteLink = `https://t.me/${botUsername}/app?startapp=${userId}`;
+        const userId = state.user?.id || tg.initDataUnsafe?.user?.id || '0';
+        const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=${userId}`;
         const shareLink = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play Flappy TON and get coins!`;
         tg.openTelegramLink(shareLink);
     };
@@ -117,42 +120,47 @@ async function init() {
     getEl('btn-close-leaderboard').onclick = () => ui.ldbModal?.classList.add('hidden');
 
     getEl('btn-buy-1ton').onclick = async () => {
-        if (!wallet.isConnected) return notify('Please connect TON wallet first');
-        const tx = await wallet.sendTransaction(1);
-        if (tx && tx.success) {
-            const res = await api.buyCoins(1);
-            if (res && res.success) {
-                state.coins = res.newBalance;
-                updateUI();
-                notify('Purchase successful! +10 Coins');
+        if (!wallet.isConnected) return notify('Connect wallet first!');
+        try {
+            const tx = await wallet.sendTransaction(1); // 1 TON
+            if (tx) {
+                const res = await api.buyCoins(1);
+                if (res && !res.error) {
+                    state.coins = res.newBalance;
+                    updateUI();
+                    notify('Success! +10 Coins');
+                }
             }
+        } catch (e) {
+            notify('Transaction failed or cancelled');
         }
     };
 
     getEl('btn-revive').onclick = async () => {
-        if (state.coins < 1) return notify("Not enough coins!");
-        const newBalance = await api.spendCoin();
-        if (newBalance !== null && typeof newBalance !== 'undefined' && !newBalance.error) {
-            state.coins = newBalance;
+        if (state.coins < 1) return notify("You need at least 1 Coin!");
+        
+        const result = await api.spendCoin();
+        // Числовой баланс 0 тоже валиден, поэтому проверяем тип
+        if (typeof result === 'number') {
+            state.coins = result;
             updateUI();
             ui.gameOver?.classList.add('hidden');
             ui.gameContainer?.classList.remove('hidden');
             game?.revive();
         } else {
-            notify("Error spending coin.");
+            notify("Error: Transaction failed.");
         }
     };
 
     getEl('btn-restart').onclick = () => {
         ui.gameOver?.classList.add('hidden');
-        ui.menu?.classList.remove('hidden');
         ui.gameContainer?.classList.add('hidden');
+        ui.menu?.classList.remove('hidden');
     };
 
     getEl('btn-share').onclick = () => {
         const score = ui.finalScore?.innerText || '0';
-        const botUsername = 'ВАШ_БОТ_NAME'; // ЗАМЕНИТЬ!
-        const shareLink = `https://t.me/share/url?url=https://t.me/${botUsername}/app&text=I scored ${score} in Flappy TON!`;
+        const shareLink = `https://t.me/share/url?url=https://t.me/${BOT_USERNAME}/app&text=My score is ${score}! Can you beat it?`;
         tg.openTelegramLink(shareLink);
     };
 
@@ -160,9 +168,9 @@ async function init() {
         if (ui.scoreOverlay) ui.scoreOverlay.innerText = e.detail;
     });
 
-    // 3. Авторизация в фоне
+    // 3. Первичная авторизация
     try {
-        const startParam = tg.initDataUnsafe?.start_param;
+        const startParam = tg.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam);
         if (authData?.user) {
             state.user = authData.user;
@@ -170,7 +178,7 @@ async function init() {
             updateUI();
         }
     } catch (e) {
-        console.error("Auth failed:", e);
+        console.error("Initialization auth failed:", e);
     }
 }
 

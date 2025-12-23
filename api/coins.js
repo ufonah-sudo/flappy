@@ -1,53 +1,72 @@
-const { supabase, verifyTelegramData, cors } = require('./_utils');
+import { supabase, verifyTelegramData, cors } from './_utils.js';
 
 const handler = async (req, res) => {
     const { initData, action, amount } = req.body;
-    // Используем имя из _utils.js
+    
+    // Валидация через наш обновленный _utils.js
     const user = verifyTelegramData(initData);
     if (!user) return res.status(403).json({ error: 'Invalid auth' });
 
     try {
         if (action === 'spend') {
-            // Рекомендую заменить этот блок на RPC для реального проекта
+            // 1. Получаем текущий баланс. Используем 'id', как в auth.js
             const { data: dbUser, error: fetchError } = await supabase
                 .from('users')
                 .select('coins')
-                .eq('telegram_id', user.id)
+                .eq('id', user.id)
                 .single();
             
-            if (fetchError || !dbUser) throw new Error('User not found');
+            if (fetchError || !dbUser) throw new Error('User not found in DB');
             if (dbUser.coins < 1) return res.status(400).json({ success: false, message: 'Not enough coins' });
 
+            // 2. Списываем монету
             const { data, error } = await supabase
                 .from('users')
                 .update({ coins: dbUser.coins - 1 })
-                .eq('telegram_id', user.id)
+                .eq('id', user.id)
                 .select()
                 .single();
+            
+            if (error) throw error;
                 
             return res.status(200).json({ success: true, newBalance: data.coins });
         }
 
         if (action === 'buy') {
-            // В будущем: здесь будет проверка TON транзакции
+            // Расчет монет: 1 TON = 10 монет (как в твоем коде)
             const coinsToAdd = (parseInt(amount) || 0) * 10; 
             
-            // Используем RPC функцию для безопасного сложения на стороне сервера
-            const { data, error } = await supabase
-                .rpc('increment_coins', { user_id: user.id, amount: coinsToAdd });
+            // Используем RPC. 
+            // ВАЖНО: Параметры должны называться точно так же, как в твоем SQL (user_id_param)
+            const { error: rpcError } = await supabase
+                .rpc('increment_coins', { 
+                    user_id_param: user.id, 
+                    amount: coinsToAdd 
+                });
             
-            // Если RPC не настроен, оставляем твой метод обновления, но через .rpc надежнее
+            if (rpcError) {
+                console.error("RPC Error, falling back to manual update:", rpcError);
+                // Фолбэк, если RPC не создан в Supabase
+                const { data: currentUser } = await supabase.from('users').select('coins').eq('id', user.id).single();
+                await supabase.from('users').update({ coins: (currentUser.coins || 0) + coinsToAdd }).eq('id', user.id);
+            }
+
+            // Получаем финальный баланс для фронтенда
             const { data: updatedUser } = await supabase
                 .from('users')
                 .select('coins')
-                .eq('telegram_id', user.id)
+                .eq('id', user.id)
                 .single();
 
             return res.status(200).json({ success: true, newBalance: updatedUser.coins });
         }
+        
+        return res.status(400).json({ error: 'Unknown action' });
+
     } catch (e) {
+        console.error("Coins error:", e.message);
         return res.status(500).json({ error: e.message });
     }
 };
 
-module.exports = cors(handler);
+export default cors(handler);

@@ -1,12 +1,9 @@
-const { createClient } = require('@supabase/supabase-js');
-const crypto = require('crypto');
+import { supabase } from './_supabase.js';
+import crypto from 'crypto';
 
-const supabase = createClient(
-    process.env.SUPABASE_URL, 
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export { supabase }; 
 
-function verifyTelegramData(initData) {
+export function verifyTelegramData(initData) {
     if (!initData) {
         console.error("DEBUG: No initData provided");
         return null;
@@ -21,9 +18,8 @@ function verifyTelegramData(initData) {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
 
-    // Проверяем, видит ли сервер вообще токен (выведет первые 5 символов)
-    const token = process.env.TELEGRAM_BOT_TOKEN || "";
-    console.log("DEBUG: Token starts with:", token.substring(0, 5));
+    // ИСПРАВЛЕНО: Теперь берем BOT_TOKEN, как в твоем Vercel
+    const token = process.env.BOT_TOKEN || "";
 
     const secretKey = crypto.createHmac('sha256', 'WebAppData')
         .update(token)
@@ -33,13 +29,9 @@ function verifyTelegramData(initData) {
         .update(dataCheckString)
         .digest('hex');
 
-    // Теперь логи сработают, так как переменные уже созданы
-    console.log("DEBUG: Computed Hash:", _hash);
-    console.log("DEBUG: Telegram Hash:", hash);
-
     if (_hash !== hash) {
         console.error("DEBUG: Hash mismatch!");
-        return null;
+        return null; 
     }
     
     try {
@@ -50,12 +42,10 @@ function verifyTelegramData(initData) {
     }
 }
 
-const cors = fn => async (req, res) => {
+export const cors = fn => async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.status(200).end();
     return await fn(req, res);
 };
-
-module.exports = { supabase, verifyTelegramData, cors };

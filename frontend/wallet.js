@@ -1,8 +1,12 @@
 export class WalletManager {
     constructor(onStatusChange) {
-        // Убедись, что ссылка на Vercel совпадает с реальностью!
-        this.tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://твой-проект.vercel.app/tonconnect-manifest.json', 
+        // Используем window.TON_CONNECT_UI, так как библиотека из CDN
+        const TonConnectUI = window.TON_CONNECT_UI.TonConnectUI;
+        
+        this.tonConnectUI = new TonConnectUI({
+            // ВАЖНО: Замени на свой реальный домен Vercel!
+            // Без корректного манифеста кошелек выдаст ошибку "Connection failed"
+            manifestUrl: 'https://flappy-ton-bird.vercel.app/tonconnect-manifest.json', 
             buttonRootId: 'ton-connect'
         });
 
@@ -16,15 +20,19 @@ export class WalletManager {
     }
 
     async sendTransaction(amountTon) {
-        if (!this.isConnected) return { success: false, error: 'Not connected' };
+        if (!this.isConnected) {
+            return { success: false, error: 'Not connected' };
+        }
 
+        // Конвертация TON в NanoTON (1 TON = 1,000,000,000 NanoTON)
         const amountNano = Math.floor(amountTon * 1000000000); 
         
         const transaction = {
-            validUntil: Math.floor(Date.now() / 1000) + 120, // Увеличил до 120 сек для спокойствия игрока
+            // validUntil — время жизни транзакции в секундах (Unix timestamp)
+            validUntil: Math.floor(Date.now() / 1000) + 300, // 5 минут на подтверждение
             messages: [
                 {
-                    // ВСТАВЬ СВОЙ АДРЕС ТУТ:
+                    // Твой проверенный адрес:
                     address: "UQDljPjQIiXzz4xAwzj1dRDFu_ZmNVpRd7--QNbT06IMXuVy", 
                     amount: amountNano.toString(),
                 }
@@ -32,18 +40,24 @@ export class WalletManager {
         };
 
         try {
-            // Telegram WebApp покажет лоадер, пока пользователь подтверждает в кошельке
+            // Запуск окна оплаты в кошельке (TonKeeper и др.)
             const result = await this.tonConnectUI.sendTransaction(transaction);
             
-            // boc - это подтверждение транзакции
+            // Если мы получили boc (Bag of Cells), транзакция отправлена в сеть
+            console.log("Transaction sent, BOC:", result.boc);
             return { success: true, boc: result.boc };
         } catch (e) {
             console.error("TON Transaction error:", e);
-            return { success: false, error: e.message };
+            // Обработка случая, если пользователь просто закрыл окно кошелька
+            return { success: false, error: e.message || "User cancelled" };
         }
     }
 
     async disconnect() {
-        await this.tonConnectUI.disconnect();
+        try {
+            await this.tonConnectUI.disconnect();
+        } catch (e) {
+            console.error("Disconnect error:", e);
+        }
     }
 }

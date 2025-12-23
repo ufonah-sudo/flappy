@@ -1,7 +1,7 @@
-const { supabase, verifyTelegramData, cors } = require('./_utils');
+import { supabase, verifyTelegramData, cors } from './_utils.js';
 
 const handler = async (req, res) => {
-    // GET: Лидерборд
+    // GET: Лидерборд (прямой запрос)
     if (req.method === 'GET') {
         const { data: top, error } = await supabase
             .from('scores')
@@ -22,11 +22,11 @@ const handler = async (req, res) => {
         return res.status(200).json({ leaderboard: formattedLeaderboard });
     }
 
-    // POST: Сохранение или получение через POST
+    // POST: Сохранение или получение лидерборда через POST
     if (req.method === 'POST') {
         const { initData, score, action } = req.body;
 
-        // Если запрос лидерборда через POST
+        // Обработка запроса лидерборда через POST (как вызывает фронтенд)
         if (action === 'get_leaderboard') {
             const { data: top, error } = await supabase
                 .from('scores')
@@ -43,7 +43,7 @@ const handler = async (req, res) => {
             return res.status(200).json({ leaderboard: formatted });
         }
 
-        // Авторизация для сохранения счета
+        // Авторизация для сохранения нового рекорда
         const user = verifyTelegramData(initData);
         if (!user) return res.status(403).json({ error: 'Auth failed' });
 
@@ -52,17 +52,16 @@ const handler = async (req, res) => {
             return res.status(400).json({ error: 'Invalid score' });
         }
 
-        // --- ИСПРАВЛЕНИЕ: Используем 'id' вместо 'telegram_id' ---
-        // Сначала проверяем, есть ли уже рекорд у этого пользователя
+        // Проверяем текущий рекорд пользователя
+        // ВАЖНО: 'id' в таблице scores — это Telegram ID игрока
         const { data: currentRecord } = await supabase
             .from('scores')
             .select('score')
-            .eq('id', user.id) // Здесь 'id' — это ID юзера в таблице scores
-            .single();
+            .eq('id', user.id)
+            .maybeSingle();
 
+        // Обновляем, если рекорда нет ИЛИ новый счет больше старого
         if (!currentRecord || finalScore > currentRecord.score) {
-            // Обновляем или вставляем (upsert)
-            // Чтобы это работало, колонка 'id' должна быть PRIMARY KEY или UNIQUE
             const { error: upsertError } = await supabase
                 .from('scores')
                 .upsert({ 
@@ -70,11 +69,14 @@ const handler = async (req, res) => {
                     score: finalScore 
                 }, { onConflict: 'id' });
 
-            if (upsertError) return res.status(500).json({ error: upsertError.message });
+            if (upsertError) {
+                console.error("Upsert Score Error:", upsertError);
+                return res.status(500).json({ error: upsertError.message });
+            }
         }
 
         return res.status(200).json({ success: true });
     }
 };
 
-module.exports = cors(handler);
+export default cors(handler);

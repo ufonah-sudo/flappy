@@ -1,6 +1,7 @@
 const tg = window.Telegram.WebApp;
 
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
+    // Берем данные напрямую из TG или из кэша
     let initData = window.Telegram.WebApp.initData || ""; 
     
     if (!initData && window.location.hash) {
@@ -11,8 +12,8 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
-        // ИСПРАВЛЕНИЕ: Добавляем .js к эндпоинту, чтобы Vercel точно нашел файл в папке /api/
-        const response = await fetch(`/api/${endpoint}.js`, {
+        // УБРАНО .js — Vercel сам найдет файл благодаря нашему vercel.json
+        const response = await fetch(`/api/${endpoint}`, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -31,8 +32,8 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
             return responseData;
         } else {
             const textError = await response.text();
-            console.error("КРИТИЧЕСКАЯ ОШИБКА СЕРВЕРА (HTML):", textError.substring(0, 200));
-            throw new Error(`Server returned HTML instead of JSON (Status: ${response.status})`);
+            console.error("КРИТИЧЕСКАЯ ОШИБКА СЕРВЕРА (HTML/Text):", textError.substring(0, 200));
+            throw new Error(`Server returned non-JSON response (Status: ${response.status})`);
         }
     } catch (error) {
         console.error(`Fetch error (${endpoint}):`, error.message);
@@ -54,7 +55,8 @@ export async function fetchBalance() {
 // 3. Трата монеты на оживление
 export async function spendCoin() {
     const data = await apiRequest('coins', 'POST', { action: 'spend' });
-    return (data && data.success) ? data.newBalance : null;
+    // Возвращаем баланс или null если ошибка
+    return (data && data.success) ? data.newBalance : (data && data.error ? {error: true} : null);
 }
 
 // 4. Покупка монет

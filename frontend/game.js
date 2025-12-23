@@ -14,16 +14,21 @@ export class Game {
         this.jump = 0;
         this.pipeSpeed = 3;
         this.pipeSpawnTimer = 0;
+        this.animationId = null; // Для контроля цикла
 
-        // Привязка клика
-        this.canvas.addEventListener('mousedown', () => this.flap());
-        this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+        // Привязка управления
+        this.handleInput = (e) => {
+            if (e.type === 'touchstart') e.preventDefault();
             this.flap();
-        });
+        };
+
+        this.canvas.addEventListener('mousedown', this.handleInput);
+        this.canvas.addEventListener('touchstart', this.handleInput, { passive: false });
 
         this.resize();
-        window.addEventListener('resize', () => this.resize());
+        // Используем стрелочную функцию, чтобы сохранить контекст
+        this.handleResize = () => this.resize();
+        window.addEventListener('resize', this.handleResize);
     }
 
     resize() {
@@ -33,12 +38,16 @@ export class Game {
         this.bird.x = this.canvas.width / 4;
         if (!this.isRunning) this.bird.y = this.canvas.height / 2;
         
+        // Адаптивная физика под высоту экрана
         this.gravity = this.canvas.height * 0.0006;
         this.jump = -this.canvas.height * 0.013;
         this.pipeSpeed = this.canvas.width * 0.008;
     }
 
     start() {
+        // Очищаем старый цикл, если он был
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+        
         this.score = 0;
         this.pipes = [];
         this.bird.y = this.canvas.height / 2;
@@ -50,7 +59,8 @@ export class Game {
 
     revive() {
         this.reviveUsed = true;
-        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 100);
+        // Убираем трубы непосредственно перед птицей, чтобы дать игроку окно
+        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 200 || p.x < this.bird.x - 100);
         this.isRunning = true;
         this.loop();
     }
@@ -80,14 +90,15 @@ export class Game {
         this.bird.velocity += this.gravity;
         this.bird.y += this.bird.velocity;
 
-        // Спавн труб
+        // Тайминг труб (примерно каждые 1.5 - 2 сек)
         this.pipeSpawnTimer++;
         if (this.pipeSpawnTimer > 90) {
             this.spawnPipe();
             this.pipeSpawnTimer = 0;
         }
 
-        this.pipes.forEach((pipe, index) => {
+        for (let i = this.pipes.length - 1; i >= 0; i--) {
+            const pipe = this.pipes[i];
             pipe.x -= this.pipeSpeed;
 
             // Коллизии
@@ -97,6 +108,7 @@ export class Game {
                 (this.bird.y < pipe.top || this.bird.y + this.bird.size > pipe.bottom)
             ) {
                 this.gameOver();
+                return; // Выходим из цикла сразу
             }
 
             // Счет
@@ -105,35 +117,41 @@ export class Game {
                 this.score++;
                 window.dispatchEvent(new CustomEvent('scoreUpdate', { detail: this.score }));
             }
-        });
+
+            // Удаление лишних труб
+            if (pipe.x < -pipe.width) {
+                this.pipes.splice(i, 1);
+            }
+        }
 
         // Смерть от границ
         if (this.bird.y + this.bird.size > this.canvas.height || this.bird.y < 0) {
             this.gameOver();
         }
-
-        // Удаление старых труб
-        if (this.pipes.length > 0 && this.pipes[0].x < -60) this.pipes.shift();
     }
 
     draw() {
+        // Очистка
         this.ctx.fillStyle = "#4ec0ca";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Трубы
+        // Рисуем трубы
         this.ctx.fillStyle = "#73bf2e";
         this.pipes.forEach(pipe => {
+            // Верхняя
             this.ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
-            this.ctx.fillRect(pipe.x, pipe.bottom, pipe.width, this.canvas.height);
+            // Нижняя
+            this.ctx.fillRect(pipe.x, pipe.bottom, pipe.width, this.canvas.height - pipe.bottom);
         });
 
-        // Птица (пока желтый квадрат)
+        // Птица
         this.ctx.fillStyle = "#f8e71c";
         this.ctx.fillRect(this.bird.x, this.bird.y, this.bird.size, this.bird.size);
     }
 
     gameOver() {
         this.isRunning = false;
+        if (this.animationId) cancelAnimationFrame(this.animationId);
         this.onGameOver(this.score, this.reviveUsed);
     }
 
@@ -141,6 +159,15 @@ export class Game {
         if (!this.isRunning) return;
         this.update();
         this.draw();
-        requestAnimationFrame(() => this.loop());
+        this.animationId = requestAnimationFrame(() => this.loop());
+    }
+
+    // Метод для очистки ресурсов (если будем удалять объект игры)
+    destroy() {
+        window.removeEventListener('resize', this.handleResize);
+        this.canvas.removeEventListener('mousedown', this.handleInput);
+        this.canvas.removeEventListener('touchstart', this.handleInput);
+        this.isRunning = false;
+        if (this.animationId) cancelAnimationFrame(this.animationId);
     }
 }
