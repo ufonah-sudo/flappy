@@ -1,9 +1,10 @@
 const tg = window.Telegram.WebApp;
 
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
-    // Берем данные напрямую из TG или из кэша
+    // Получаем initData из WebApp
     let initData = window.Telegram.WebApp.initData || ""; 
     
+    // Резервный метод получения данных
     if (!initData && window.location.hash) {
         const params = new URLSearchParams(window.location.hash.substring(1));
         initData = params.get('tgWebAppData') || window.location.hash.substring(1);
@@ -12,8 +13,8 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
-        // ИСПРАВЛЕНО: Добавлено расширение .js, чтобы обойти ошибку 404
-        const response = await fetch(`/api/${endpoint}.js`, {
+        // УБРАЛИ .js из пути, Vercel сам разрулит через vercel.json
+        const response = await fetch(`/api/${endpoint}`, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -24,6 +25,7 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
 
         const contentType = response.headers.get("content-type");
 
+        // Если пришел JSON — парсим
         if (contentType && contentType.includes("application/json")) {
             const responseData = await response.json();
             if (!response.ok) {
@@ -31,9 +33,10 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
             }
             return responseData;
         } else {
+            // Если пришел HTML (ошибка 404) — выводим это четко
             const textError = await response.text();
-            console.error("КРИТИЧЕСКАЯ ОШИБКА СЕРВЕРА (HTML/Text):", textError.substring(0, 200));
-            throw new Error(`Server returned non-JSON response (Status: ${response.status})`);
+            console.error("ОШИБКА: Сервер вернул не JSON, а страницу (возможно 404):", textError.substring(0, 100));
+            throw new Error(`Endpoint /api/${endpoint} not found (Status: ${response.status})`);
         }
     } catch (error) {
         console.error(`Fetch error (${endpoint}):`, error.message);
@@ -41,36 +44,29 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     }
 }
 
-// 1. Авторизация и получение данных игрока
 export async function authPlayer(startParam) {
     return await apiRequest('auth', 'POST', { startParam });
 }
 
-// 2. Получение актуального баланса
 export async function fetchBalance() {
     const data = await apiRequest('auth', 'POST'); 
     return (data && data.user) ? data.user.coins : 0;
 }
 
-// 3. Трата монеты на оживление
 export async function spendCoin() {
-    const data = await apiRequest('coins', 'POST', { action: 'spend' });
-    // Возвращаем баланс или null если ошибка
+    const data = await apiRequest('auth', 'POST', { action: 'spend' }); // Исправлено: трата обычно в auth или отдельном coins
     return (data && data.success) ? data.newBalance : (data && data.error ? {error: true} : null);
 }
 
-// 4. Покупка монет
 export async function buyCoins(amount) {
-    return await apiRequest('coins', 'POST', { action: 'buy', amount: amount });
+    return await apiRequest('auth', 'POST', { action: 'buy', amount: amount });
 }
 
-// 5. Сохранение рекорда
 export async function saveScore(score) {
-    return await apiRequest('scores', 'POST', { score: score });
+    return await apiRequest('auth', 'POST', { score: score }); // Используем auth как основной хаб если других файлов нет
 }
 
-// 6. Получение топ-игроков
 export async function getLeaderboard() {
-    const data = await apiRequest('scores', 'POST', { action: 'get_leaderboard' });
+    const data = await apiRequest('auth', 'POST', { action: 'get_leaderboard' });
     return (data && data.leaderboard) ? data.leaderboard : [];
 }
