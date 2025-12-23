@@ -2,51 +2,36 @@ const tg = window.Telegram.WebApp;
 
 // Универсальный метод для запросов к нашему API
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
-    // ВАЖНО: Пытаемся взять данные из WebApp, а если там пусто — берем напрямую из URL (hash)
     let initData = window.Telegram.WebApp.initData || ""; 
     
     if (!initData && window.location.hash) {
-        // Убираем решетку и ищем параметры initData в hash
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        if (params.has('tgWebAppData')) {
-            initData = params.get('tgWebAppData');
-        } else {
-            initData = hash; // запасной вариант
-        }
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        initData = params.get('tgWebAppData') || window.location.hash.substring(1);
     }
 
     console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
-        // ИСПРАВЛЕНИЕ: Используем относительный путь '/api/...' вместо полного URL
-        // Это помогает избежать проблем с CORS и протоколами (http/https)
         const response = await fetch(`/api/${endpoint}`, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 initData: initData,
                 ...extraData
             })
         });
 
-        // Если сервер ответил ошибкой (400, 403, 500)
+        // Читаем тело ответа ОДИН раз
+        const responseData = await response.json();
+
         if (!response.ok) {
-            let errorDetail = "Unknown error";
-            try {
-                const errorJson = await response.json();
-                errorDetail = errorJson.error || JSON.stringify(errorJson);
-            } catch (e) {
-                errorDetail = await response.text();
-            }
-            throw new Error(`Server ${response.status}: ${errorDetail}`);
+            // Если сервер вернул ошибку (например, 403), берем текст ошибки из JSON
+            throw new Error(responseData.error || `Server error ${response.status}`);
         }
 
-        return await response.json();
+        return responseData;
     } catch (error) {
-        // Теперь мы увидим реальный текст ошибки в консоли
+        // Теперь здесь будет реальная причина: "Invalid signature" или "DB Error"
         console.error(`Fetch error (${endpoint}):`, error.message);
         return { error: true, message: error.message };
     }
