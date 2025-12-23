@@ -11,7 +11,8 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
 
     try {
-        const response = await fetch(`/api/${endpoint}`, {
+        // ИСПРАВЛЕНИЕ: Добавляем .js к эндпоинту, чтобы Vercel точно нашел файл в папке /api/
+        const response = await fetch(`/api/${endpoint}.js`, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -20,18 +21,15 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
             })
         });
 
-        // ПРОВЕРКА: Что нам прислал сервер?
         const contentType = response.headers.get("content-type");
 
         if (contentType && contentType.includes("application/json")) {
-            // Если это JSON, читаем как обычно
             const responseData = await response.json();
             if (!response.ok) {
                 throw new Error(responseData.error || `Server error ${response.status}`);
             }
             return responseData;
         } else {
-            // Если это НЕ JSON (например, HTML страница ошибки Vercel)
             const textError = await response.text();
             console.error("КРИТИЧЕСКАЯ ОШИБКА СЕРВЕРА (HTML):", textError.substring(0, 200));
             throw new Error(`Server returned HTML instead of JSON (Status: ${response.status})`);

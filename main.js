@@ -23,8 +23,8 @@ const state = {
 
 // ИСПРАВЛЕНО: Безопасный notify для старых версий (v6.0)
 const notify = (msg) => {
-    // Метод showAlert появился в v6.2. Если версия ниже, используем обычный alert
-    if (tg.isVersionAtLeast('6.2')) {
+    // Метод showAlert появился в v6.2. Если версия ниже, используем alert
+    if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
         tg.showAlert(msg);
     } else {
         alert(msg);
@@ -47,16 +47,15 @@ const ui = {
 };
 
 async function init() {
-    // --- ИСПРАВЛЕНИЕ: Ждем initData перед авторизацией ---
+    // --- Ждем initData перед авторизацией ---
     let attempts = 0;
-    // Проверяем и tg.initData, и наличие данных в URL (hash)
-    while (!tg.initData && !window.location.hash && attempts < 10) {
+    while (!tg.initData && !window.location.hash && attempts < 15) {
         console.log("Waiting for Telegram data... Attempt:", attempts);
         await new Promise(r => setTimeout(r, 200));
         attempts++;
     }
 
-    const startParam = tg.initDataUnsafe.start_param;
+    const startParam = tg.initDataUnsafe ? tg.initDataUnsafe.start_param : null;
     
     try {
         const authData = await api.authPlayer(startParam);
@@ -67,12 +66,13 @@ async function init() {
             updateUI();
         } else {
             console.error("Auth failed: No user data returned");
-            notify("Connection error. Please open via Telegram Bot.");
+            // Если сервер вернул ошибку, выводим её
+            const errorMsg = authData && authData.message ? authData.message : "Connection error";
+            notify(errorMsg + ". Please open via Telegram Bot.");
         }
     } catch (err) {
         console.error("Critical Auth Error:", err);
-        // Если сервер вернул 403, значит токен в Vercel не подходит к этому боту
-        notify("Server error. Please check your connection.");
+        notify("Server connection error. Please try again later.");
     }
 
     // 2. Инициализация кошелька TON
@@ -112,7 +112,6 @@ async function init() {
 
     document.getElementById('btn-invite').onclick = () => {
         if (!state.user) return;
-        // Используем id из базы данных для реферальной ссылки
         const botUsername = 'ВАШ_БОТ_NAME'; // ЗАМЕНИ НА ЮЗЕРНЕЙМ СВОЕГО БОТА
         const inviteLink = `https://t.me/${botUsername}/app?startapp=${state.user.id}`;
         const shareLink = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play Flappy TON and get coins!`;
@@ -132,9 +131,9 @@ async function init() {
             return;
         }
         const tx = await wallet.sendTransaction(1);
-        if (tx.success) {
+        if (tx && tx.success) {
             const res = await api.buyCoins(1);
-            if (res.success) {
+            if (res && res.success) {
                 state.coins = res.newBalance;
                 updateUI();
                 notify('Purchase successful! +10 Coins');
@@ -150,7 +149,7 @@ async function init() {
         }
         
         const newBalance = await api.spendCoin();
-        if (newBalance !== null) {
+        if (newBalance !== null && typeof newBalance !== 'undefined' && !newBalance.error) {
             state.coins = newBalance;
             updateUI();
             ui.gameOver.classList.add('hidden');
