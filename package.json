@@ -2,10 +2,10 @@
   "name": "flappy-ton-backend",
   "version": "1.0.0",
   "description": "Backend for Flappy Bird Telegram Mini App",
+  "type": "module",
   "main": "api/auth.js",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "crypto": "^1.0.1"
+    "@supabase/supabase-js": "^2.39.0"
   },
   "engines": {
     "node": "20.x"
