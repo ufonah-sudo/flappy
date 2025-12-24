@@ -23,13 +23,25 @@
         </div>
 
         <div id="menu" class="screen">
-            <h1 class="game-title">FLAPPY TON</h1>
-            <div class="menu-buttons">
-                <button id="btn-start" class="primary-btn">PLAY</button>
-                <button id="btn-leaderboard" class="secondary-btn">LEADERBOARD</button>
-                <button id="btn-shop" class="secondary-btn">SHOP</button>
-                <button id="btn-invite" class="secondary-btn">INVITE FRIENDS</button>
+            <div class="side-buttons">
+                <img src="assets/top.png" id="btn-top-icon" class="icon-btn" onclick="document.getElementById('btn-leaderboard').click()">
+                <img src="assets/daily.png" id="btn-daily-icon" class="icon-btn">
             </div>
+
+            <h1 class="game-title">FLAPPY TON</h1>
+
+            <img src="assets/birdmenu.png" class="menu-bird-decoration" alt="Bird Menu">
+
+            <button id="btn-start">PLAY</button>
+
+            <div class="menu-buttons">
+                <button id="btn-shop">SHOP</button>
+                <button id="btn-leaderboard">AWARDS</button>
+                <button id="btn-restart-panel">HOME</button>
+                <button id="btn-invite">FRIENDS</button>
+                <button id="btn-settings">SETTINGS</button>
+            </div>
+            
             <p class="promo-text">Invite friends & get +5 Coins</p>
         </div>
 

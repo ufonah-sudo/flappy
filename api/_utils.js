@@ -3,68 +3,82 @@ import crypto from 'crypto';
 
 export { supabase }; 
 
+/**
+ * Проверка данных от Telegram.
+ * Возвращает объект пользователя, если всё ок, или null, если данные подделаны.
+ */
 export function verifyTelegramData(initData) {
     if (!initData) {
-        console.error("DEBUG: No initData provided");
+        console.error("[Verify] No initData provided");
         return null;
     }
 
-    // 1. Разбираем строку и достаем хеш
     const urlParams = new URLSearchParams(initData);
     const hash = urlParams.get('hash');
     
-    // 2. Сортируем ключи по алфавиту (требование Telegram)
+    // Сортируем параметры
     const keys = Array.from(urlParams.keys()).filter(key => key !== 'hash').sort();
-    
-    // 3. Собираем строку проверки
     const dataCheckString = keys
         .map(key => `${key}=${urlParams.get(key)}`)
         .join('\n');
 
-    // 4. Берем токен из переменных окружения Vercel
-    const token = process.env.BOT_TOKEN || "";
+    const token = process.env.BOT_TOKEN;
 
-    // 5. Генерируем секретный ключ
+    if (!token) {
+        console.error("[Verify] CRITICAL: BOT_TOKEN is missing in environment variables!");
+        // Для локальных тестов без токена:
+        // return JSON.parse(urlParams.get('user')); 
+        return null;
+    }
+
+    // Хеш-проверка
     const secretKey = crypto.createHmac('sha256', 'WebAppData')
         .update(token)
         .digest();
         
-    // 6. Вычисляем финальный хеш
-    const _hash = crypto.createHmac('sha256', secretKey)
+    const calculatedHash = crypto.createHmac('sha256', secretKey)
         .update(dataCheckString)
         .digest('hex');
 
-    // 7. Сравнение хешей
-    if (_hash !== hash) {
-        console.error("DEBUG: Hash mismatch! Проверь BOT_TOKEN.");
-        console.log("Calculated:", _hash);
-        console.log("Received:", hash);
-        // ВРЕМЕННО закомментировано по твоему желанию для тестов:
+    if (calculatedHash !== hash) {
+        console.error("[Verify] Hash mismatch!");
+        // ВАЖНО: На продакшене тут должен быть return null;
+        // Пока ты тестируешь, можешь оставить лог, но не забудь закрыть дыру!
         // return null; 
     }
     
     try {
         const userJson = urlParams.get('user');
-        if (!userJson) {
-            console.error("DEBUG: No user field in initData");
-            return null;
-        }
-        return JSON.parse(userJson);
+        return userJson ? JSON.parse(userJson) : null;
     } catch (e) {
-        console.error("DEBUG: Parse user error:", e);
+        console.error("[Verify] Parse error:", e);
         return null;
     }
 }
 
-// CORS обертка для работы фронтенда с API
+/**
+ * CORS обертка. 
+ * Позволяет фронтенду (Vercel) общаться с бэкендом (Vercel Functions).
+ */
 export const cors = fn => async (req, res) => {
+    // Разрешаем запросы со всех доменов (для Telegram Mini Apps это норма)
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
     
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        res.status(200).end();
+        return;
     }
     
-    return await fn(req, res);
+    try {
+        return await fn(req, res);
+    } catch (err) {
+        console.error("[CORS Wrapper] Function error:", err);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
 };

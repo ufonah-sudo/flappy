@@ -1,11 +1,19 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-// Берем именно те названия, которые ты ввел в панели Vercel
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY 
+// Переменные окружения на Vercel
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY; 
 
+// Проверка инициализации (чтобы не упал весь сервер при первом запросе)
 if (!supabaseUrl || !supabaseKey) {
-    console.error("ОШИБКА: Переменные SUPABASE_URL или SUPABASE_SERVICE_KEY не найдены в Vercel!");
+    throw new Error("CRITICAL: Supabase environment variables are missing!");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Создаем клиент с настройками авторизации
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false, // Для серверных функций это ОБЯЗАТЕЛЬНО (чтобы не было утечек памяти)
+    autoRefreshToken: false,
+    detectSessionInUrl: false
+  }
+});

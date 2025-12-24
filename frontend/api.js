@@ -1,72 +1,86 @@
 const tg = window.Telegram.WebApp;
 
 async function apiRequest(endpoint, method = 'POST', extraData = {}) {
-    // Получаем initData из WebApp
-    let initData = window.Telegram.WebApp.initData || ""; 
-    
-    // Резервный метод получения данных
-    if (!initData && window.location.hash) {
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        initData = params.get('tgWebAppData') || window.location.hash.substring(1);
+    let initData = "";
+    try {
+        // Убираем возможные лишние символы в начале/конце
+        initData = (tg.initData || "").trim();
+        
+        if (!initData && window.location.hash) {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            initData = params.get('tgWebAppData') || "";
+        }
+    } catch (e) {
+        console.error("Error getting initData:", e);
     }
 
-    console.log(`[API Request] ${endpoint}, initData length: ${initData.length}`);
+    // Лог для отладки (потом можно убрать)
+    console.log(`[🚀 API] To: /api/${endpoint} | Action: ${extraData.action || 'none'}`);
 
     try {
-        // УБРАЛИ .js из пути, Vercel сам разрулит через vercel.json
         const response = await fetch(`/api/${endpoint}`, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                // Добавляем кастомный заголовок, иногда помогает избежать кэширования
+                'Cache-Control': 'no-cache'
+            },
             body: JSON.stringify({
                 initData: initData,
                 ...extraData
             })
         });
 
-        const contentType = response.headers.get("content-type");
+        // Проверка на пустой ответ (204 No Content)
+        if (response.status === 204) return { success: true };
 
-        // Если пришел JSON — парсим
+        const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
             const responseData = await response.json();
-            if (!response.ok) {
-                throw new Error(responseData.error || `Server error ${response.status}`);
-            }
+            if (!response.ok) throw new Error(responseData.error || `Error ${response.status}`);
             return responseData;
         } else {
-            // Если пришел HTML (ошибка 404) — выводим это четко
-            const textError = await response.text();
-            console.error("ОШИБКА: Сервер вернул не JSON, а страницу (возможно 404):", textError.substring(0, 100));
-            throw new Error(`Endpoint /api/${endpoint} not found (Status: ${response.status})`);
+            // Если сервер вернул ошибку в виде текста (например, лимит запросов)
+            const text = await response.text();
+            throw new Error(text || "Server returned non-JSON");
         }
     } catch (error) {
-        console.error(`Fetch error (${endpoint}):`, error.message);
+        console.error(`[❌ API Error] ${endpoint}:`, error.message);
         return { error: true, message: error.message };
     }
 }
+
+// --- ФУНКЦИИ (Проверь эндпоинты!) ---
 
 export async function authPlayer(startParam) {
     return await apiRequest('auth', 'POST', { startParam });
 }
 
 export async function fetchBalance() {
-    const data = await apiRequest('auth', 'POST'); 
+    const data = await apiRequest('auth', 'POST', { action: 'get_user' }); 
     return (data && data.user) ? data.user.coins : 0;
 }
 
 export async function spendCoin() {
-    const data = await apiRequest('auth', 'POST', { action: 'spend' }); // Исправлено: трата обычно в auth или отдельном coins
-    return (data && data.success) ? data.newBalance : (data && data.error ? {error: true} : null);
+    // ВАЖНО: Эндпоинт 'coins'
+    const data = await apiRequest('coins', 'POST', { action: 'spend_revive' }); 
+    // Проверка через Number.isInteger, чтобы 0 монет не считался ошибкой
+    if (data && Number.isInteger(data.newBalance)) return data.newBalance; 
+    return { error: true };
 }
 
 export async function buyCoins(amount) {
-    return await apiRequest('auth', 'POST', { action: 'buy', amount: amount });
+    // ВАЖНО: Эндпоинт 'coins'
+    return await apiRequest('coins', 'POST', { action: 'buy_coins', amount: amount });
 }
 
 export async function saveScore(score) {
-    return await apiRequest('auth', 'POST', { score: score }); // Используем auth как основной хаб если других файлов нет
+    // ВАЖНО: Эндпоинт 'scores'
+    return await apiRequest('scores', 'POST', { action: 'save_score', score: score });
 }
 
 export async function getLeaderboard() {
-    const data = await apiRequest('auth', 'POST', { action: 'get_leaderboard' });
+    // ВАЖНО: Эндпоинт 'scores'
+    const data = await apiRequest('scores', 'POST', { action: 'get_leaderboard' });
     return (data && data.leaderboard) ? data.leaderboard : [];
 }

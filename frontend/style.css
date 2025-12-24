@@ -10,7 +10,9 @@ body, html {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: #4ec0ca; /* Цвет неба Flappy Bird */
+    /* Твой фон fon.png на весь экран */
+    background: #4ec0ca url('assets/fon.png') no-repeat center center;
+    background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: white;
 }
@@ -24,7 +26,7 @@ body, html {
 /* Шапка: Кнопка кошелька и баланс */
 #header {
     position: absolute;
-    top: env(safe-area-inset-top, 10px); /* Учет "челки" на iPhone */
+    top: env(safe-area-inset-top, 10px);
     left: 0;
     width: 100%;
     z-index: 100;
@@ -57,7 +59,7 @@ body, html {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, #4ec0ca 0%, #3ca0a9 100%);
+    background: transparent;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -71,42 +73,88 @@ body, html {
     display: none !important;
 }
 
-/* Кнопки */
-.menu-buttons, .post-game-buttons {
-    display: flex;
-    flex-direction: column;
+/* --- ТВОЯ ГРАФИКА В МЕНЮ --- */
+
+/* Боковые кнопки в верхней части меню */
+.side-buttons {
+    position: absolute;
+    top: 80px; 
+    left: 0;
     width: 100%;
-    max-width: 250px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    pointer-events: none;
+    z-index: 60;
 }
 
-.primary-btn {
-    background: #f7941d;
-    border: none;
-    padding: 16px;
-    color: white;
-    font-size: 20px;
-    font-weight: bold;
-    border-radius: 12px;
-    margin: 8px 0;
+.icon-btn {
+    width: 55px;
+    height: 55px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #b36b15;
+    pointer-events: auto;
     transition: transform 0.1s;
 }
 
-.primary-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #b36b15;
+.icon-btn:active {
+    transform: scale(0.9);
 }
 
-.secondary-btn {
-    background: rgba(255, 255, 255, 0.9);
+/* Логотип 500x312 */
+.game-title {
+    width: 280px; 
+    height: 175px; 
+    background: url('assets/flappyname.png') no-repeat center center;
+    background-size: contain;
+    text-indent: -9999px; /* Прячем текст h1 */
+    margin: 0 auto 10px auto;
+}
+
+/* Статичная птица в меню (БЕЗ АНИМАЦИИ) */
+.menu-bird-decoration {
+    display: block;
+    margin: 0 auto 20px auto;
+    width: 80px;
+    height: auto;
+}
+
+/* Кнопка играть (knopka.png) */
+#btn-start {
+    width: 150px;
+    height: 150px;
+    background: url('assets/knopka.png') no-repeat center center;
+    background-size: contain;
     border: none;
-    padding: 12px;
-    color: #333;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 10px;
-    margin: 5px 0;
+    cursor: pointer;
+    text-indent: -9999px;
+    margin-bottom: 30px;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+    transition: transform 0.1s;
+}
+
+#btn-start:active {
+    transform: scale(0.95);
+}
+
+/* Панель кнопок 800x160 */
+.menu-buttons {
+    display: flex;
+    flex-direction: row; 
+    width: 100%;
+    max-width: 360px;
+    height: 72px; 
+    background: url('assets/panel.png') no-repeat center center;
+    background-size: contain;
+    position: relative;
+}
+
+/* Невидимые области для клика поверх панели */
+.menu-buttons button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    text-indent: -9999px;
+    height: 100%;
     cursor: pointer;
 }
 
@@ -136,15 +184,33 @@ body, html {
     overflow-y: auto;
 }
 
-/* Стили для списка лидеров внутри модалки */
-.leader-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
+/* Стили кнопок для интерфейсов (GameOver, Магазин) */
+.primary-btn {
+    background: #f7941d;
+    border: none;
+    padding: 16px;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 12px;
+    margin: 8px 0;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #b36b15;
 }
 
-/* Оверлей счета во время игры */
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    padding: 12px;
+    color: #333;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 10px;
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+/* Счетчик очков в игре */
 #score-overlay {
     position: absolute;
     top: 80px;
@@ -166,4 +232,11 @@ body, html {
     margin-top: 15px;
     font-size: 16px;
     cursor: pointer;
+}
+
+/* Канвас игры */
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }

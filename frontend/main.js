@@ -3,7 +3,7 @@ import { Game } from './game.js';
 import { WalletManager } from './wallet.js';
 
 const tg = window.Telegram.WebApp;
-const BOT_USERNAME = 'FlappyTonBird_bot'; // Твой ник зафиксирован
+const BOT_USERNAME = 'FlappyTonBird_bot'; 
 
 // Безопасная инициализация интерфейса Telegram
 try {
@@ -79,7 +79,9 @@ async function init() {
         api.saveScore(score).catch(err => console.error("Save score error:", err));
     }
 
-    // 2. Обработка кнопок
+    // 2. Обработка кнопок ГЛАВНОГО МЕНЮ
+    
+    // Кнопка ИГРАТЬ (knopka.png)
     getEl('btn-start').onclick = () => {
         ui.menu?.classList.add('hidden');
         ui.gameOver?.classList.add('hidden');
@@ -89,7 +91,8 @@ async function init() {
         game?.start();
     };
 
-    getEl('btn-leaderboard').onclick = async () => {
+    // Лидерборд (теперь открывается и из иконки Top, и из панели Awards)
+    const openLeaderboard = async () => {
         ui.ldbModal?.classList.remove('hidden');
         if (ui.ldbList) ui.ldbList.innerHTML = '<p>Loading...</p>';
         try {
@@ -108,6 +111,12 @@ async function init() {
         }
     };
 
+    getEl('btn-leaderboard').onclick = openLeaderboard;
+    // Если есть иконка top в side-buttons, она уже имеет onclick в HTML, но можно продублировать тут
+    const btnTopIcon = getEl('btn-top-icon');
+    if (btnTopIcon) btnTopIcon.onclick = openLeaderboard;
+
+    // Друзья / Инвайт
     getEl('btn-invite').onclick = () => {
         const userId = state.user?.id || tg.initDataUnsafe?.user?.id || '0';
         const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=${userId}`;
@@ -115,14 +124,33 @@ async function init() {
         tg.openTelegramLink(shareLink);
     };
 
+    // Магазин
     getEl('btn-shop').onclick = () => ui.shopModal?.classList.remove('hidden');
     getEl('btn-close-shop').onclick = () => ui.shopModal?.classList.add('hidden');
     getEl('btn-close-leaderboard').onclick = () => ui.ldbModal?.classList.add('hidden');
 
+    // Кнопка HOME на панели (просто закрывает все окна и возвращает в корень меню)
+    const btnHomePanel = getEl('btn-restart-panel');
+    if (btnHomePanel) {
+        btnHomePanel.onclick = () => {
+            ui.shopModal?.classList.add('hidden');
+            ui.ldbModal?.classList.add('hidden');
+            ui.gameOver?.classList.add('hidden');
+            ui.menu?.classList.remove('hidden');
+        };
+    }
+
+    // Заглушка для Settings
+    const btnSettings = getEl('btn-settings');
+    if (btnSettings) {
+        btnSettings.onclick = () => notify("Settings coming soon!");
+    }
+
+    // 3. Покупка и Воскрешение
     getEl('btn-buy-1ton').onclick = async () => {
         if (!wallet.isConnected) return notify('Connect wallet first!');
         try {
-            const tx = await wallet.sendTransaction(1); // 1 TON
+            const tx = await wallet.sendTransaction(1); 
             if (tx) {
                 const res = await api.buyCoins(1);
                 if (res && !res.error) {
@@ -140,7 +168,6 @@ async function init() {
         if (state.coins < 1) return notify("You need at least 1 Coin!");
         
         const result = await api.spendCoin();
-        // Числовой баланс 0 тоже валиден, поэтому проверяем тип
         if (typeof result === 'number') {
             state.coins = result;
             updateUI();
@@ -152,6 +179,7 @@ async function init() {
         }
     };
 
+    // Кнопка MAIN MENU на экране Game Over
     getEl('btn-restart').onclick = () => {
         ui.gameOver?.classList.add('hidden');
         ui.gameContainer?.classList.add('hidden');
@@ -168,7 +196,7 @@ async function init() {
         if (ui.scoreOverlay) ui.scoreOverlay.innerText = e.detail;
     });
 
-    // 3. Первичная авторизация
+    // 4. Первичная авторизация
     try {
         const startParam = tg.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam);
