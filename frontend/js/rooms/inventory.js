@@ -10,8 +10,7 @@ export function initInventory() {
         return;
     }
 
-    // 1. Формируем список расходных материалов (Сердечки и способности из state)
-    // Мы берем количество напрямую из state.lives и state.powerups
+    // 1. Формируем список расходных материалов
     const consumables = [
         { 
             id: 'lives', 
@@ -55,18 +54,27 @@ export function initInventory() {
         }
     ];
 
-    // Если всё по нулям (и в инвентаре пользователя тоже пусто)
+    // --- ЛОГИКА ДЛЯ ПУСТОГО ИНВЕНТАРЯ ---
     if (consumables.every(i => i.count === 0)) {
         container.innerHTML = `
             <div class="empty-text" style="padding: 50px 20px; opacity: 0.5; text-align: center;">
                 <p>Твой рюкзак пуст.</p>
-                <button class="primary-btn" onclick="showRoom('shop')" style="margin-top:15px;">В МАГАЗИН</button>
+                <button id="go-to-shop-empty" class="primary-btn" style="margin-top:15px;">В МАГАЗИН</button>
             </div>
         `;
+        
+        // Привязываем событие через JS, так как onclick в строке может не сработать в модуле
+        const emptyBtn = container.querySelector('#go-to-shop-empty');
+        if (emptyBtn) {
+            emptyBtn.onclick = (e) => {
+                e.preventDefault();
+                if (window.showRoom) window.showRoom('shop');
+            };
+        }
         return;
     }
 
-    // Генерируем HTML
+    // Генерируем HTML списка
     container.innerHTML = consumables.map(item => {
         const isEmpty = item.count <= 0;
         
@@ -95,9 +103,10 @@ export function initInventory() {
                     : '<button class="secondary-btn go-to-shop-btn" style="padding: 6px 10px; font-size: 10px; width: auto; background: #555; color: #fff; border: none; border-radius: 6px;">SHOP</button>'}
             </div>
         </div>
-    `}).join('');
+    `;
+    }).join('');
 
-    // Привязываем клик к кнопкам магазина
+    // Привязываем клик к кнопкам SHOP внутри карточек
     container.querySelectorAll('.go-to-shop-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.preventDefault();
