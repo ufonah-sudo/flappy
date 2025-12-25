@@ -4,7 +4,6 @@ export class Game {
         this.ctx = canvas.getContext('2d');
         this.onGameOver = onGameOver;
         
-        // Настройки птицы
         this.bird = { x: 50, y: 0, size: 34, velocity: 0, rotation: 0 }; 
         this.pipes = [];
         this.score = 0;
@@ -12,8 +11,10 @@ export class Game {
         this.isRunning = false;
         this.isPaused = false;
         this.reviveUsed = false;
+
+        // Эффекты
+        this.shieldActive = false; // Визуальный эффект щита в полете
         
-        // Загрузка спрайтов
         this.birdSprites = [];
         const sources = ['bird1.png', 'bird2.png', 'bird3.png'];
         sources.forEach(src => {
@@ -65,38 +66,41 @@ export class Game {
 
     start() {
         if (this.animationId) cancelAnimationFrame(this.animationId);
+        
+        // ПРОВЕРКА ЩИТА: Если у игрока есть щиты в инвентаре, активируем один на этот забег
+        if (window.state?.powerups?.shield > 0) {
+            this.shieldActive = true;
+            window.state.powerups.shield--; // Тратим сразу при старте
+            if (window.updateGlobalUI) window.updateGlobalUI(); 
+        } else {
+            this.shieldActive = false;
+        }
+
         this.score = 0;
+        this.updateScoreUI();
         this.pipes = [];
         this.bird.y = window.innerHeight / 2;
         this.bird.velocity = 0;
         this.bird.rotation = 0;
-        this.pipeSpawnTimer = 0; // Сброс таймера труб
+        this.pipeSpawnTimer = 0;
         this.reviveUsed = false;
         this.isRunning = true;
         this.loop();
     }
 
-    /**
-     * НОВОЕ: Метод возрождения
-     */
     revive() {
         this.reviveUsed = true;
         this.isRunning = true;
-        
-        // 1. Убираем ближайшие трубы, чтобы не умереть сразу
         this.pipes = this.pipes.filter(p => p.x > this.bird.x + 150);
-        
-        // 2. Возвращаем птицу в игровую зону, если она упала
-        if (this.bird.y > window.innerHeight) {
-            this.bird.y = window.innerHeight / 2;
-        }
-        
-        // 3. Даем небольшой импульс вверх
+        if (this.bird.y > window.innerHeight) this.bird.y = window.innerHeight / 2;
         this.bird.velocity = this.jump * 0.7;
         this.bird.rotation = 0;
-        
-        // 4. Перезапускаем цикл
         this.loop();
+    }
+
+    updateScoreUI() {
+        const scoreEl = document.getElementById('score-overlay');
+        if (scoreEl) scoreEl.innerText = this.score;
     }
 
     flap() {
@@ -165,6 +169,16 @@ export class Game {
                 this.bird.x + pad < p.x + p.width &&
                 (this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom)
             ) {
+                // ЛОГИКА ЩИТА
+                if (this.shieldActive) {
+                    this.shieldActive = false; // Ломаем щит
+                    this.pipes.splice(i, 1); // Удаляем трубу, об которую ударились
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('warning');
+                    }
+                    continue; 
+                }
+
                 this.gameOver();
                 return;
             }
@@ -172,13 +186,12 @@ export class Game {
             if (!p.passed && p.x + p.width < this.bird.x) {
                 p.passed = true;
                 this.score++;
-                window.dispatchEvent(new CustomEvent('scoreUpdate', { detail: this.score }));
+                this.updateScoreUI();
             }
 
             if (p.x < -p.width) this.pipes.splice(i, 1);
         }
 
-        // Границы экрана (улучшено)
         if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < -150) {
             this.gameOver();
         }
@@ -198,6 +211,17 @@ export class Game {
         this.ctx.save();
         this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
         this.ctx.rotate(this.bird.rotation);
+
+        // Рисуем свечение щита, если он активен
+        if (this.shieldActive) {
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, this.bird.size * 0.8, 0, Math.PI * 2);
+            this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+            this.ctx.fill();
+        }
 
         const img = this.birdSprites[this.frameIndex];
         if (img && img.complete) {
@@ -228,11 +252,9 @@ export class Game {
     gameOver() {
         if (!this.isRunning) return;
         this.isRunning = false;
-        
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
         }
-
         if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
     }
 
