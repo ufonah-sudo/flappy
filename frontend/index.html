@@ -14,7 +14,6 @@
     <div id="app">
         
         <div id="header">
-            <div id="ton-connect"></div>
             <div class="coins-display">
                 <span class="coin-icon">🪙</span>
                 <span id="header-coins">0</span>
@@ -49,6 +48,20 @@
             <div id="score-overlay">0</div>
         </div>
 
+        <div id="scene-shop" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>COIN SHOP</h3>
+            <div id="shop-ton-wallet"></div> 
+            <div class="room-content shop-grid" id="shop-content"></div>
+        </div>
+
+        <div id="scene-settings" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>SETTINGS</h3>
+            <div id="settings-ton-wallet"></div>
+            <div class="room-content settings-options" id="settings-content"></div>
+        </div>
+
         <div id="game-over" class="screen hidden">
             <h2 class="status-title">GAME OVER</h2>
             <div class="result-box">
@@ -63,13 +76,6 @@
             <button id="btn-share" class="secondary-btn">SHARE RESULT</button>
         </div>
 
-        <div id="scene-shop" class="screen hidden">
-            <button class="btn-home">BACK</button>
-            <h3>COIN SHOP</h3>
-            <div class="room-content shop-grid" id="shop-content">
-                </div>
-        </div>
-
         <div id="scene-leaderboard" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>TOP PLAYERS</h3>
@@ -81,30 +87,20 @@
         <div id="scene-friends" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>FRIENDS</h3>
-            <div class="room-content friends-list" id="friends-content">
-                </div>
+            <div class="room-content friends-list" id="friends-content"></div>
             <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
         </div>
 
         <div id="scene-inventory" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>INVENTORY</h3>
-            <div class="room-content inventory-items" id="inventory-content">
-                </div>
-        </div>
-
-        <div id="scene-settings" class="screen hidden">
-            <button class="btn-home">BACK</button>
-            <h3>SETTINGS</h3>
-            <div class="room-content settings-options" id="settings-content">
-                </div>
+            <div class="room-content inventory-items" id="inventory-content"></div>
         </div>
 
         <div id="scene-daily" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>DAILY REWARD</h3>
-            <div class="room-content daily-grid" id="daily-content">
-                </div>
+            <div class="room-content daily-grid" id="daily-content"></div>
         </div>
 
     </div>

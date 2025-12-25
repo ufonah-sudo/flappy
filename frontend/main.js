@@ -30,9 +30,11 @@ const scenes = {
     gameOver: document.getElementById('game-over')
 };
 
+// Исправленная функция showRoom
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
+    // Скрываем все экраны
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
@@ -41,6 +43,15 @@ function showRoom(roomName) {
     if (target) {
         target.classList.remove('hidden');
         
+        // Логика перемещения кнопки кошелька TON
+        if (window.wallet && window.wallet.tonConnectUI) {
+            if (roomName === 'shop') {
+                window.wallet.tonConnectUI.uiOptions = { buttonRootId: 'shop-ton-wallet' };
+            } else if (roomName === 'settings') {
+                window.wallet.tonConnectUI.uiOptions = { buttonRootId: 'settings-ton-wallet' };
+            }
+        }
+
         // Остановка игрового цикла при уходе из игры
         if (roomName !== 'game' && window.game) {
             window.game.isRunning = false;
@@ -70,6 +81,7 @@ function showRoom(roomName) {
     }
 }
 
+// Делаем функцию доступной глобально
 window.showRoom = showRoom;
 
 async function init() {
@@ -77,11 +89,13 @@ async function init() {
     
     if (tg) {
         tg.ready();
-        tg.expand();
+        tg.expand(); // Растягиваем на весь экран
+        tg.setHeaderColor('#4ec0ca'); // Убираем белую полосу (цвет неба)
+        tg.setBackgroundColor('#4ec0ca');
         tg.enableClosingConfirmation();
     }
 
-    // 1. Кошелек
+    // 1. Инициализация Кошелька
     try {
         window.wallet = new WalletManager((isConnected) => {
             console.log("[TON] Кошелек:", isConnected ? "OK" : "DISCONNECTED");
@@ -90,26 +104,18 @@ async function init() {
         console.error("[Init] WalletManager error:", e);
     }
     
-    // 2. Игра
+    // 2. Инициализация Игры
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, handleGameOver);
     }
 
-    // Слушатель для обновления счета во время игры
-    window.addEventListener('scoreUpdate', (e) => {
-        // Если хочешь, чтобы монеты прибавлялись прямо в полете:
-        // state.coins++; 
-        // updateGlobalUI();
-    });
-
-    // 3. Настройка кнопок
+    // 3. Настройка кликов (исправлены ID под твой index.html)
     const setupClick = (id, room) => {
         const el = document.getElementById(id);
         if (el) {
             el.onclick = (e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 showRoom(room);
             };
         }
@@ -117,13 +123,16 @@ async function init() {
 
     setupClick('btn-start', 'game');
     setupClick('btn-shop', 'shop');
-    setupClick('btn-leaderboard', 'leaderboard');
+    setupClick('btn-leaderboard-panel', 'leaderboard'); // ID из твоего индекса
     setupClick('btn-friends', 'friends');
     setupClick('btn-inventory', 'inventory');
-    setupClick('btn-daily', 'daily');
     setupClick('btn-settings', 'settings');
-    setupClick('btn-restart-panel', 'home'); 
+    setupClick('btn-home-panel', 'home'); // Кнопка HOME на панели
     
+    // Иконки сверху (Top и Daily)
+    setupClick('btn-top-icon', 'leaderboard');
+    setupClick('btn-daily-icon', 'daily');
+
     document.querySelectorAll('.btn-home').forEach(btn => {
         btn.onclick = (e) => {
             e.preventDefault();
@@ -146,7 +155,7 @@ async function init() {
                     showRoom('game');
                     window.game?.revive();
                 } else {
-                    tg?.showAlert("Недостаточно монет для возрождения!");
+                    tg?.showAlert("Недостаточно монет!");
                 }
             } catch (e) {
                 console.error("Revive error:", e);
@@ -171,13 +180,11 @@ async function init() {
 
 function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
-    
     const finalScoreEl = document.getElementById('final-score');
     if (finalScoreEl) finalScoreEl.innerText = score;
     
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        // Показываем кнопку возрождения только если она еще не была использована в этом раунде
         btnRevive.style.display = reviveUsed ? 'none' : 'block';
     }
     
@@ -192,7 +199,6 @@ function updateGlobalUI() {
     });
 }
 
-// Экспортируем функции в window для доступа из других модулей (shop.js и др.)
 window.updateGlobalUI = updateGlobalUI;
 window.state = state;
 
