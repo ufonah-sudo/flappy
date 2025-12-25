@@ -5,6 +5,7 @@
     { "source": "/api/coins", "destination": "/api/coins.js" },
     { "source": "/api/scores", "destination": "/api/scores.js" },
     { "source": "/api/(.*)", "destination": "/api/$1.js" },
+    { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ]
 }
