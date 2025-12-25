@@ -7,13 +7,12 @@
     
     <link rel="stylesheet" href="style.css">
     
-    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
-    <script>var vConsole = new window.VConsole();</script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
 <body>
     <div id="app">
+        
         <div id="header">
             <div id="ton-connect"></div>
             <div class="coins-display">
@@ -22,30 +21,29 @@
             </div>
         </div>
 
-        <div id="menu" class="screen">
+        <div id="scene-home" class="screen">
             <div class="side-buttons">
-                <img src="assets/top.png" id="btn-top-icon" class="icon-btn" onclick="document.getElementById('btn-leaderboard').click()">
+                <img src="assets/top.png" id="btn-top-icon" class="icon-btn">
                 <img src="assets/daily.png" id="btn-daily-icon" class="icon-btn">
             </div>
 
             <h1 class="game-title">FLAPPY TON</h1>
-
             <img src="assets/birdmenu.png" class="menu-bird-decoration" alt="Bird Menu">
 
-            <button id="btn-start">PLAY</button>
+            <button id="btn-start" class="play-btn">PLAY</button>
 
-            <div class="menu-buttons">
+            <div class="menu-buttons-panel">
                 <button id="btn-shop">SHOP</button>
-                <button id="btn-leaderboard">AWARDS</button>
+                <button id="btn-leaderboard">TOP</button>
                 <button id="btn-restart-panel">HOME</button>
                 <button id="btn-invite">FRIENDS</button>
-                <button id="btn-settings">SETTINGS</button>
+                <button id="btn-inventory">ITEMS</button> <button id="btn-settings">GEAR</button>
             </div>
             
             <p class="promo-text">Invite friends & get +5 Coins</p>
         </div>
 
-        <div id="game-container" class="hidden">
+        <div id="game-container" class="screen hidden">
             <canvas id="game-canvas"></canvas>
             <div id="score-overlay">0</div>
         </div>
@@ -56,38 +54,60 @@
                 <p>Your Score</p>
                 <span id="final-score">0</span>
             </div>
-            
             <div id="revive-container">
                 <button id="btn-revive" class="primary-btn">REVIVE (1 Coin)</button>
-                <p class="balance-info">Balance: <span id="revive-balance">0</span></p>
             </div>
-
-            <div class="post-game-buttons">
-                <button id="btn-restart" class="secondary-btn">MAIN MENU</button>
-                <button id="btn-share" class="secondary-btn">SHARE RESULT</button>
-            </div>
+            <button id="btn-restart" class="secondary-btn">MAIN MENU</button>
+            <button id="btn-share" class="secondary-btn">SHARE</button>
         </div>
-        
-        <div id="shop-modal" class="modal hidden">
-            <div class="modal-content">
-                <h3>COIN SHOP</h3>
-                <div class="shop-item">
-                    <p>1 TON = 10 Coins</p>
-                    <button id="btn-buy-1ton" class="primary-btn">BUY FOR 1 TON</button>
-                </div>
-                <button id="btn-close-shop" class="text-link">Close</button>
+
+        <div id="scene-shop" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>COIN SHOP</h3>
+            <div class="room-content">
+                <p>1 TON = 10 Coins</p>
+                <button id="btn-buy-1ton" class="primary-btn">BUY FOR 1 TON</button>
             </div>
         </div>
 
-        <div id="leaderboard-modal" class="modal hidden">
-            <div class="modal-content">
-                <h3>TOP PLAYERS</h3>
-                <div id="leaderboard-list" class="list-container">
-                    <p class="loading-text">Loading...</p>
-                </div>
-                <button id="btn-close-leaderboard" class="text-link">Close</button>
+        <div id="scene-leaderboard" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>TOP 50 PLAYERS</h3>
+            <div id="leaderboard-list" class="list-container">
+                <p class="loading-text">Loading...</p>
             </div>
         </div>
+
+        <div id="scene-friends" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>FRIENDS</h3>
+            <div class="friends-list"></div>
+            <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
+        </div>
+
+        <div id="scene-inventory" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>INVENTORY</h3>
+            <div class="inventory-items">
+                <div class="item">🧲 Magnet (Level 1)</div>
+            </div>
+        </div>
+
+        <div id="scene-settings" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>SETTINGS</h3>
+            <div class="settings-options">
+                <button id="toggle-sound">Sound: ON</button>
+                <button id="toggle-music">Music: ON</button>
+            </div>
+        </div>
+
+        <div id="scene-daily" class="screen hidden">
+            <button class="btn-home">BACK</button>
+            <h3>DAILY REWARD</h3>
+            <div class="daily-grid"></div>
+        </div>
+
     </div>
 
     <script type="module" src="main.js"></script>

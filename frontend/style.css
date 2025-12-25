@@ -1,7 +1,11 @@
+/* =========================================
+   1. БАЗОВЫЕ НАСТРОЙКИ И СБРОС
+   ========================================= */
 * {
     box-sizing: border-box;
-    /* Убирает синее выделение при нажатии на мобильных */
     -webkit-tap-highlight-color: transparent;
+    user-select: none; /* Запрет выделения текста */
+    outline: none;
 }
 
 body, html {
@@ -10,10 +14,10 @@ body, html {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    /* Твой фон fon.png на весь экран */
+    /* Твой основной фон */
     background: #4ec0ca url('assets/fon.png') no-repeat center center;
     background-size: cover;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
 }
 
@@ -23,62 +27,128 @@ body, html {
     height: 100vh;
 }
 
-/* Шапка: Кнопка кошелька и баланс */
+/* =========================================
+   2. ШАПКА (HEADER)
+   ========================================= */
 #header {
     position: absolute;
-    top: env(safe-area-inset-top, 10px);
+    top: env(safe-area-inset-top, 15px); /* Учитываем "челку" iPhone */
     left: 0;
     width: 100%;
-    z-index: 100;
+    z-index: 1000; /* Всегда поверх всего */
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 15px;
-    pointer-events: none; 
+    pointer-events: none; /* Пропускаем клики сквозь пустые места */
 }
 
 #ton-connect, .coins-display {
-    pointer-events: auto;
+    pointer-events: auto; /* Кнопки кликабельны */
 }
 
 .coins-display {
     background: rgba(0, 0, 0, 0.6);
-    padding: 8px 15px;
+    padding: 8px 12px;
     border-radius: 20px;
-    font-weight: bold;
+    font-weight: 800;
+    font-size: 14px;
     display: flex;
     align-items: center;
-    gap: 5px;
-    border: 1px solid rgba(255,255,255,0.2);
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
 }
 
-/* Экраны (Меню, Game Over) */
+.coin-icon {
+    font-size: 18px;
+}
+
+/* =========================================
+   3. СИСТЕМА СЦЕН (SCREENS)
+   ========================================= */
 .screen {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: transparent;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
     z-index: 50;
     text-align: center;
-    padding: 20px;
+    padding: 80px 20px 20px 20px; /* Отступ сверху под Header */
+    overflow-y: auto; /* Скролл, если контент не влезает */
+    
+    /* Анимация появления */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: scale(0.95);
+    
+    /* Фон по умолчанию для внутренних комнат (Shop, Settings...) */
+    background: rgba(26, 33, 46, 0.95); /* Темно-синяя подложка */
+    backdrop-filter: blur(10px); /* Размытие фона игры */
+}
+
+/* Активная сцена */
+.screen:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+/* Исключения: Главная и Игра должны быть прозрачными */
+#scene-home, #game-container {
+    background: transparent;
+    backdrop-filter: none;
+    justify-content: center; /* Центрируем контент */
+    padding-top: 0;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* --- ТВОЯ ГРАФИКА В МЕНЮ --- */
+/* Заголовки страниц */
+.screen h3 {
+    color: #f7d51d;
+    font-size: 24px;
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.5);
+}
 
-/* Боковые кнопки в верхней части меню */
+/* Кнопка НАЗАД (BACK) */
+.btn-home {
+    position: absolute;
+    top: 20px; /* Чуть ниже хедера */
+    left: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 1100;
+    backdrop-filter: blur(5px);
+}
+
+.btn-home:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* =========================================
+   4. ГЛАВНОЕ МЕНЮ
+   ========================================= */
 .side-buttons {
     position: absolute;
-    top: 80px; 
+    top: 90px;
     left: 0;
     width: 100%;
     display: flex;
@@ -89,28 +159,34 @@ body, html {
 }
 
 .icon-btn {
-    width: 55px;
-    height: 55px;
+    width: 60px;
+    height: 60px;
     cursor: pointer;
     pointer-events: auto;
     transition: transform 0.1s;
+    filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3));
 }
 
 .icon-btn:active {
     transform: scale(0.9);
 }
 
-/* Логотип 500x312 */
+/* Логотип */
 .game-title {
     width: 280px; 
     height: 175px; 
     background: url('assets/flappyname.png') no-repeat center center;
     background-size: contain;
-    text-indent: -9999px; /* Прячем текст h1 */
+    text-indent: -9999px;
     margin: 0 auto 10px auto;
+    animation: floatTitle 3s ease-in-out infinite;
 }
 
-/* Статичная птица в меню (БЕЗ АНИМАЦИИ) */
+@keyframes floatTitle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
 .menu-bird-decoration {
     display: block;
     margin: 0 auto 20px auto;
@@ -118,125 +194,342 @@ body, html {
     height: auto;
 }
 
-/* Кнопка играть (knopka.png) */
+/* Кнопка PLAY */
 #btn-start {
-    width: 150px;
-    height: 150px;
+    width: 140px;
+    height: 140px;
     background: url('assets/knopka.png') no-repeat center center;
     background-size: contain;
     border: none;
     cursor: pointer;
     text-indent: -9999px;
-    margin-bottom: 30px;
-    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+    margin-bottom: 25px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
     transition: transform 0.1s;
 }
 
 #btn-start:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
 }
 
-/* Панель кнопок 800x160 */
-.menu-buttons {
+/* Нижняя панель */
+.menu-buttons-panel {
     display: flex;
     flex-direction: row; 
     width: 100%;
     max-width: 360px;
-    height: 72px; 
+    height: 72px; /* Под твою нарезку */
     background: url('assets/panel.png') no-repeat center center;
     background-size: contain;
     position: relative;
+    margin-top: 10px;
 }
 
-/* Невидимые области для клика поверх панели */
-.menu-buttons button {
+.menu-buttons-panel button {
     flex: 1;
     background: transparent;
     border: none;
-    text-indent: -9999px;
+    /* Если на картинке панели есть иконки, раскомментируй следующую строку: */
+    /* text-indent: -9999px; */
+    color: transparent; /* Или скрываем текст так */
     height: 100%;
     cursor: pointer;
 }
 
-/* Модалки */
-.modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.85);
-    z-index: 200;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-}
-
-.modal-content {
-    background: white;
-    color: black;
-    padding: 25px;
-    border-radius: 20px;
-    width: 100%;
-    max-width: 320px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-/* Стили кнопок для интерфейсов (GameOver, Магазин) */
-.primary-btn {
-    background: #f7941d;
-    border: none;
-    padding: 16px;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-    border-radius: 12px;
-    margin: 8px 0;
-    cursor: pointer;
-    box-shadow: 0 4px 0 #b36b15;
-}
-
-.secondary-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    padding: 12px;
-    color: #333;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 10px;
-    margin: 5px 0;
-    cursor: pointer;
-}
-
-/* Счетчик очков в игре */
-#score-overlay {
-    position: absolute;
-    top: 80px;
-    width: 100%;
-    text-align: center;
-    font-size: 60px;
-    font-weight: 900;
-    color: white;
-    text-shadow: 3px 3px 0 #000;
-    z-index: 20;
-    pointer-events: none;
-}
-
-.text-link {
-    background: none;
-    border: none;
-    color: #3ca0a9;
-    text-decoration: underline;
+.promo-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
     margin-top: 15px;
-    font-size: 16px;
-    cursor: pointer;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-/* Канвас игры */
+/* =========================================
+   5. ИГРОВОЙ ПРОЦЕСС
+   ========================================= */
 #game-canvas {
     display: block;
     width: 100%;
     height: 100%;
+}
+
+#score-overlay {
+    position: absolute;
+    top: 15%;
+    width: 100%;
+    text-align: center;
+    font-size: 70px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 4px 4px 0 #000;
+    z-index: 20;
+    pointer-events: none;
+}
+
+/* Game Over Экран */
+#game-over {
+    background: rgba(0, 0, 0, 0.85); /* Чуть темнее */
+    backdrop-filter: blur(5px);
+}
+
+.status-title {
+    font-size: 40px;
+    color: #f7941d;
+    text-shadow: 3px 3px 0 #000;
+    margin-bottom: 20px;
+}
+
+.result-box {
+    background: #ded895;
+    border: 3px solid #543847;
+    border-radius: 15px;
+    padding: 20px 40px;
+    margin-bottom: 20px;
+    color: #e67e22;
+}
+
+.result-box p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: #e06020;
+}
+
+#final-score {
+    font-size: 48px;
+    font-weight: 900;
+    color: #333;
+}
+
+/* =========================================
+   6. МАГАЗИН (SHOP)
+   ========================================= */
+.shop-section {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 25px;
+}
+
+.shop-section h4 {
+    text-align: left;
+    color: #888;
+    font-size: 12px;
+    margin: 0 0 10px 5px;
+}
+
+.shop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.shop-card.coin-pack {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pack-icon { font-size: 40px; margin-bottom: 10px; }
+.pack-amount { font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+
+.shop-item {
+    background: rgba(255, 255, 255, 0.08);
+    margin-bottom: 10px;
+    padding: 12px 15px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.item-info { display: flex; align-items: center; gap: 15px; }
+.item-title { font-weight: bold; margin: 0; text-align: left; font-size: 15px;}
+.item-price { font-size: 13px; color: #f7d51d; margin: 0; text-align: left; }
+
+/* =========================================
+   7. ЛИДЕРБОРД (TOP)
+   ========================================= */
+#leaderboard-list {
+    width: 100%;
+    max-width: 400px;
+}
+
+.leader-item {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.leader-item.top-rank {
+    background: linear-gradient(90deg, rgba(247, 213, 29, 0.1) 0%, rgba(247, 213, 29, 0.0) 100%);
+    border-left: 3px solid #f7d51d;
+}
+
+.rank-col { width: 30px; font-size: 16px; font-weight: bold; }
+.name-col { flex-grow: 1; text-align: left; padding-left: 10px; font-weight: 500; }
+.score-col { font-family: monospace; font-weight: bold; color: #f7d51d; font-size: 16px; }
+
+/* =========================================
+   8. ДРУЗЬЯ И ИНВЕНТАРЬ
+   ========================================= */
+.friends-list, .inventory-items {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 10px;
+}
+
+.friend-card, .inventory-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.item-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.inventory-card.locked { opacity: 0.5; filter: grayscale(1); }
+
+/* =========================================
+   9. НАСТРОЙКИ
+   ========================================= */
+.settings-options {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.settings-btn {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 15px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.settings-btn:active { background: rgba(255, 255, 255, 0.2); }
+.settings-btn span { color: #f7d51d; font-weight: 800; }
+
+/* =========================================
+   10. DAILY REWARDS
+   ========================================= */
+.daily-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 колонки */
+    gap: 10px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.daily-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+}
+
+.daily-card.current {
+    background: rgba(247, 213, 29, 0.2);
+    border: 2px solid #f7d51d;
+    transform: scale(1.02);
+}
+
+.daily-card.claimed {
+    background: rgba(46, 204, 113, 0.2);
+    opacity: 0.6;
+}
+
+.daily-card:last-child {
+    grid-column: span 3; /* Последний день на всю ширину */
+    height: 80px;
+    flex-direction: row;
+    gap: 15px;
+}
+
+/* =========================================
+   КНОПКИ ОБЩЕГО НАЗНАЧЕНИЯ
+   ========================================= */
+.primary-btn {
+    background: linear-gradient(to bottom, #f7941d, #d67c10);
+    border: none;
+    width: 100%;
+    padding: 16px;
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    border-radius: 12px;
+    margin-top: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #b36b15;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.primary-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #b36b15;
+}
+
+.primary-btn:disabled {
+    background: #777;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    background: white;
+    width: 100%;
+    border: none;
+    padding: 14px;
+    color: #333;
+    font-size: 16px;
+    font-weight: 800;
+    border-radius: 12px;
+    margin: 5px 0;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #ccc;
+}
+
+.secondary-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+/* Текст загрузки / ошибок */
+.loading-text, .empty-text {
+    color: #aaa;
+    margin-top: 30px;
+    font-size: 14px;
 }

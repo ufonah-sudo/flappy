@@ -2,212 +2,141 @@ import * as api from './api.js';
 import { Game } from './game.js';
 import { WalletManager } from './wallet.js';
 
+// Импортируем инициализаторы комнат
+import { initShop } from './js/rooms/shop.js';
+import { initInventory } from './js/rooms/inventory.js';
+import { initFriends } from './js/rooms/friends.js';
+import { initDaily } from './js/rooms/daily.js';
+import { initLeaderboard } from './js/rooms/leaderboard.js';
+import { initSettings } from './js/rooms/settings.js';
+
 const tg = window.Telegram.WebApp;
-const BOT_USERNAME = 'FlappyTonBird_bot'; 
-
-// Безопасная инициализация интерфейса Telegram
-try {
-    tg.ready();
-    tg.expand();
-    if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
-        tg.setHeaderColor('#4ec0ca'); 
-    }
-} catch (e) {
-    console.error("TG Init Error:", e);
-}
-
 const state = { user: null, coins: 0 };
 
-const getEl = (id) => {
-    const el = document.getElementById(id);
-    if (!el) console.warn(`Element with id "${id}" not found!`);
-    return el;
+// 1. Диспетчер сцен (Комнат)
+const scenes = {
+    home: document.getElementById('scene-home'),
+    game: document.getElementById('game-container'),
+    shop: document.getElementById('scene-shop'),
+    leaderboard: document.getElementById('scene-leaderboard'),
+    friends: document.getElementById('scene-friends'),
+    inventory: document.getElementById('scene-inventory'),
+    daily: document.getElementById('scene-daily'),
+    settings: document.getElementById('scene-settings'),
+    gameOver: document.getElementById('game-over')
 };
 
-const notify = (msg) => {
-    if (tg && tg.showAlert) {
-        tg.showAlert(msg);
-    } else {
-        alert(msg);
+function showRoom(roomName) {
+    // Скрываем все сцены
+    Object.values(scenes).forEach(s => s?.classList.add('hidden'));
+    
+    // Показываем нужную
+    const target = scenes[roomName];
+    if (target) {
+        target.classList.remove('hidden');
+        console.log(`[Navigation] Switched to: ${roomName}`);
+        
+        // ВЫЗОВ ЛОГИКИ КОНКРЕТНОЙ КОМНАТЫ
+        switch(roomName) {
+            case 'game':
+                window.game?.resize();
+                window.game?.start();
+                break;
+            case 'shop':
+                initShop();
+                break;
+            case 'inventory':
+                initInventory();
+                break;
+            case 'friends':
+                initFriends();
+                break;
+            case 'daily':
+                initDaily();
+                break;
+            case 'leaderboard':
+                initLeaderboard();
+                break;
+            case 'settings':
+                initSettings();
+                break;
+        }
     }
-};
-
-const ui = {
-    menu: getEl('menu'),
-    gameContainer: getEl('game-container'),
-    gameOver: getEl('game-over'),
-    scoreOverlay: getEl('score-overlay'),
-    coinBalance: getEl('coin-balance'),
-    reviveBalance: getEl('revive-balance'),
-    finalScore: getEl('final-score'),
-    btnRevive: getEl('btn-revive'),
-    shopModal: getEl('shop-modal'),
-    ldbModal: getEl('leaderboard-modal'),
-    ldbList: getEl('leaderboard-list')
-};
-
-function updateUI() {
-    if (ui.coinBalance) ui.coinBalance.innerText = state.coins;
-    if (ui.reviveBalance) ui.reviveBalance.innerText = state.coins;
 }
 
+// 2. Инициализация при загрузке
 async function init() {
-    console.log("App initializing...");
+    tg.ready();
+    tg.expand();
 
-    // 1. Кошелек и Игра
-    const wallet = new WalletManager((isConnected) => {
-        console.log("Wallet connection state:", isConnected);
-    });
-
-    const canvas = getEl('game-canvas');
-    let game = null;
-    if (canvas) {
-        game = new Game(canvas, handleGameOver);
-    }
-
-    function handleGameOver(score, reviveUsed) {
-        ui.gameContainer?.classList.add('hidden');
-        ui.gameOver?.classList.remove('hidden');
-        if (ui.finalScore) ui.finalScore.innerText = score;
-        
-        // Кнопка воскрешения доступна только 1 раз за игру
-        if (ui.btnRevive) {
-            ui.btnRevive.style.display = reviveUsed ? 'none' : 'block';
-        }
-        
-        // Сохраняем результат в БД
-        api.saveScore(score).catch(err => console.error("Save score error:", err));
-    }
-
-    // 2. Обработка кнопок ГЛАВНОГО МЕНЮ
+    // Инициализация кошелька
+    window.wallet = new WalletManager((isConnected) => console.log("Wallet Connected:", isConnected));
     
-    // Кнопка ИГРАТЬ (knopka.png)
-    getEl('btn-start').onclick = () => {
-        ui.menu?.classList.add('hidden');
-        ui.gameOver?.classList.add('hidden');
-        ui.gameContainer?.classList.remove('hidden');
-        if (ui.scoreOverlay) ui.scoreOverlay.innerText = '0';
-        game?.resize();
-        game?.start();
-    };
-
-    // Лидерборд (теперь открывается и из иконки Top, и из панели Awards)
-    const openLeaderboard = async () => {
-        ui.ldbModal?.classList.remove('hidden');
-        if (ui.ldbList) ui.ldbList.innerHTML = '<p>Loading...</p>';
-        try {
-            const top = await api.getLeaderboard();
-            if (ui.ldbList) {
-                ui.ldbList.innerHTML = (top && top.length > 0) 
-                    ? top.map((entry, i) => `
-                        <div class="leader-item" style="display:flex; justify-content:space-between; margin: 10px 0;">
-                            <span>${i + 1}. ${entry.username}</span>
-                            <b>${entry.score}</b>
-                        </div>`).join('')
-                    : '<p>No records yet</p>';
-            }
-        } catch (e) {
-            if (ui.ldbList) ui.ldbList.innerHTML = 'Failed to load';
-        }
-    };
-
-    getEl('btn-leaderboard').onclick = openLeaderboard;
-    // Если есть иконка top в side-buttons, она уже имеет onclick в HTML, но можно продублировать тут
-    const btnTopIcon = getEl('btn-top-icon');
-    if (btnTopIcon) btnTopIcon.onclick = openLeaderboard;
-
-    // Друзья / Инвайт
-    getEl('btn-invite').onclick = () => {
-        const userId = state.user?.id || tg.initDataUnsafe?.user?.id || '0';
-        const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=${userId}`;
-        const shareLink = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play Flappy TON and get coins!`;
-        tg.openTelegramLink(shareLink);
-    };
-
-    // Магазин
-    getEl('btn-shop').onclick = () => ui.shopModal?.classList.remove('hidden');
-    getEl('btn-close-shop').onclick = () => ui.shopModal?.classList.add('hidden');
-    getEl('btn-close-leaderboard').onclick = () => ui.ldbModal?.classList.add('hidden');
-
-    // Кнопка HOME на панели (просто закрывает все окна и возвращает в корень меню)
-    const btnHomePanel = getEl('btn-restart-panel');
-    if (btnHomePanel) {
-        btnHomePanel.onclick = () => {
-            ui.shopModal?.classList.add('hidden');
-            ui.ldbModal?.classList.add('hidden');
-            ui.gameOver?.classList.add('hidden');
-            ui.menu?.classList.remove('hidden');
-        };
+    const canvas = document.getElementById('game-canvas');
+    if (canvas) {
+        window.game = new Game(canvas, handleGameOver);
     }
 
-    // Заглушка для Settings
-    const btnSettings = getEl('btn-settings');
-    if (btnSettings) {
-        btnSettings.onclick = () => notify("Settings coming soon!");
-    }
-
-    // 3. Покупка и Воскрешение
-    getEl('btn-buy-1ton').onclick = async () => {
-        if (!wallet.isConnected) return notify('Connect wallet first!');
-        try {
-            const tx = await wallet.sendTransaction(1); 
-            if (tx) {
-                const res = await api.buyCoins(1);
-                if (res && !res.error) {
-                    state.coins = res.newBalance;
-                    updateUI();
-                    notify('Success! +10 Coins');
-                }
-            }
-        } catch (e) {
-            notify('Transaction failed or cancelled');
-        }
+    // Привязка кнопок панели
+    const bindBtn = (id, room) => {
+        const el = document.getElementById(id);
+        if (el) el.onclick = () => showRoom(room);
     };
 
-    getEl('btn-revive').onclick = async () => {
-        if (state.coins < 1) return notify("You need at least 1 Coin!");
-        
-        const result = await api.spendCoin();
-        if (typeof result === 'number') {
-            state.coins = result;
-            updateUI();
-            ui.gameOver?.classList.add('hidden');
-            ui.gameContainer?.classList.remove('hidden');
-            game?.revive();
-        } else {
-            notify("Error: Transaction failed.");
-        }
-    };
-
-    // Кнопка MAIN MENU на экране Game Over
-    getEl('btn-restart').onclick = () => {
-        ui.gameOver?.classList.add('hidden');
-        ui.gameContainer?.classList.add('hidden');
-        ui.menu?.classList.remove('hidden');
-    };
-
-    getEl('btn-share').onclick = () => {
-        const score = ui.finalScore?.innerText || '0';
-        const shareLink = `https://t.me/share/url?url=https://t.me/${BOT_USERNAME}/app&text=My score is ${score}! Can you beat it?`;
-        tg.openTelegramLink(shareLink);
-    };
-
-    window.addEventListener('scoreUpdate', (e) => {
-        if (ui.scoreOverlay) ui.scoreOverlay.innerText = e.detail;
+    bindBtn('btn-start', 'game');
+    bindBtn('btn-shop', 'shop');
+    bindBtn('btn-leaderboard', 'leaderboard');
+    bindBtn('btn-friends', 'friends');
+    bindBtn('btn-inventory', 'inventory');
+    bindBtn('btn-daily', 'daily');
+    bindBtn('btn-settings', 'settings');
+    bindBtn('btn-restart-panel', 'home'); // Твоя кнопка HOME на панели
+    
+    // Кнопки возврата домой (те, что внутри комнат с классом .btn-home)
+    document.querySelectorAll('.btn-home').forEach(btn => {
+        btn.onclick = () => showRoom('home');
     });
 
-    // 4. Первичная авторизация
+    // Обработка кнопки "Играть заново" после Game Over
+    const btnRestart = document.getElementById('btn-restart');
+    if (btnRestart) btnRestart.onclick = () => showRoom('home');
+
+    // Первичная авторизация
     try {
         const startParam = tg.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam);
         if (authData?.user) {
             state.user = authData.user;
             state.coins = authData.user.coins;
-            updateUI();
+            updateGlobalUI();
         }
     } catch (e) {
-        console.error("Initialization auth failed:", e);
+        console.error("Auth failed:", e);
     }
 }
 
+function handleGameOver(score, reviveUsed) {
+    showRoom('gameOver');
+    const finalScoreEl = document.getElementById('final-score');
+    if (finalScoreEl) finalScoreEl.innerText = score;
+    
+    const btnRevive = document.getElementById('btn-revive');
+    if (btnRevive) btnRevive.style.display = reviveUsed ? 'none' : 'block';
+    
+    api.saveScore(score);
+}
+
+function updateGlobalUI() {
+    // Обновляем все элементы с балансом (в хедере и магазинах)
+    const balanceElements = [
+        document.getElementById('coin-balance'),
+        document.getElementById('revive-balance')
+    ];
+    balanceElements.forEach(el => {
+        if (el) el.innerText = state.coins;
+    });
+}
+
 window.onload = init;
+
+export { showRoom, state, updateGlobalUI };
