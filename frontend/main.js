@@ -52,17 +52,25 @@ function showRoom(roomName) {
     
     const target = scenes[roomName];
     if (!target) return;
-
     target.classList.remove('hidden');
 
-    // Управление видимостью нижней панели
-    const bottomPanel = document.querySelector('.menu-buttons-panel');
-    if (bottomPanel) {
-        // Панель скрыта только ВНУТРИ самой игры. На Game Over возвращаем!
-        const isGameActive = (roomName === 'game');
-        bottomPanel.style.display = isGameActive ? 'none' : 'flex';
+    // --- УПРАВЛЕНИЕ ОТОБРАЖЕНИЕМ БАЛАНСА (HEADER) ---
+    const header = document.getElementById('header');
+    if (header) {
+        // Показываем только в home, shop и inventory
+        const showHeader = ['home', 'shop', 'inventory'].includes(roomName);
+        header.style.display = showHeader ? 'flex' : 'none';
     }
 
+    // Управление нижней панелью
+    const bottomPanel = document.querySelector('.menu-buttons-panel');
+    if (bottomPanel) {
+        // Скрываем панель только в самой игре
+        bottomPanel.style.display = (roomName === 'game') ? 'none' : 'flex';
+    }
+
+    // --- ИСПРАВЛЕНО: Этот блок теперь ВНУТРИ функции showRoom ---
+    
     // Безопасная инициализация TON Connect
     if (window.wallet && window.wallet.tonConnectUI) {
         let walletContainerSelector = null;
@@ -110,11 +118,9 @@ window.showRoom = showRoom;
  * Инициализация при загрузке
  */
 async function init() {
-    // 1. Настройка Telegram WebApp
     if (tg) {
         tg.ready();
         tg.expand(); 
-        // Исправлено: не все версии TG поддерживают setHeaderColor, оборачиваем в проверку
         try {
             if (tg.isVersionAtLeast('6.1')) {
                 tg.setHeaderColor('#4ec0ca');
@@ -123,7 +129,6 @@ async function init() {
         } catch(e) {}
     }
 
-    // 2. Инициализация TON (в блоке try/catch чтобы не вешать всю игру)
     try {
         window.wallet = new WalletManager((isConnected) => {
             console.log("[TON] Статус:", isConnected ? "Connected" : "Disconnected");
@@ -132,13 +137,11 @@ async function init() {
         console.error("[TON] Ошибка инициализации кошелька:", e); 
     }
     
-    // 3. Инициализация Игры
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, handleGameOver);
     }
 
-    // 4. Привязка событий клика (Навигация)
     const bindClick = (id, room) => {
         const el = document.getElementById(id);
         if (el) el.onclick = (e) => { 
@@ -156,11 +159,9 @@ async function init() {
     bindClick('btn-top-icon', 'leaderboard');
     bindClick('btn-daily-icon', 'daily');
 
-    // Кнопки "Main Menu" в результатах
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) btnRestart.onclick = () => showRoom('home');
 
-    // Логика кнопки Revive
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.onclick = async () => {
@@ -175,7 +176,6 @@ async function init() {
         };
     }
 
-    // 5. Авторизация и загрузка данных
     try {
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 
@@ -192,10 +192,9 @@ async function init() {
         console.error("[Auth] Ошибка API, используем локальный state:", e);
     }
 
-    // Финальное обновление UI и показ экрана (обязательно в конце)
     window.state = state; 
     updateGlobalUI();
-    showRoom('home'); // Принудительно показываем главный экран
+    showRoom('home'); 
 }
 
 function handleGameOver(score, reviveUsed) {
@@ -205,22 +204,18 @@ function handleGameOver(score, reviveUsed) {
     
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        // Показываем кнопку возрождения только если есть жизни и оно еще не использовалось в этом раунде
         btnRevive.style.display = (!reviveUsed && state.lives > 0) ? 'block' : 'none';
     }
     
-    // Сохраняем результат
     api.saveScore(score).catch(err => console.error("[Score] Ошибка сохранения:", err));
 }
 
-/**
- * Обновление баланса и UI во всех местах
- */
 function updateGlobalUI() {
     if (!state) return;
     const coinValue = Number(state.coins).toLocaleString();
+    const crystalValue = Number(state.crystals).toLocaleString();
     
-    // 1. Монеты (Исправлено под ID в header и inventory)
+    // 1. Монеты
     const headerCoins = document.getElementById('header-coins');
     if (headerCoins) headerCoins.innerText = coinValue;
 
@@ -234,8 +229,11 @@ function updateGlobalUI() {
         el.innerText = state.lives;
     });
 
-    // 3. Кристаллы
-    document.querySelectorAll('.stat-crystals, #header-crystals').forEach(el => {
+    // 3. Кристаллы (Обновляем и в шапке!)
+    const headerCrystals = document.getElementById('header-crystals');
+    if (headerCrystals) headerCrystals.innerText = crystalValue;
+
+    document.querySelectorAll('.stat-crystals').forEach(el => {
         el.innerText = state.crystals;
     });
 
@@ -248,7 +246,6 @@ function updateGlobalUI() {
     }
 }
 
-// Безопасный запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
