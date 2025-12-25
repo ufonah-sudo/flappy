@@ -16,7 +16,8 @@ body, html {
     position: fixed; 
     top: 0;
     left: 0;
-    background: #4ec0ca url('../assets/fon.png') no-repeat center center;
+    /* Фон игры: небо */
+    background: #4ec0ca url('assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
@@ -32,33 +33,56 @@ body, html {
     overflow: hidden;
 }
 
-/* Фиксированная панель кнопок снизу (общие правила) */
+/* --- НОВАЯ НИЖНЯЯ ПАНЕЛЬ С ОТДЕЛЬНЫМИ КНОПКАМИ --- */
 .menu-buttons-panel {
     position: fixed;
-    bottom: 20px;
+    bottom: env(safe-area-inset-bottom, 15px); /* Учитываем отступ iPhone снизу */
     left: 50%;
     transform: translateX(-50%);
-    width: 95%;
-    max-width: 600px;
-    aspect-ratio: 800 / 160;
-    background: url('../assets/panel.png') no-repeat center center;
-    background-size: contain;
-    z-index: 2000; /* Поверх всех окон */
+    width: 100%;
+    max-width: 500px;
+    z-index: 2000;
     display: flex;
     flex-direction: row;
-    pointer-events: auto;
+    justify-content: space-around; /* Распределяем кнопки равномерно */
+    align-items: flex-end; /* Выравниваем по нижнему краю */
+    padding: 0 10px 10px 10px;
+    pointer-events: none; /* Чтобы пустое место не мешало кликам */
 }
 
-.menu-buttons-panel button {
-    flex: 1;
-    background: transparent;
+/* Базовый стиль для каждой из 5 кнопок */
+.nav-btn {
+    pointer-events: auto; /* Возвращаем кликабельность кнопкам */
+    width: 68px;  /* Размер на экране (баланс между 200px исходника) */
+    height: 68px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: transparent;
     border: none;
     cursor: pointer;
-    color: transparent; /* Текст кнопок прозрачный, так как они нарисованы на панели */
-    outline: none;
+    transition: transform 0.1s ease;
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3));
 }
 
-/* Отображение коинов (используется в инвентаре) */
+/* Привязка твоих новых PNG (200x200) */
+#btn-shop { background-image: url('assets/shop.png'); }
+#btn-inventory { background-image: url('assets/invent.png'); }
+#btn-home-panel { 
+    background-image: url('assets/home.png'); 
+    width: 82px; /* Главную кнопку делаем чуть акцентнее */
+    height: 82px; 
+} 
+#btn-friends { background-image: url('assets/friends.png'); }
+#btn-settings { background-image: url('assets/settings.png'); }
+
+/* Эффект нажатия */
+.nav-btn:active {
+    transform: scale(0.85) translateY(5px);
+}
+
+/* --- ОСТАЛЬНЫЕ СТИЛИ --- */
+
 .coins-display {
     background: rgba(0, 0, 0, 0.6);
     padding: 10px 18px;
@@ -68,17 +92,15 @@ body, html {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 2px solid rgba(255, 215, 0, 0.3); /* Золотистая кайма */
+    border: 2px solid #f7d51d;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    color: #f7d51d; /* Золотой цвет текста */
+    color: #f7d51d;
 }
 
 .gold-coin {
     font-size: 20px;
-    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
 }
 
-/* Заглушка для хедера (если там остался TON Connect) */
 #header {
     position: absolute;
     top: env(safe-area-inset-top, 15px);
@@ -86,11 +108,7 @@ body, html {
     width: 100%;
     z-index: 1000;
     display: flex;
-    justify-content: flex-end; /* TON Connect прижимаем к правому краю */
+    justify-content: flex-end;
     padding: 0 15px;
     pointer-events: none;
-}
-
-#ton-connect {
-    pointer-events: auto;
 }

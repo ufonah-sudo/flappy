@@ -2,6 +2,7 @@
 #game-container { 
     background: transparent; 
     backdrop-filter: none; 
+    display: flex;
     justify-content: center; 
     padding-top: 0; 
     overflow: hidden; 
@@ -17,13 +18,13 @@
 /* Текущий счет во время полета */
 #score-overlay {
     position: absolute; 
-    top: 15%; 
+    top: 12%; /* Чуть выше для лучшей видимости */
     width: 100%; 
     text-align: center;
-    font-size: 70px; 
+    font-size: 80px; /* Сделаем чуть крупнее */
     font-weight: 900; 
     color: white;
-    text-shadow: 4px 4px 0 #000; 
+    text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; 
     z-index: 20; 
     pointer-events: none;
 }
@@ -31,96 +32,87 @@
 /* Экран проигрыша */
 #game-over { 
     background: rgba(0, 0, 0, 0.85); 
-    backdrop-filter: blur(5px); 
+    backdrop-filter: blur(8px); 
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding-bottom: 120px; /* Отступ, чтобы кнопки не закрывала панель panel.png */
+    /* Убираем огромный отступ, так как панель кнопок скрыта на этом экране */
+    padding: 20px; 
 }
 
 .status-title { 
-    font-size: 40px; 
+    font-size: 48px; /* Увеличил размер */
     color: #f7941d; 
-    text-shadow: 3px 3px 0 #000; 
-    margin-bottom: 20px; 
+    text-shadow: 4px 4px 0 #000; 
+    margin-bottom: 30px; 
+    text-transform: uppercase;
 }
 
-/* Табличка с результатом */
+/* Табличка с результатом в стиле оригинальной игры */
 .result-box {
     background: #ded895; 
-    border: 3px solid #543847;
-    border-radius: 15px; 
-    padding: 20px 40px; 
-    margin-bottom: 20px; 
+    border: 4px solid #543847;
+    border-radius: 12px; 
+    padding: 25px 50px; 
+    margin-bottom: 30px; 
     color: #e67e22;
     text-align: center;
+    box-shadow: 0 10px 0 rgba(0,0,0,0.3);
 }
 
 .result-box p {
-    margin: 5px 0;
+    margin: 0;
+    font-size: 18px;
+    text-transform: uppercase;
+    color: #543847;
     font-weight: bold;
 }
 
 #final-score {
-    font-size: 48px;
+    font-size: 64px;
     font-weight: 900;
     display: block;
+    color: white;
+    text-shadow: 3px 3px 0 #543847;
+    margin: 10px 0;
 }
 
-/* Основная кнопка (Оранжевая) */
-.primary-btn {
-    background: linear-gradient(to bottom, #f7941d, #d67c10);
-    border: none; 
+/* Кнопки */
+.primary-btn, .secondary-btn {
     width: 100%; 
-    max-width: 280px;
-    padding: 16px; 
-    color: white;
-    font-size: 16px; 
+    max-width: 260px;
+    padding: 18px; 
+    font-size: 18px; 
     font-weight: 800; 
-    border-radius: 12px;
-    box-shadow: 0 4px 0 #b36b15; 
+    border-radius: 8px; /* Квадратный стиль кнопок Flappy */
+    border: 2px solid #000;
     cursor: pointer; 
     text-transform: uppercase;
-    margin-bottom: 10px;
+    transition: transform 0.1s;
 }
 
-.primary-btn:active { 
-    transform: translateY(4px); 
-    box-shadow: 0 0 0 #b36b15; 
+.primary-btn {
+    background: #f7941d;
+    color: white;
+    box-shadow: 0 6px 0 #b36b15; 
+    margin-bottom: 15px;
 }
 
-/* Вторичная кнопка (Белая) */
 .secondary-btn {
-    background: white; 
-    width: 100%; 
-    max-width: 280px;
-    border: none; 
-    padding: 14px;
-    color: #333; 
-    font-size: 16px; 
-    font-weight: 800; 
-    border-radius: 12px;
-    box-shadow: 0 4px 0 #ccc; 
-    cursor: pointer;
-    margin-top: 10px;
+    background: #ffffff; 
+    color: #543847; 
+    box-shadow: 0 6px 0 #999; 
+    margin-top: 5px;
 }
 
-.secondary-btn:active { 
-    transform: translateY(2px); 
-    box-shadow: 0 2px 0 #ccc; 
+.primary-btn:active, .secondary-btn:active { 
+    transform: translateY(4px); 
+    box-shadow: 0 2px 0 #000; 
 }
 
-/* Контейнеры для TON Connect кошелька */
+/* TON Connect - делаем аккуратнее */
 #shop-ton-wallet, #settings-ton-wallet { 
-    display: flex; 
-    justify-content: center; 
-    width: 100%; 
-    padding: 10px 0; 
-    min-height: 44px; 
-}
-
-/* Скрытие элементов */
-.hidden {
-    display: none !important;
+    margin: 15px 0;
+    transform: scale(1.1); /* Сделаем кнопку коннекта чуть заметнее */
 }

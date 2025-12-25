@@ -1,123 +1,144 @@
+/* Базовый экран комнаты */
 .screen {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     display: flex; flex-direction: column; align-items: center;
-    z-index: 50; text-align: center;
-    padding: 80px 20px 20px 20px;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    opacity: 0; pointer-events: none;
+    /* Уменьшаем z-index, чтобы нижняя панель (z-index: 2000) была ВСЕГДА сверху */
+    z-index: 50; 
+    text-align: center;
+    /* Увеличиваем нижний padding до 120px, чтобы контент не перекрывался кнопками */
+    padding: 80px 20px 120px 20px; 
+    overflow-y: auto; 
+    -webkit-overflow-scrolling: touch;
+    opacity: 0; 
+    pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
     transform: scale(0.95);
     background: rgba(26, 33, 46, 0.95);
     backdrop-filter: blur(10px);
 }
 
+/* Когда экран активен (удаляем .hidden) */
 .screen:not(.hidden) {
-    opacity: 1; pointer-events: auto;
-    transform: scale(1); z-index: 100;
+    opacity: 1; 
+    pointer-events: auto;
+    transform: scale(1); 
+    z-index: 100;
 }
 
-.hidden { display: none !important; }
-
-.screen h3 {
-    color: #f7d51d; font-size: 24px; margin: 0 0 20px 0;
-    text-transform: uppercase; letter-spacing: 2px;
-    text-shadow: 0 2px 0 rgba(0,0,0,0.5);
-}
-
+/* Кнопка "Назад" (если используешь её внутри комнат) */
 .btn-home {
-    position: absolute; top: 20px; left: 20px;
+    position: absolute; 
+    top: 20px; 
+    left: 20px;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white; padding: 6px 14px; border-radius: 12px;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    z-index: 1100; backdrop-filter: blur(5px);
+    color: white; 
+    padding: 8px 16px; 
+    border-radius: 12px;
+    font-size: 13px; 
+    font-weight: 700; 
+    cursor: pointer;
+    z-index: 1100; 
+    backdrop-filter: blur(5px);
 }
 
-/* SHOP */
-.shop-section { width: 100%; max-width: 400px; margin-bottom: 25px; }
-.shop-section h4 { text-align: left; color: #888; font-size: 12px; margin: 0 0 10px 5px; }
-.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+/* Заголовки комнат */
+.screen h3 {
+    color: #f7d51d; 
+    font-size: 28px; 
+    margin: 0 0 25px 0;
+    text-transform: uppercase; 
+    letter-spacing: 2px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* --- МАГАЗИН (SHOP) --- */
+.shop-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+    width: 100%;
+    max-width: 400px;
+}
+
 .shop-card.coin-pack {
-    background: rgba(255, 255, 255, 0.08); border-radius: 16px;
-    padding: 20px; display: flex; flex-direction: column;
-    align-items: center; border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.pack-icon { font-size: 40px; margin-bottom: 10px; }
-.pack-amount { font-size: 22px; font-weight: bold; margin-bottom: 15px; }
-.shop-item {
-    background: rgba(255, 255, 255, 0.08); margin-bottom: 10px;
-    padding: 12px 15px; border-radius: 12px; display: flex;
-    justify-content: space-between; align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08); 
+    border-radius: 16px;
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* LEADERBOARD & FRIENDS */
-#leaderboard-list, .friends-list, .inventory-items { width: 100%; max-width: 400px; }
+/* --- СПИСКИ (Лидерборд, Друзья, Инвентарь) --- */
+#leaderboard-list, .friends-list, .inventory-items { 
+    width: 100%; 
+    max-width: 400px; 
+}
+
 .leader-item, .friend-card, .inventory-card {
-    display: flex; align-items: center;
+    display: flex; 
+    align-items: center;
     background: rgba(255, 255, 255, 0.05);
-    margin-bottom: 8px; padding: 12px 15px; border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 10px; 
+    padding: 15px; 
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.leader-item.top-rank {
-    background: linear-gradient(90deg, rgba(247, 213, 29, 0.1) 0%, rgba(247, 213, 29, 0.0) 100%);
-    border-left: 3px solid #f7d51d;
-}
-.rank-col { width: 30px; font-size: 16px; font-weight: bold; }
-.name-col { flex-grow: 1; text-align: left; padding-left: 10px; font-weight: 500; }
-.score-col { color: #f7d51d; font-weight: bold; }
 
-/* SETTINGS & DAILY */
-.settings-options { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
-.settings-btn {
-    width: 100%; background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1); color: white;
-    padding: 15px; border-radius: 12px; display: flex; justify-content: space-between;
-}
-.daily-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 400px; }
-.daily-card {
-    background: rgba(255, 255, 255, 0.1); border-radius: 12px;
-    padding: 10px; display: flex; flex-direction: column; align-items: center; height: 100px;
-}
-.daily-card.current { border: 2px solid #f7d51d; background: rgba(247, 213, 29, 0.2); }
-/* Улучшения для карточек инвентаря */
+/* --- ИНВЕНТАРЬ (Особые стили) --- */
 .inventory-card {
     transition: transform 0.1s, background 0.2s;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important; /* перекрываем общие стили */
 }
 
 .inventory-card:active {
     transform: scale(0.98);
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.12);
 }
 
-.item-icon-wrapper {
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+.item-badge {
+    background: #f7d51d;
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 900;
+    font-size: 12px;
+    margin-left: auto;
 }
 
-.item-info p {
-    margin: 3px 0 0 0;
-    font-size: 11px;
-    color: #aaa;
-    line-height: 1.2;
+/* --- ДЕЙЛИ (DAILY) --- */
+.daily-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px; 
+    width: 100%; 
+    max-width: 400px; 
 }
 
-/* Статус "Пусто/В магазин" */
-.inventory-card[style*="opacity: 0.6"] {
-    filter: grayscale(0.6);
-    border-style: dashed !important;
+.daily-card {
+    background: rgba(255, 255, 255, 0.1); 
+    border-radius: 12px;
+    padding: 10px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    height: 110px;
 }
 
-/* Кнопки внутри карточек */
-.secondary-btn.go-to-shop-btn {
-    background: #444;
-    box-shadow: 0 3px 0 #222;
-    color: #fff;
-    transition: all 0.1s;
+.daily-card.current { 
+    border: 2px solid #f7d51d; 
+    background: rgba(247, 213, 29, 0.2); 
+    box-shadow: 0 0 15px rgba(247, 213, 29, 0.3);
 }
 
-.secondary-btn.go-to-shop-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 0 #222;
+/* Скроллбар для аккуратности */
+.screen::-webkit-scrollbar {
+    width: 4px;
+}
+.screen::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
 }
