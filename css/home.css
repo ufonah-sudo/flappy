@@ -7,14 +7,13 @@
     align-items: center;
     padding-top: 0;
     overflow: hidden;
-    /* Убираем темный фон комнат для главного экрана, чтобы видеть небо */
     background: none !important; 
 }
 
 /* Кнопки ТОП и DAILY сверху */
 .side-buttons {
     position: absolute;
-    top: env(safe-area-inset-top, 20px); /* Учитываем челку iPhone */
+    top: env(safe-area-inset-top, 20px);
     left: 0;
     width: 100%;
     display: flex;
@@ -34,12 +33,13 @@
 }
 .icon-btn:active { transform: scale(0.9); }
 
-/* ЛОГОТИП (500x312) */
+/* ЛОГОТИП (500x312) — ИСПРАВЛЕН ПУТЬ */
 .game-title {
     width: 80%;
-    max-width: 320px; /* Оптимально для мобильных */
+    max-width: 320px; 
     aspect-ratio: 500 / 312;
-    background: url('assets/flappyname.png') no-repeat center center;
+    /* Выходим из css/, заходим во frontend/assets/ */
+    background: url('../frontend/assets/flappyname.png') no-repeat center center;
     background-size: contain;
     text-indent: -9999px;
     margin: 0 auto 20px auto;
@@ -51,11 +51,12 @@
     50% { transform: translateY(-15px); }
 }
 
-/* КНОПКА PLAY (knopka.png) */
+/* КНОПКА PLAY (knopka.png) — ИСПРАВЛЕН ПУТЬ */
 #btn-start {
     width: 160px; 
     height: 160px;
-    background: url('assets/knopka.png') no-repeat center center;
+    /* Выходим из css/, заходим во frontend/assets/ */
+    background: url('../frontend/assets/knopka.png') no-repeat center center;
     background-size: contain;
     border: none; 
     cursor: pointer; 
@@ -66,7 +67,6 @@
 }
 #btn-start:active { transform: scale(0.92); }
 
-/* Текст под кнопкой */
 .promo-text {
     color: white;
     font-weight: bold;
@@ -77,8 +77,6 @@
     border-radius: 20px;
 }
 
-/* !!! УДАЛЯЕМ СТАРУЮ ПАНЕЛЬ ИЗ ЭТОГО ФАЙЛА !!! */
-/* Она теперь глобальная и находится в style.css */
 .menu-buttons-panel {
     display: none !important; 
 }

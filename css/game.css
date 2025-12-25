@@ -5,7 +5,8 @@
     display: flex;
     justify-content: center; 
     padding-top: 0; 
-    overflow: hidden; 
+    overflow: hidden;
+    z-index: 10; /* Чуть ниже, чем основные меню */
 }
 
 /* Холст отрисовки */
@@ -13,17 +14,19 @@
     display: block; 
     width: 100%; 
     height: 100%; 
+    touch-action: none; /* Предотвращаем скролл при тапах в игре */
 }
 
 /* Текущий счет во время полета */
 #score-overlay {
     position: absolute; 
-    top: 12%; /* Чуть выше для лучшей видимости */
+    top: 12%; 
     width: 100%; 
     text-align: center;
-    font-size: 80px; /* Сделаем чуть крупнее */
+    font-size: 80px; 
     font-weight: 900; 
     color: white;
+    /* Улучшенная обводка для читаемости на любом фоне */
     text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; 
     z-index: 20; 
     pointer-events: none;
@@ -37,19 +40,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    /* Убираем огромный отступ, так как панель кнопок скрыта на этом экране */
-    padding: 20px; 
+    padding: 20px;
+    z-index: 100; /* Поверх игры */
 }
 
 .status-title { 
-    font-size: 48px; /* Увеличил размер */
+    font-size: 48px; 
     color: #f7941d; 
     text-shadow: 4px 4px 0 #000; 
     margin-bottom: 30px; 
     text-transform: uppercase;
 }
 
-/* Табличка с результатом в стиле оригинальной игры */
+/* Табличка с результатом */
 .result-box {
     background: #ded895; 
     border: 4px solid #543847;
@@ -78,14 +81,14 @@
     margin: 10px 0;
 }
 
-/* Кнопки */
+/* Кнопки управления */
 .primary-btn, .secondary-btn {
     width: 100%; 
     max-width: 260px;
     padding: 18px; 
     font-size: 18px; 
     font-weight: 800; 
-    border-radius: 8px; /* Квадратный стиль кнопок Flappy */
+    border-radius: 8px; 
     border: 2px solid #000;
     cursor: pointer; 
     text-transform: uppercase;
@@ -111,8 +114,8 @@
     box-shadow: 0 2px 0 #000; 
 }
 
-/* TON Connect - делаем аккуратнее */
+/* TON Connect кнопки */
 #shop-ton-wallet, #settings-ton-wallet { 
     margin: 15px 0;
-    transform: scale(1.1); /* Сделаем кнопку коннекта чуть заметнее */
+    transform: scale(1.1);
 }

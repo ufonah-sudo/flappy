@@ -1,5 +1,5 @@
 /* Главный диспетчер стилей */
-@import url('../css/base.css');
-@import url('../css/home.css');
-@import url('../css/rooms.css');
-@import url('../css/game.css');
+@import url('css/base.css');
+@import url('css/home.css');
+@import url('css/rooms.css');
+@import url('css/game.css');

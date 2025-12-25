@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Flappy Bird TON</title>
+    
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
 <body>
     <div id="app">
         
-        <div id="scene-home" class="screen">
+        <div id="scene-home" class="screen hidden">
             <div class="side-buttons">
-                <img src="assets/top.png" id="btn-top-icon" class="icon-btn" alt="Top">
-                <img src="assets/daily.png" id="btn-daily-icon" class="icon-btn" alt="Daily">
+                <img src="frontend/assets/top.png" id="btn-top-icon" class="icon-btn" alt="Top">
+                <img src="frontend/assets/daily.png" id="btn-daily-icon" class="icon-btn" alt="Daily">
             </div>
             <div class="game-title">FLAPPY TON</div>
             <button id="btn-start">PLAY</button>
@@ -24,6 +26,19 @@
         <div id="game-container" class="screen hidden">
             <canvas id="game-canvas"></canvas>
             <div id="score-overlay">0</div>
+        </div>
+
+        <div id="game-over" class="screen hidden">
+            <h2 class="status-title">GAME OVER</h2>
+            <div class="result-box">
+                <p>Your Score</p>
+                <span id="final-score">0</span>
+                <p>Lives: <span id="revive-lives-count">0</span></p>
+            </div>
+            <div id="revive-container">
+                <button id="btn-revive" class="primary-btn">REVIVE (1 ❤️)</button>
+            </div>
+            <button id="btn-restart" class="secondary-btn">MAIN MENU</button>
         </div>
 
         <div id="scene-shop" class="screen hidden">
@@ -38,19 +53,6 @@
                 <span id="coin-balance">💰 0</span>
             </div>
             <div class="room-content inventory-items" id="inventory-content"></div>
-        </div>
-
-        <div id="game-over" class="screen hidden">
-            <h2 class="status-title">GAME OVER</h2>
-            <div class="result-box">
-                <p>Your Score</p>
-                <span id="final-score">0</span>
-                <p>Lives: <span id="revive-lives-count">0</span></p>
-            </div>
-            <div id="revive-container">
-                <button id="btn-revive" class="primary-btn">REVIVE (1 ❤️)</button>
-            </div>
-            <button id="btn-restart" class="secondary-btn">MAIN MENU</button>
         </div>
 
         <div id="scene-leaderboard" class="screen hidden">
