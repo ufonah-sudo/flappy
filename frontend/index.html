@@ -13,13 +13,23 @@
 <body>
     <div id="app">
         
-        <div id="scene-home" class="screen hidden">
+        <div id="header">
+            <div class="coins-display">
+                <span class="coin-icon">🪙</span>
+                <span id="header-coins">0</span>
+            </div>
+        </div>
+
+        <div id="scene-home" class="screen">
             <div class="side-buttons">
                 <img src="frontend/assets/top.png" id="btn-top-icon" class="icon-btn" alt="Top">
                 <img src="frontend/assets/daily.png" id="btn-daily-icon" class="icon-btn" alt="Daily">
             </div>
+
             <div class="game-title">FLAPPY TON</div>
+
             <button id="btn-start">PLAY</button>
+
             <p class="promo-text">Invite friends & get +5 Coins</p>
         </div>
 
@@ -28,36 +38,37 @@
             <div id="score-overlay">0</div>
         </div>
 
-        <div id="game-over" class="screen hidden">
-            <h2 class="status-title">GAME OVER</h2>
-            <div class="result-box">
-                <p>Your Score</p>
-                <span id="final-score">0</span>
-                <p>Lives: <span id="revive-lives-count">0</span></p>
-            </div>
-            <div id="revive-container">
-                <button id="btn-revive" class="primary-btn">REVIVE (1 ❤️)</button>
-            </div>
-            <button id="btn-restart" class="secondary-btn">MAIN MENU</button>
-        </div>
-
         <div id="scene-shop" class="screen hidden">
             <h3>COIN SHOP</h3>
             <div id="shop-ton-wallet"></div> 
             <div class="room-content shop-grid" id="shop-content"></div>
         </div>
 
-        <div id="scene-inventory" class="screen hidden">
-            <h3>INVENTORY</h3>
-            <div class="coins-display" style="margin-bottom: 20px; pointer-events: auto;">
-                <span id="coin-balance">💰 0</span>
+        <div id="scene-settings" class="screen hidden">
+            <h3>SETTINGS</h3>
+            <div id="settings-ton-wallet"></div>
+            <div class="room-content settings-options" id="settings-content"></div>
+        </div>
+
+        <div id="game-over" class="screen hidden">
+            <h2 class="status-title">GAME OVER</h2>
+            <div class="result-box">
+                <p>Your Score</p>
+                <span id="final-score">0</span>
+                <p>Coins: <span id="revive-balance">0</span></p>
             </div>
-            <div class="room-content inventory-items" id="inventory-content"></div>
+            <div id="revive-container">
+                <button id="btn-revive" class="primary-btn">REVIVE (1 Coin)</button>
+            </div>
+            <button id="btn-restart" class="secondary-btn">RESTART</button>
+            <button id="btn-share" class="secondary-btn" style="margin-top: 10px;">SHARE RESULT</button>
         </div>
 
         <div id="scene-leaderboard" class="screen hidden">
             <h3>TOP PLAYERS</h3>
-            <div class="room-content" id="leaderboard-list"></div>
+            <div class="room-content" id="leaderboard-list">
+                <p class="loading-text">Loading...</p>
+            </div>
         </div>
 
         <div id="scene-friends" class="screen hidden">
@@ -66,15 +77,14 @@
             <button class="primary-btn" id="btn-invite-real" style="margin-top: 20px;">INVITE FRIEND</button>
         </div>
 
+        <div id="scene-inventory" class="screen hidden">
+            <h3>INVENTORY</h3>
+            <div class="room-content inventory-items" id="inventory-content"></div>
+        </div>
+
         <div id="scene-daily" class="screen hidden">
             <h3>DAILY REWARD</h3>
             <div class="room-content daily-grid" id="daily-content"></div>
-        </div>
-
-        <div id="scene-settings" class="screen hidden">
-            <h3>SETTINGS</h3>
-            <div id="settings-ton-wallet"></div>
-            <div class="room-content settings-options" id="settings-content"></div>
         </div>
 
         <div class="menu-buttons-panel">
