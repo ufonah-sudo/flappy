@@ -17,8 +17,8 @@ body, html {
     position: fixed; 
     top: 0;
     left: 0;
-    /* Исправленный путь к фону */
-    background: #4ec0ca url('../../../frontend/assets/fon.png') no-repeat center center;
+    /* Исправленный путь: выходим из css/ и идем в frontend/assets/ */
+    background: #4ec0ca url('../frontend/assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
@@ -75,16 +75,16 @@ body, html {
     width: 95%;
     max-width: 450px;
     height: 85px; 
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7) !important; /* Сделал чуть темнее для теста */
     backdrop-filter: blur(15px);
     border-radius: 25px;
-    display: flex;
+    display: flex !important; /* Принудительно показываем */
     justify-content: space-around;
     align-items: center;
     z-index: 9999;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
-    pointer-events: auto !important; /* Чтобы кнопки нажимались */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    pointer-events: auto !important;
 }
 
 .nav-btn {
@@ -97,6 +97,7 @@ body, html {
     border: none;
     cursor: pointer;
     transition: transform 0.1s ease;
+    display: block !important;
 }
 
 /* Центральная кнопка Home */
@@ -106,13 +107,16 @@ body, html {
     transform: translateY(-5px); 
 }
 
-/* ПУТИ ИСПРАВЛЕНЫ ПОД ТВОЙ СКРИНШОТ */
-/* Выходим из папки css (../) и идем в frontend/assets/ */
+/* --- ПУТИ К КАРТИНКАМ (Выход из css/ -> frontend/assets/) --- */
 #btn-shop { background-image: url('../frontend/assets/shop.png') !important; }
 #btn-inventory { background-image: url('../frontend/assets/invent.png') !important; }
 #btn-home-panel { background-image: url('../frontend/assets/home.png') !important; }
 #btn-friends { background-image: url('../frontend/assets/friends.png') !important; }
 #btn-settings { background-image: url('../frontend/assets/settings.png') !important; }
+
+/* Кнопки главного экрана */
+#btn-daily-icon { content: url('../frontend/assets/daily.png'); }
+#btn-top-icon { content: url('../frontend/assets/top.png'); }
 
 .nav-btn:active {
     transform: scale(0.85);
