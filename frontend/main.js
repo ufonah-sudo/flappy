@@ -30,7 +30,7 @@ const scenes = {
     gameOver: document.getElementById('game-over')
 };
 
-// Исправленная функция showRoom
+// Функция переключения экранов
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
@@ -42,17 +42,20 @@ function showRoom(roomName) {
     const target = scenes[roomName];
     if (target) {
         target.classList.remove('hidden');
-        
-        // Логика перемещения кнопки кошелька TON
+
+        // ПЕРЕНОС КОШЕЛЬКА (чтобы кнопка появилась в нужной комнате)
         if (window.wallet && window.wallet.tonConnectUI) {
-            if (roomName === 'shop') {
-                window.wallet.tonConnectUI.uiOptions = { buttonRootId: 'shop-ton-wallet' };
-            } else if (roomName === 'settings') {
-                window.wallet.tonConnectUI.uiOptions = { buttonRootId: 'settings-ton-wallet' };
+            let walletContainerId = null;
+            if (roomName === 'shop') walletContainerId = 'shop-ton-wallet';
+            if (roomName === 'settings') walletContainerId = 'settings-ton-wallet';
+
+            if (walletContainerId) {
+                // Принудительно отрисовываем кнопку в контейнере комнаты
+                window.wallet.tonConnectUI.setConnectButtonRoot(`#${walletContainerId}`);
             }
         }
 
-        // Остановка игрового цикла при уходе из игры
+        // Остановка игры при уходе с экрана игры
         if (roomName !== 'game' && window.game) {
             window.game.isRunning = false;
         }
@@ -89,8 +92,8 @@ async function init() {
     
     if (tg) {
         tg.ready();
-        tg.expand(); // Растягиваем на весь экран
-        tg.setHeaderColor('#4ec0ca'); // Убираем белую полосу (цвет неба)
+        tg.expand(); 
+        tg.setHeaderColor('#4ec0ca'); 
         tg.setBackgroundColor('#4ec0ca');
         tg.enableClosingConfirmation();
     }
@@ -98,7 +101,7 @@ async function init() {
     // 1. Инициализация Кошелька
     try {
         window.wallet = new WalletManager((isConnected) => {
-            console.log("[TON] Кошелек:", isConnected ? "OK" : "DISCONNECTED");
+            console.log("[TON] Статус кошелька:", isConnected ? "Подключен" : "Отключен");
         });
     } catch (e) {
         console.error("[Init] WalletManager error:", e);
@@ -110,7 +113,7 @@ async function init() {
         window.game = new Game(canvas, handleGameOver);
     }
 
-    // 3. Настройка кликов (исправлены ID под твой index.html)
+    // 3. Настройка кликов по кнопкам
     const setupClick = (id, room) => {
         const el = document.getElementById(id);
         if (el) {
@@ -123,13 +126,12 @@ async function init() {
 
     setupClick('btn-start', 'game');
     setupClick('btn-shop', 'shop');
-    setupClick('btn-leaderboard-panel', 'leaderboard'); // ID из твоего индекса
+    setupClick('btn-leaderboard-panel', 'leaderboard');
     setupClick('btn-friends', 'friends');
     setupClick('btn-inventory', 'inventory');
     setupClick('btn-settings', 'settings');
-    setupClick('btn-home-panel', 'home'); // Кнопка HOME на панели
+    setupClick('btn-home-panel', 'home'); 
     
-    // Иконки сверху (Top и Daily)
     setupClick('btn-top-icon', 'leaderboard');
     setupClick('btn-daily-icon', 'daily');
 
@@ -163,7 +165,7 @@ async function init() {
         };
     }
 
-    // 4. Авторизация
+    // 4. Авторизация игрока
     try {
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 

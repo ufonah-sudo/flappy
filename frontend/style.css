@@ -6,27 +6,34 @@
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     outline: none;
-    max-width: 100vw; /* Защита от вылетания элементов за край */
+    max-width: 100vw;
 }
 
 body, html {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
-    overflow: hidden; /* Убираем ползунки */
-    position: fixed; /* Фиксируем экран для мобилок */
+    /* Исправленный Fullscreen блок */
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow: hidden;
+    position: fixed; 
+    top: 0;
+    left: 0;
+    /* Конец блока */
     background: #4ec0ca url('assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
-    touch-action: none; /* Отключаем лишние жесты браузера */
+    touch-action: none;
 }
 
 #app {
     position: relative;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
 }
 
@@ -82,7 +89,7 @@ body, html {
     z-index: 50;
     text-align: center;
     padding: 80px 20px 20px 20px;
-    overflow-y: auto; /* Скролл только внутри комнат */
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     
     opacity: 0;
@@ -122,7 +129,6 @@ body, html {
     text-shadow: 0 2px 0 rgba(0,0,0,0.5);
 }
 
-/* Кнопка НАЗАД */
 .btn-home {
     position: absolute;
     top: 20px;
@@ -165,7 +171,6 @@ body, html {
 
 .icon-btn:active { transform: scale(0.9); }
 
-/* Логотип Flappy Bird (Твой 500x312) */
 .game-title {
     width: 85%;
     max-width: 500px;
@@ -189,7 +194,6 @@ body, html {
     height: auto;
 }
 
-/* Кнопка PLAY */
 #btn-start {
     width: 140px;
     height: 140px;
@@ -205,7 +209,6 @@ body, html {
 
 #btn-start:active { transform: scale(0.92); }
 
-/* Нижняя панель кнопок (Твоя 800x160) */
 .menu-buttons-panel {
     display: flex;
     flex-direction: row; 
@@ -371,7 +374,7 @@ body, html {
 .daily-card:last-child { grid-column: span 3; height: 80px; flex-direction: row; gap: 15px; }
 
 /* =========================================
-   КНОПКИ ОБЩЕГО НАЗНАЧЕНИЯ
+   11. КНОПКИ И КОШЕЛЕК
    ========================================= */
 .primary-btn {
     background: linear-gradient(to bottom, #f7941d, #d67c10);
@@ -385,4 +388,17 @@ body, html {
     background: white; width: 100%; border: none; padding: 14px;
     color: #333; font-size: 16px; font-weight: 800; border-radius: 12px;
     box-shadow: 0 4px 0 #ccc; cursor: pointer;
+}
+
+#shop-ton-wallet, #settings-ton-wallet {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 0;
+    min-height: 44px; /* Чтобы кнопка не схлопывалась */
+}
+
+/* Скрываем хедер в самой игре */
+#game-container:not(.hidden) ~ #header {
+    display: none;
 }
