@@ -1,6 +1,7 @@
-// Убрали импорт из main.js для предотвращения Circular Dependency
+import * as api from '../../api.js';
+
 export function initInventory() {
-    const state = window.state; // Используем глобальный state
+    const state = window.state; 
     const container = document.querySelector('#scene-inventory .inventory-items');
     
     if (!container) {
@@ -8,8 +9,7 @@ export function initInventory() {
         return;
     }
 
-    // Список предметов. 
-    // В будущем: const items = state.user.inventory;
+    // Список предметов (заглушка, пока не подтянем из БД)
     const items = [
         { 
             id: 'magnet', 
@@ -35,28 +35,30 @@ export function initInventory() {
     }
 
     container.innerHTML = items.map(item => `
-        <div class="inventory-card ${item.status}">
+        <div class="inventory-card ${item.status === 'locked' ? 'locked' : ''}">
             <div class="item-icon-wrapper">
                 <span class="item-icon">${item.icon}</span>
-                ${item.status === 'locked' ? '<div class="lock-overlay">🔒</div>' : ''}
+                ${item.status === 'locked' ? '<div class="lock-overlay" style="position:absolute; font-size:12px;">🔒</div>' : ''}
             </div>
-            <div class="item-info">
-                <div class="item-header">
-                    <span class="item-name">${item.name}</span>
-                    <span class="item-level">${item.status === 'locked' ? '' : 'Ур. ' + item.level}</span>
+            <div class="item-info" style="flex-grow: 1; text-align: left; padding-left: 10px;">
+                <div class="item-header" style="display: flex; justify-content: space-between;">
+                    <span class="item-name" style="font-weight: bold;">${item.name}</span>
+                    <span class="item-level" style="color: #f7d51d; font-size: 12px;">
+                        ${item.status === 'locked' ? '' : 'Ур. ' + item.level}
+                    </span>
                 </div>
-                <p class="item-desc">${item.description}</p>
+                <p class="item-desc" style="margin: 5px 0 0 0; font-size: 11px; color: #ccc;">${item.description}</p>
             </div>
             <div class="item-actions">
                 ${item.status === 'active' 
-                    ? '<button class="use-btn" disabled>Включено</button>' 
-                    : '<button class="unlock-btn" onclick="showRoom(\'shop\')">В магазин</button>'}
+                    ? '<button class="primary-btn" disabled style="padding: 5px 10px; font-size: 10px; opacity: 0.6;">АКТИВНО</button>' 
+                    : '<button class="secondary-btn go-to-shop-btn" style="padding: 5px 10px; font-size: 10px; margin:0;">В МАГАЗИН</button>'}
             </div>
         </div>
     `).join('');
 
-    // Добавляем обработку кликов (опционально)
-    container.querySelectorAll('.unlock-btn').forEach(btn => {
+    // Обработка перехода в магазин
+    container.querySelectorAll('.go-to-shop-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.preventDefault();
             if (window.showRoom) window.showRoom('shop');

@@ -1,3 +1,6 @@
+// Импорт API (путь исправлен на два уровня вверх)
+import * as api from '../../api.js';
+
 export function initSettings() {
     const container = document.querySelector('#scene-settings .settings-options');
     if (!container) {
@@ -36,12 +39,13 @@ export function initSettings() {
             </button>
         </div>
         
-        <div class="version-info">Версия 1.0.2</div>
+        <div class="version-info" style="margin-top: 20px; font-size: 10px; opacity: 0.5;">Версия 1.0.2</div>
     `;
 
     // 1. Инициализация кнопки TON Connect
-    // Мы используем уже созданный в main.js экземпляр WalletManager
-    if (window.wallet) {
+    const walletContainer = document.getElementById('settings-ton-button');
+    if (window.wallet && walletContainer) {
+        walletContainer.innerHTML = ''; // Очищаем перед рендером
         window.wallet.renderButton('settings-ton-button');
     }
 
@@ -52,7 +56,9 @@ export function initSettings() {
             settings.sound = !settings.sound;
             localStorage.setItem('sound', settings.sound ? 'on' : 'off');
             soundBtn.querySelector('span').innerText = settings.sound ? 'ВКЛ' : 'ВЫКЛ';
-            if (window.Telegram?.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
         };
     }
 
@@ -63,16 +69,24 @@ export function initSettings() {
             settings.music = !settings.music;
             localStorage.setItem('music', settings.music ? 'on' : 'off');
             musicBtn.querySelector('span').innerText = settings.music ? 'ВКЛ' : 'ВЫКЛ';
-            if (window.Telegram?.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
         };
     }
 
-    // 4. Кнопки ссылок (через Telegram API)
-    document.getElementById('btn-channel').onclick = () => {
-        window.Telegram.WebApp.openTelegramLink('https://t.me/your_channel');
+    // 4. Кнопки ссылок
+    const openLink = (url) => {
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.openTelegramLink(url);
+        } else {
+            window.open(url, '_blank');
+        }
     };
 
-    document.getElementById('btn-support').onclick = () => {
-        window.Telegram.WebApp.openTelegramLink('https://t.me/your_support');
-    };
+    const chanBtn = document.getElementById('btn-channel');
+    if (chanBtn) chanBtn.onclick = () => openLink('https://t.me/ваша_ссылка');
+
+    const suppBtn = document.getElementById('btn-support');
+    if (suppBtn) suppBtn.onclick = () => openLink('https://t.me/ваша_поддержка');
 }

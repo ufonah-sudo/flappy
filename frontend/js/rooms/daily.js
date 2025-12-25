@@ -1,4 +1,4 @@
-import * as api from '../api.js';
+import * as api from '../../api.js'; 
 
 export function initDaily() {
     // Используем window.state, так как мы привязали его в main.js

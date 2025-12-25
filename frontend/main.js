@@ -2,7 +2,7 @@ import * as api from './api.js';
 import { Game } from './game.js';
 import { WalletManager } from './wallet.js';
 
-// Импортируем инициализаторы комнат
+// Импорты комнат
 import { initShop } from './js/rooms/shop.js';
 import { initInventory } from './js/rooms/inventory.js';
 import { initFriends } from './js/rooms/friends.js';
@@ -18,7 +18,6 @@ const state = {
     coins: 0 
 };
 
-// 1. Диспетчер сцен (DOM элементы)
 const scenes = {
     home: document.getElementById('scene-home'),
     game: document.getElementById('game-container'),
@@ -31,13 +30,9 @@ const scenes = {
     gameOver: document.getElementById('game-over')
 };
 
-/**
- * Переключение между экранами
- */
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
-    // Скрываем все сцены
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
@@ -46,7 +41,7 @@ function showRoom(roomName) {
     if (target) {
         target.classList.remove('hidden');
         
-        // Остановка игры при уходе с экрана
+        // Остановка игрового цикла при уходе из игры
         if (roomName !== 'game' && window.game) {
             window.game.isRunning = false;
         }
@@ -70,35 +65,29 @@ function showRoom(roomName) {
                     break;
             }
         } catch (err) {
-            console.error(`[Error] Ошибка инициализации комнаты ${roomName}:`, err);
+            console.error(`[Error] Ошибка комнаты ${roomName}:`, err);
         }
-    } else {
-        console.warn(`[Navigation] Сцена "${roomName}" не найдена в DOM!`);
     }
 }
 
 window.showRoom = showRoom;
 
-/**
- * Инициализация
- */
 async function init() {
-    console.log("[Init] Запуск приложения...");
+    console.log("[Init] Приложение запускается...");
     
     if (tg) {
         tg.ready();
         tg.expand();
-        // Включаем подтверждение закрытия, чтобы пользователь случайно не вышел
         tg.enableClosingConfirmation();
     }
 
     // 1. Кошелек
     try {
         window.wallet = new WalletManager((isConnected) => {
-            console.log("[TON] Статус кошелька:", isConnected ? "Подключен" : "Отключен");
+            console.log("[TON] Кошелек:", isConnected ? "OK" : "DISCONNECTED");
         });
     } catch (e) {
-        console.error("[Init] WalletManager failed:", e);
+        console.error("[Init] WalletManager error:", e);
     }
     
     // 2. Игра
@@ -107,18 +96,22 @@ async function init() {
         window.game = new Game(canvas, handleGameOver);
     }
 
-    // 3. Обработчики кнопок
+    // Слушатель для обновления счета во время игры
+    window.addEventListener('scoreUpdate', (e) => {
+        // Если хочешь, чтобы монеты прибавлялись прямо в полете:
+        // state.coins++; 
+        // updateGlobalUI();
+    });
+
+    // 3. Настройка кнопок
     const setupClick = (id, room) => {
         const el = document.getElementById(id);
         if (el) {
-            console.log(`[Init] Кнопка ${id} найдена, вешаю клик.`);
             el.onclick = (e) => {
                 e.preventDefault();
-                e.stopPropagation(); // Чтобы клик не улетел в игру
+                e.stopPropagation();
                 showRoom(room);
             };
-        } else {
-            console.warn(`[Init] Кнопка ${id} НЕ НАЙДЕНА в HTML!`);
         }
     };
 
@@ -147,14 +140,13 @@ async function init() {
         btnRevive.onclick = async () => {
             try {
                 const res = await api.spendCoin(); 
-                if (res && !res.error) {
-                    state.coins = res.newBalance !== undefined ? res.newBalance : res;
+                if (res !== null && !res.error) {
+                    state.coins = res;
                     updateGlobalUI();
                     showRoom('game');
                     window.game?.revive();
                 } else {
-                    if (tg) tg.showAlert("Недостаточно монет!");
-                    else alert("Недостаточно монет!");
+                    tg?.showAlert("Недостаточно монет для возрождения!");
                 }
             } catch (e) {
                 console.error("Revive error:", e);
@@ -164,17 +156,16 @@ async function init() {
 
     // 4. Авторизация
     try {
-        // Безопасное получение start_param
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 
         
         if (authData && authData.user) {
             state.user = authData.user;
-            state.coins = authData.user.coins;
+            state.coins = authData.user.coins || 0;
             updateGlobalUI();
         }
     } catch (e) {
-        console.error("[Auth] Ошибка авторизации:", e);
+        console.error("[Auth] Fail:", e);
     }
 }
 
@@ -186,23 +177,22 @@ function handleGameOver(score, reviveUsed) {
     
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
+        // Показываем кнопку возрождения только если она еще не была использована в этом раунде
         btnRevive.style.display = reviveUsed ? 'none' : 'block';
     }
     
-    api.saveScore(score).catch(e => console.error("Save score error:", e));
+    api.saveScore(score).catch(e => console.error("Score save failed:", e));
 }
 
 function updateGlobalUI() {
-    const balanceElements = ['coin-balance', 'revive-balance', 'header-coins'];
-    balanceElements.forEach(id => {
+    const balanceIds = ['coin-balance', 'revive-balance', 'header-coins'];
+    balanceIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            // Анимация числа, если нужно, или просто текст
-            el.innerText = state.coins;
-        }
+        if (el) el.innerText = state.coins;
     });
 }
 
+// Экспортируем функции в window для доступа из других модулей (shop.js и др.)
 window.updateGlobalUI = updateGlobalUI;
 window.state = state;
 

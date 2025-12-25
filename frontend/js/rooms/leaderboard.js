@@ -1,7 +1,7 @@
-import * as api from '../api.js';
+// ИСПРАВЛЕНО: Поднимаемся на два уровня вверх к api.js
+import * as api from '../../api.js';
 
 export async function initLeaderboard() {
-    // Используем более точный селектор внутри конкретной сцены
     const listContainer = document.querySelector('#scene-leaderboard .leaderboard-list') || document.getElementById('leaderboard-list');
     
     if (!listContainer) {
@@ -9,9 +9,8 @@ export async function initLeaderboard() {
         return;
     }
 
-    // Состояние загрузки
     listContainer.innerHTML = `
-        <div class="loading-container">
+        <div class="loading-container" style="text-align:center; padding: 20px;">
             <span class="spinner">⏳</span>
             <p class="loading-text">Загрузка чемпионов...</p>
         </div>
@@ -22,14 +21,13 @@ export async function initLeaderboard() {
 
         if (!topPlayers || topPlayers.length === 0) {
             listContainer.innerHTML = `
-                <div class="empty-state">
+                <div class="empty-state" style="text-align:center; padding: 20px;">
                     <p class="empty-text">Список пуст. Стань первым!</p>
                 </div>
             `;
             return;
         }
 
-        // Берем текущего пользователя из глобального стейта для подсветки
         const currentUserId = window.state?.user?.id;
 
         listContainer.innerHTML = topPlayers.map((player, index) => {
@@ -60,10 +58,16 @@ export async function initLeaderboard() {
     } catch (e) {
         console.error("Leaderboard loading error:", e);
         listContainer.innerHTML = `
-            <div class="error-container">
+            <div class="error-container" style="text-align:center; padding: 20px;">
                 <p class="error-text">Не удалось загрузить топ</p>
-                <button onclick="initLeaderboard()" class="retry-btn">Обновить</button>
+                <button id="retry-leaderboard" class="secondary-btn">Обновить</button>
             </div>
         `;
+        
+        const retryBtn = document.getElementById('retry-leaderboard');
+        if (retryBtn) retryBtn.onclick = () => initLeaderboard();
     }
 }
+
+// Делаем функцию доступной глобально на всякий случай
+window.initLeaderboard = initLeaderboard;
