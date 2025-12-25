@@ -81,3 +81,43 @@
     padding: 10px; display: flex; flex-direction: column; align-items: center; height: 100px;
 }
 .daily-card.current { border: 2px solid #f7d51d; background: rgba(247, 213, 29, 0.2); }
+/* Улучшения для карточек инвентаря */
+.inventory-card {
+    transition: transform 0.1s, background 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important; /* перекрываем общие стили */
+}
+
+.inventory-card:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.item-icon-wrapper {
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+}
+
+.item-info p {
+    margin: 3px 0 0 0;
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.2;
+}
+
+/* Статус "Пусто/В магазин" */
+.inventory-card[style*="opacity: 0.6"] {
+    filter: grayscale(0.6);
+    border-style: dashed !important;
+}
+
+/* Кнопки внутри карточек */
+.secondary-btn.go-to-shop-btn {
+    background: #444;
+    box-shadow: 0 3px 0 #222;
+    color: #fff;
+    transition: all 0.1s;
+}
+
+.secondary-btn.go-to-shop-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #222;
+}

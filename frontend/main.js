@@ -12,10 +12,19 @@ import { initSettings } from './js/rooms/settings.js';
 
 const tg = window.Telegram?.WebApp;
 
-// Глобальное состояние приложения
+// 1. Глобальное состояние приложения (Добавлены жизни и кристаллы)
 const state = { 
     user: null, 
-    coins: 0 
+    coins: 100, 
+    lives: 5, // Это наше "Сердечко"
+    crystals: 1,
+    // Новые способности
+    powerups: {
+        shield: 0,
+        gap: 0,
+        magnet: 0,
+        ghost: 0
+    }
 };
 
 // Ссылки на экраны (Scenes)
@@ -33,12 +42,11 @@ const scenes = {
 
 /**
  * Основная функция навигации
- * @param {string} roomName - ключ из объекта scenes
  */
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
-    // 1. Скрываем абсолютно все экраны
+    // Скрываем все экраны
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
@@ -49,10 +57,9 @@ function showRoom(roomName) {
         return;
     }
 
-    // 2. Показываем целевой экран
     target.classList.remove('hidden');
 
-    // 3. Логика для TON Connect (перемещение кнопки кошелька)
+    // Логика для TON Connect
     if (window.wallet && window.wallet.tonConnectUI) {
         let walletContainerSelector = null;
         if (roomName === 'shop') walletContainerSelector = '#shop-ton-wallet';
@@ -63,17 +70,17 @@ function showRoom(roomName) {
         }
     }
 
-    // 4. Управление состоянием игры
+    // Управление состоянием игры
     if (window.game) {
         if (roomName === 'game') {
-            window.game.resize(); // Адаптация под размер экрана
-            window.game.start();  // Запуск цикла игры
+            window.game.resize();
+            window.game.start(); // Вход всегда бесплатный
         } else {
-            window.game.isRunning = false; // Стоп, если ушли с экрана игры
+            window.game.isRunning = false;
         }
     }
 
-    // 5. Инициализация специфической логики комнаты
+    // Инициализация специфической логики комнаты
     try {
         switch(roomName) {
             case 'shop':        initShop(); break;
@@ -89,7 +96,6 @@ function showRoom(roomName) {
     }
 }
 
-// Делаем доступным для inline onclick в HTML (если нужно)
 window.showRoom = showRoom;
 
 /**
@@ -120,45 +126,39 @@ async function init() {
         window.game = new Game(canvas, handleGameOver);
     }
 
-    // 3. Привязка событий клика (Учитывая твою панель 800x160)
+    // 3. Привязка событий клика
     const bindClick = (id, room) => {
         const el = document.getElementById(id);
         if (el) el.onclick = (e) => { e.preventDefault(); showRoom(room); };
     };
 
-    // Кнопки нижней панели
     bindClick('btn-shop', 'shop');
     bindClick('btn-inventory', 'inventory');
     bindClick('btn-home-panel', 'home'); 
     bindClick('btn-friends', 'friends');
     bindClick('btn-settings', 'settings');
-
-    // Кнопки на главном экране (иконки ТОП и ДЕЙЛИ)
     bindClick('btn-start', 'game');
     bindClick('btn-top-icon', 'leaderboard');
     bindClick('btn-daily-icon', 'daily');
 
-    // Все кнопки "Назад" ( .btn-home )
     document.querySelectorAll('.btn-home').forEach(btn => {
         btn.onclick = (e) => { e.preventDefault(); showRoom('home'); };
     });
 
-    // Рестарт после проигрыша
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) btnRestart.onclick = () => showRoom('home');
 
-    // Кнопка возрождения (Revive)
+    // Кнопка возрождения (Revive) - Тратит жизнь
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.onclick = async () => {
-            const res = await api.spendCoin(); 
-            if (res !== null && !res.error) {
-                state.coins = res;
+            if (state.lives > 0) {
+                state.lives--; // Тратим сердечко
                 updateGlobalUI();
                 showRoom('game');
                 window.game?.revive();
             } else {
-                tg?.showAlert("Need more coins!");
+                tg?.showAlert("У вас нет сердечек ❤️");
             }
         };
     }
@@ -169,11 +169,24 @@ async function init() {
         const authData = await api.authPlayer(startParam); 
         if (authData?.user) {
             state.user = authData.user;
-            state.coins = authData.user.coins || 0;
+            state.coins = authData.user.coins ?? state.coins;
+            state.lives = authData.user.lives ?? state.lives;
+            state.crystals = authData.user.crystals ?? state.crystals;
+
+            // ДОБАВИТЬ ЭТО: Подгружаем способности
+            if (authData.user.powerups) {
+                state.powerups = { ...state.powerups, ...authData.user.powerups };
+            }
+            
+            // Чтобы комнаты могли обращаться через window.state
+            window.state = state; 
+            
             updateGlobalUI();
         }
     } catch (e) {
         console.error("[Auth] Error:", e);
+        window.state = state; // Все равно прокидываем дефолтный state
+        updateGlobalUI();
     }
 }
 
@@ -186,7 +199,10 @@ function handleGameOver(score, reviveUsed) {
     if (finalScoreEl) finalScoreEl.innerText = score;
     
     const btnRevive = document.getElementById('btn-revive');
-    if (btnRevive) btnRevive.style.display = reviveUsed ? 'none' : 'block';
+    if (btnRevive) {
+        // Показываем кнопку только если ревайв не юзали И есть запас жизней
+        btnRevive.style.display = (!reviveUsed && state.lives > 0) ? 'block' : 'none';
+    }
     
     api.saveScore(score).catch(console.error);
 }
@@ -196,14 +212,26 @@ function handleGameOver(score, reviveUsed) {
  */
 function updateGlobalUI() {
     const coinValue = Number(state.coins).toLocaleString();
-    const targets = ['coin-balance', 'revive-balance', 'header-coins'];
-    targets.forEach(id => {
+    
+    // Монеты
+    const coinTargets = ['coin-balance', 'revive-balance', 'header-coins'];
+    coinTargets.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerText = coinValue;
     });
+
+    // Жизни
+    document.querySelectorAll('.stat-lives, #header-lives, #revive-lives-count').forEach(el => {
+        el.innerText = state.lives;
+    });
+
+    // Кристаллы
+    document.querySelectorAll('.stat-crystals, #header-crystals').forEach(el => {
+        el.innerText = state.crystals;
+    });
 }
 
-// Запуск инициализации
+// Запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {

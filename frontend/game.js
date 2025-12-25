@@ -26,7 +26,6 @@ export class Game {
         this.tickCount = 0;
         this.ticksPerFrame = 6; 
 
-        // Привязка методов
         this.loop = this.loop.bind(this);
         this.handleInput = this.handleInput.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -58,8 +57,7 @@ export class Game {
         this.bird.x = w / 4; 
         if (!this.isRunning) this.bird.y = h / 2;
         
-        // Адаптивная физика
-        this.gravity = h * 0.00045; // Чуть мягче
+        this.gravity = h * 0.00045;
         this.jump = -h * 0.010;
         this.pipeSpeed = w * 0.0055;
         this.pipeSpawnThreshold = Math.max(90, Math.floor(110 * (w / 375)));
@@ -72,8 +70,32 @@ export class Game {
         this.bird.y = window.innerHeight / 2;
         this.bird.velocity = 0;
         this.bird.rotation = 0;
+        this.pipeSpawnTimer = 0; // Сброс таймера труб
         this.reviveUsed = false;
         this.isRunning = true;
+        this.loop();
+    }
+
+    /**
+     * НОВОЕ: Метод возрождения
+     */
+    revive() {
+        this.reviveUsed = true;
+        this.isRunning = true;
+        
+        // 1. Убираем ближайшие трубы, чтобы не умереть сразу
+        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 150);
+        
+        // 2. Возвращаем птицу в игровую зону, если она упала
+        if (this.bird.y > window.innerHeight) {
+            this.bird.y = window.innerHeight / 2;
+        }
+        
+        // 3. Даем небольшой импульс вверх
+        this.bird.velocity = this.jump * 0.7;
+        this.bird.rotation = 0;
+        
+        // 4. Перезапускаем цикл
         this.loop();
     }
 
@@ -118,18 +140,15 @@ export class Game {
         this.bird.velocity += this.gravity;
         this.bird.y += this.bird.velocity;
 
-        // Поворот: птица клюет носом вниз при падении
         const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.15)));
         this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
 
-        // Анимация крыльев
         this.tickCount++;
         if (this.tickCount > this.ticksPerFrame) {
             this.tickCount = 0;
             this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
         }
 
-        // Спавн труб
         this.pipeSpawnTimer = (this.pipeSpawnTimer || 0) + 1;
         if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
             this.spawnPipe();
@@ -140,7 +159,6 @@ export class Game {
             const p = this.pipes[i];
             p.x -= this.pipeSpeed;
 
-            // Коллизия (хитбокс чуть меньше спрайта)
             const pad = 8; 
             if (
                 this.bird.x + this.bird.size - pad > p.x && 
@@ -151,7 +169,6 @@ export class Game {
                 return;
             }
 
-            // Счет
             if (!p.passed && p.x + p.width < this.bird.x) {
                 p.passed = true;
                 this.score++;
@@ -161,8 +178,8 @@ export class Game {
             if (p.x < -p.width) this.pipes.splice(i, 1);
         }
 
-        // Границы экрана
-        if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < -50) {
+        // Границы экрана (улучшено)
+        if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < -150) {
             this.gameOver();
         }
     }
@@ -170,19 +187,14 @@ export class Game {
     draw() {
         this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-        // Отрисовка труб
         this.pipes.forEach(p => {
             this.ctx.fillStyle = '#73bf2e';
             this.ctx.strokeStyle = '#2d4c12';
             this.ctx.lineWidth = 3;
-
-            // Верхняя труба
             this.drawPipeRect(p.x, 0, p.width, p.top, true);
-            // Нижняя труба
             this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false);
         });
 
-        // Птица
         this.ctx.save();
         this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
         this.ctx.rotate(this.bird.rotation);
@@ -199,12 +211,9 @@ export class Game {
         this.ctx.restore();
     }
 
-    // Вспомогательный метод для красивых труб
     drawPipeRect(x, y, w, h, isTop) {
         this.ctx.fillRect(x, y, w, h);
         this.ctx.strokeRect(x, y, w, h);
-        
-        // Наконечник трубы (крышка)
         const capH = 25;
         const capW = 10;
         if (isTop) {
