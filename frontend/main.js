@@ -13,7 +13,7 @@ import { initSettings } from './js/rooms/settings.js';
 const tg = window.Telegram.WebApp;
 const state = { user: null, coins: 0 };
 
-// 1. Диспетчер сцен (Комнат)
+// 1. Диспетчер сцен
 const scenes = {
     home: document.getElementById('scene-home'),
     game: document.getElementById('game-container'),
@@ -30,88 +30,104 @@ function showRoom(roomName) {
     // Скрываем все сцены
     Object.values(scenes).forEach(s => s?.classList.add('hidden'));
     
-    // Показываем нужную
     const target = scenes[roomName];
     if (target) {
         target.classList.remove('hidden');
-        console.log(`[Navigation] Switched to: ${roomName}`);
         
-        // ВЫЗОВ ЛОГИКИ КОНКРЕТНОЙ КОМНАТЫ
+        // ВАЖНО: Останавливаем игру, если уходим со сцены game
+        if (roomName !== 'game' && window.game) {
+            window.game.isRunning = false;
+        }
+
         switch(roomName) {
             case 'game':
-                window.game?.resize();
-                window.game?.start();
+                if (window.game) {
+                    window.game.resize();
+                    window.game.start();
+                }
                 break;
-            case 'shop':
-                initShop();
-                break;
-            case 'inventory':
-                initInventory();
-                break;
-            case 'friends':
-                initFriends();
-                break;
-            case 'daily':
-                initDaily();
-                break;
-            case 'leaderboard':
-                initLeaderboard();
-                break;
-            case 'settings':
-                initSettings();
-                break;
+            case 'shop': initShop(); break;
+            case 'inventory': initInventory(); break;
+            case 'friends': initFriends(); break;
+            case 'daily': initDaily(); break;
+            case 'leaderboard': initLeaderboard(); break;
+            case 'settings': initSettings(); break;
         }
     }
 }
 
-// 2. Инициализация при загрузке
+// Делаем функции доступными глобально для HTML onclick событий
+window.showRoom = showRoom;
+
+// 2. Инициализация
 async function init() {
     tg.ready();
     tg.expand();
 
     // Инициализация кошелька
-    window.wallet = new WalletManager((isConnected) => console.log("Wallet Connected:", isConnected));
+    window.wallet = new WalletManager((isConnected) => {
+        console.log("Wallet Connected:", isConnected);
+        // Можно обновить UI кошелька здесь
+    });
     
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, handleGameOver);
     }
 
-    // Привязка кнопок панели
-    const bindBtn = (id, room) => {
+    // Привязка кнопок панели управления
+    const setupClick = (id, room) => {
         const el = document.getElementById(id);
-        if (el) el.onclick = () => showRoom(room);
+        if (el) el.onclick = (e) => {
+            e.preventDefault();
+            showRoom(room);
+        };
     };
 
-    bindBtn('btn-start', 'game');
-    bindBtn('btn-shop', 'shop');
-    bindBtn('btn-leaderboard', 'leaderboard');
-    bindBtn('btn-friends', 'friends');
-    bindBtn('btn-inventory', 'inventory');
-    bindBtn('btn-daily', 'daily');
-    bindBtn('btn-settings', 'settings');
-    bindBtn('btn-restart-panel', 'home'); // Твоя кнопка HOME на панели
+    setupClick('btn-start', 'game');
+    setupClick('btn-shop', 'shop');
+    setupClick('btn-leaderboard', 'leaderboard');
+    setupClick('btn-friends', 'friends');
+    setupClick('btn-inventory', 'inventory');
+    setupClick('btn-daily', 'daily');
+    setupClick('btn-settings', 'settings');
+    setupClick('btn-restart-panel', 'home'); 
     
-    // Кнопки возврата домой (те, что внутри комнат с классом .btn-home)
+    // Глобальные кнопки возврата
     document.querySelectorAll('.btn-home').forEach(btn => {
         btn.onclick = () => showRoom('home');
     });
 
-    // Обработка кнопки "Играть заново" после Game Over
+    // Game Over логика
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) btnRestart.onclick = () => showRoom('home');
 
-    // Первичная авторизация
+    const btnRevive = document.getElementById('btn-revive');
+    if (btnRevive) {
+        btnRevive.onclick = async () => {
+            const res = await api.spendCoin();
+            if (res && !res.error) {
+                state.coins = res;
+                updateGlobalUI();
+                showRoom('game');
+                window.game?.revive();
+            } else {
+                tg.showAlert("Недостаточно монет для возрождения!");
+            }
+        };
+    }
+
+    // Загрузка данных пользователя
     try {
         const startParam = tg.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam);
-        if (authData?.user) {
+        if (authData && authData.user) {
             state.user = authData.user;
             state.coins = authData.user.coins;
             updateGlobalUI();
         }
     } catch (e) {
-        console.error("Auth failed:", e);
+        console.error("Auth initialization failed:", e);
     }
 }
 
@@ -121,22 +137,33 @@ function handleGameOver(score, reviveUsed) {
     if (finalScoreEl) finalScoreEl.innerText = score;
     
     const btnRevive = document.getElementById('btn-revive');
-    if (btnRevive) btnRevive.style.display = reviveUsed ? 'none' : 'block';
+    if (btnRevive) {
+        // Показываем кнопку возрождения только если она еще не использовалась
+        btnRevive.style.display = reviveUsed ? 'none' : 'block';
+    }
     
-    api.saveScore(score);
+    api.saveScore(score).then(res => {
+        console.log("Score saved:", res);
+    });
 }
 
 function updateGlobalUI() {
-    // Обновляем все элементы с балансом (в хедере и магазинах)
-    const balanceElements = [
-        document.getElementById('coin-balance'),
-        document.getElementById('revive-balance')
-    ];
-    balanceElements.forEach(el => {
+    const balanceElements = ['coin-balance', 'revive-balance'];
+    balanceElements.forEach(id => {
+        const el = document.getElementById(id);
         if (el) el.innerText = state.coins;
     });
 }
 
-window.onload = init;
+// Привязываем обновление UI к окну, чтобы другие модули могли его вызвать
+window.updateGlobalUI = updateGlobalUI;
+window.state = state;
+
+// Запуск
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 
 export { showRoom, state, updateGlobalUI };
