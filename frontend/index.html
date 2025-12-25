@@ -23,8 +23,8 @@
 
         <div id="scene-home" class="screen">
             <div class="side-buttons">
-                <img src="assets/top.png" id="btn-top-icon" class="icon-btn" onclick="showRoom('leaderboard')">
-                <img src="assets/daily.png" id="btn-daily-icon" class="icon-btn" onclick="showRoom('daily')">
+                <img src="assets/top.png" id="btn-top-icon" class="icon-btn">
+                <img src="assets/daily.png" id="btn-daily-icon" class="icon-btn">
             </div>
 
             <h1 class="game-title">FLAPPY TON</h1>
@@ -34,8 +34,8 @@
 
             <div class="menu-buttons-panel">
                 <button id="btn-shop">SHOP</button>
-                <button id="btn-leaderboard">TOP</button>
-                <button id="btn-restart-panel">HOME</button>
+                <button id="btn-leaderboard-panel">TOP</button>
+                <button id="btn-home-panel">HOME</button>
                 <button id="btn-friends">FRIENDS</button>
                 <button id="btn-inventory">ITEMS</button> 
                 <button id="btn-settings">GEAR</button>
@@ -66,14 +66,14 @@
         <div id="scene-shop" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>COIN SHOP</h3>
-            <div class="room-content">
+            <div class="room-content shop-grid" id="shop-content">
                 </div>
         </div>
 
         <div id="scene-leaderboard" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>TOP PLAYERS</h3>
-            <div class="leaderboard-list list-container" id="leaderboard-list">
+            <div class="room-content" id="leaderboard-list">
                 <p class="loading-text">Loading...</p>
             </div>
         </div>
@@ -81,7 +81,7 @@
         <div id="scene-friends" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>FRIENDS</h3>
-            <div class="room-content friends-list">
+            <div class="room-content friends-list" id="friends-content">
                 </div>
             <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
         </div>
@@ -89,21 +89,21 @@
         <div id="scene-inventory" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>INVENTORY</h3>
-            <div class="room-content inventory-items">
+            <div class="room-content inventory-items" id="inventory-content">
                 </div>
         </div>
 
         <div id="scene-settings" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>SETTINGS</h3>
-            <div class="settings-options room-content">
+            <div class="room-content settings-options" id="settings-content">
                 </div>
         </div>
 
         <div id="scene-daily" class="screen hidden">
             <button class="btn-home">BACK</button>
             <h3>DAILY REWARD</h3>
-            <div class="room-content daily-grid">
+            <div class="room-content daily-grid" id="daily-content">
                 </div>
         </div>
 

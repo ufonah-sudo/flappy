@@ -4,8 +4,9 @@
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    user-select: none; /* Запрет выделения текста */
+    user-select: none;
     outline: none;
+    max-width: 100vw; /* Защита от вылетания элементов за край */
 }
 
 body, html {
@@ -13,18 +14,20 @@ body, html {
     padding: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    /* Твой основной фон */
+    overflow: hidden; /* Убираем ползунки */
+    position: fixed; /* Фиксируем экран для мобилок */
     background: #4ec0ca url('assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
+    touch-action: none; /* Отключаем лишние жесты браузера */
 }
 
 #app {
     position: relative;
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
 }
 
 /* =========================================
@@ -32,19 +35,19 @@ body, html {
    ========================================= */
 #header {
     position: absolute;
-    top: env(safe-area-inset-top, 15px); /* Учитываем "челку" iPhone */
+    top: env(safe-area-inset-top, 15px);
     left: 0;
     width: 100%;
-    z-index: 1000; /* Всегда поверх всего */
+    z-index: 1000;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 15px;
-    pointer-events: none; /* Пропускаем клики сквозь пустые места */
+    pointer-events: none;
 }
 
 #ton-connect, .coins-display {
-    pointer-events: auto; /* Кнопки кликабельны */
+    pointer-events: auto;
 }
 
 .coins-display {
@@ -78,41 +81,38 @@ body, html {
     align-items: center;
     z-index: 50;
     text-align: center;
-    padding: 80px 20px 20px 20px; /* Отступ сверху под Header */
-    overflow-y: auto; /* Скролл, если контент не влезает */
+    padding: 80px 20px 20px 20px;
+    overflow-y: auto; /* Скролл только внутри комнат */
+    -webkit-overflow-scrolling: touch;
     
-    /* Анимация появления */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
     transform: scale(0.95);
     
-    /* Фон по умолчанию для внутренних комнат (Shop, Settings...) */
-    background: rgba(26, 33, 46, 0.95); /* Темно-синяя подложка */
-    backdrop-filter: blur(10px); /* Размытие фона игры */
+    background: rgba(26, 33, 46, 0.95);
+    backdrop-filter: blur(10px);
 }
 
-/* Активная сцена */
 .screen:not(.hidden) {
     opacity: 1;
     pointer-events: auto;
     transform: scale(1);
-    z-index: 100; /* Чтобы активный экран был выше всех остальных */
+    z-index: 100;
 }
 
-/* Исключения: Главная и Игра должны быть прозрачными */
 #scene-home, #game-container {
     background: transparent;
     backdrop-filter: none;
-    justify-content: center; /* Центрируем контент */
+    justify-content: center;
     padding-top: 0;
+    overflow: hidden;
 }
 
 .hidden {
-    display: none !important; /* КРИТИЧНО: убирает невидимый блок, мешающий клику */
+    display: none !important;
 }
 
-/* Заголовки страниц */
 .screen h3 {
     color: #f7d51d;
     font-size: 24px;
@@ -122,10 +122,10 @@ body, html {
     text-shadow: 0 2px 0 rgba(0,0,0,0.5);
 }
 
-/* Кнопка НАЗАД (BACK) */
+/* Кнопка НАЗАД */
 .btn-home {
     position: absolute;
-    top: 20px; /* Чуть ниже хедера */
+    top: 20px;
     left: 20px;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -137,11 +137,6 @@ body, html {
     cursor: pointer;
     z-index: 1100;
     backdrop-filter: blur(5px);
-}
-
-.btn-home:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.3);
 }
 
 /* =========================================
@@ -168,14 +163,13 @@ body, html {
     filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3));
 }
 
-.icon-btn:active {
-    transform: scale(0.9);
-}
+.icon-btn:active { transform: scale(0.9); }
 
-/* Логотип */
+/* Логотип Flappy Bird (Твой 500x312) */
 .game-title {
-    width: 500px; 
-    height: 312px; 
+    width: 85%;
+    max-width: 500px;
+    aspect-ratio: 500 / 312;
     background: url('assets/flappyname.png') no-repeat center center;
     background-size: contain;
     text-indent: -9999px;
@@ -209,17 +203,15 @@ body, html {
     transition: transform 0.1s;
 }
 
-#btn-start:active {
-    transform: scale(0.92);
-}
+#btn-start:active { transform: scale(0.92); }
 
-/* Нижняя панель */
+/* Нижняя панель кнопок (Твоя 800x160) */
 .menu-buttons-panel {
     display: flex;
     flex-direction: row; 
-    width: 100%;
-    max-width: 800px; /* Под твой размер */
-    height: 160px; /* Под твой размер */
+    width: 95%;
+    max-width: 600px;
+    aspect-ratio: 800 / 160;
     background: url('assets/panel.png') no-repeat center center;
     background-size: contain;
     position: relative;
@@ -230,16 +222,9 @@ body, html {
     flex: 1;
     background: transparent;
     border: none;
-    color: transparent; /* Или скрываем текст так */
+    color: transparent;
     height: 100%;
     cursor: pointer;
-}
-
-.promo-text {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 15px;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 /* =========================================
@@ -264,9 +249,8 @@ body, html {
     pointer-events: none;
 }
 
-/* Game Over Экран */
 #game-over {
-    background: rgba(0, 0, 0, 0.85); /* Чуть темнее */
+    background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(5px);
 }
 
@@ -286,13 +270,6 @@ body, html {
     color: #e67e22;
 }
 
-.result-box p {
-    margin: 0;
-    font-size: 14px;
-    font-weight: bold;
-    color: #e06020;
-}
-
 #final-score {
     font-size: 48px;
     font-weight: 900;
@@ -302,24 +279,10 @@ body, html {
 /* =========================================
    6. МАГАЗИН (SHOP)
    ========================================= */
-.shop-section {
-    width: 100%;
-    max-width: 400px;
-    margin-bottom: 25px;
-}
+.shop-section { width: 100%; max-width: 400px; margin-bottom: 25px; }
+.shop-section h4 { text-align: left; color: #888; font-size: 12px; margin: 0 0 10px 5px; }
 
-.shop-section h4 {
-    text-align: left;
-    color: #888;
-    font-size: 12px;
-    margin: 0 0 10px 5px;
-}
-
-.shop-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
 .shop-card.coin-pack {
     background: rgba(255, 255, 255, 0.08);
@@ -345,18 +308,10 @@ body, html {
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.item-info { display: flex; align-items: center; gap: 15px; }
-.item-title { font-weight: bold; margin: 0; text-align: left; font-size: 15px;}
-.item-price { font-size: 13px; color: #f7d51d; margin: 0; text-align: left; }
-
 /* =========================================
    7. ЛИДЕРБОРД (TOP)
    ========================================= */
-#leaderboard-list {
-    width: 100%;
-    max-width: 400px;
-}
-
+#leaderboard-list { width: 100%; max-width: 400px; }
 .leader-item {
     display: flex;
     align-items: center;
@@ -366,25 +321,18 @@ body, html {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 .leader-item.top-rank {
     background: linear-gradient(90deg, rgba(247, 213, 29, 0.1) 0%, rgba(247, 213, 29, 0.0) 100%);
     border-left: 3px solid #f7d51d;
 }
-
 .rank-col { width: 30px; font-size: 16px; font-weight: bold; }
 .name-col { flex-grow: 1; text-align: left; padding-left: 10px; font-weight: 500; }
-.score-col { font-family: monospace; font-weight: bold; color: #f7d51d; font-size: 16px; }
+.score-col { color: #f7d51d; font-weight: bold; }
 
 /* =========================================
    8. ДРУЗЬЯ И ИНВЕНТАРЬ
    ========================================= */
-.friends-list, .inventory-items {
-    width: 100%;
-    max-width: 400px;
-    margin-top: 10px;
-}
-
+.friends-list, .inventory-items { width: 100%; max-width: 400px; margin-top: 10px; }
 .friend-card, .inventory-card {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
@@ -394,141 +342,47 @@ body, html {
     align-items: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 .item-icon-wrapper {
-    width: 50px;
-    height: 50px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    margin-right: 15px;
+    width: 50px; height: 50px; background: rgba(0,0,0,0.3);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin-right: 15px;
 }
-
-.inventory-card.locked { opacity: 0.5; filter: grayscale(1); }
 
 /* =========================================
    9. НАСТРОЙКИ
    ========================================= */
-.settings-options {
-    width: 100%;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
+.settings-options { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
 .settings-btn {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    padding: 15px;
-    border-radius: 12px;
-    font-size: 15px;
-    display: flex;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: background 0.2s;
+    width: 100%; background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1); color: white;
+    padding: 15px; border-radius: 12px; display: flex; justify-content: space-between;
 }
-
-.settings-btn:active { background: rgba(255, 255, 255, 0.2); }
 .settings-btn span { color: #f7d51d; font-weight: 800; }
 
 /* =========================================
    10. DAILY REWARDS
    ========================================= */
-.daily-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 колонки */
-    gap: 10px;
-    width: 100%;
-    max-width: 400px;
-}
-
+.daily-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 400px; }
 .daily-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100px;
+    background: rgba(255, 255, 255, 0.1); border-radius: 12px;
+    padding: 10px; display: flex; flex-direction: column; align-items: center; height: 100px;
 }
-
-.daily-card.current {
-    background: rgba(247, 213, 29, 0.2);
-    border: 2px solid #f7d51d;
-    transform: scale(1.02);
-}
-
-.daily-card.claimed {
-    background: rgba(46, 204, 113, 0.2);
-    opacity: 0.6;
-}
-
-.daily-card:last-child {
-    grid-column: span 3; /* Последний день на всю ширину */
-    height: 80px;
-    flex-direction: row;
-    gap: 15px;
-}
+.daily-card.current { border: 2px solid #f7d51d; background: rgba(247, 213, 29, 0.2); }
+.daily-card:last-child { grid-column: span 3; height: 80px; flex-direction: row; gap: 15px; }
 
 /* =========================================
    КНОПКИ ОБЩЕГО НАЗНАЧЕНИЯ
    ========================================= */
 .primary-btn {
     background: linear-gradient(to bottom, #f7941d, #d67c10);
-    border: none;
-    width: 100%;
-    padding: 16px;
-    color: white;
-    font-size: 16px;
-    font-weight: 800;
-    border-radius: 12px;
-    margin-top: 10px;
-    cursor: pointer;
-    box-shadow: 0 4px 0 #b36b15;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    border: none; width: 100%; padding: 16px; color: white;
+    font-size: 16px; font-weight: 800; border-radius: 12px;
+    box-shadow: 0 4px 0 #b36b15; cursor: pointer; text-transform: uppercase;
 }
-
-.primary-btn:active {
-    transform: translateY(4px);
-    box-shadow: 0 0 0 #b36b15;
-}
-
-.primary-btn:disabled {
-    background: #777;
-    box-shadow: none;
-    cursor: not-allowed;
-}
+.primary-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #b36b15; }
 
 .secondary-btn {
-    background: white;
-    width: 100%;
-    border: none;
-    padding: 14px;
-    color: #333;
-    font-size: 16px;
-    font-weight: 800;
-    border-radius: 12px;
-    margin: 5px 0;
-    cursor: pointer;
-    box-shadow: 0 4px 0 #ccc;
-}
-
-.secondary-btn:active {
-    transform: translateY(4px);
-    box-shadow: none;
-}
-
-/* Текст загрузки / ошибок */
-.loading-text, .empty-text {
-    color: #aaa;
-    margin-top: 30px;
-    font-size: 14px;
+    background: white; width: 100%; border: none; padding: 14px;
+    color: #333; font-size: 16px; font-weight: 800; border-radius: 12px;
+    box-shadow: 0 4px 0 #ccc; cursor: pointer;
 }
