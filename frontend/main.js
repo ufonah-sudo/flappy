@@ -2,7 +2,7 @@ import * as api from './api.js';
 import { Game } from './game.js';
 import { WalletManager } from './wallet.js';
 
-// Импорты комнат
+// Импорты логики комнат
 import { initShop } from './js/rooms/shop.js';
 import { initInventory } from './js/rooms/inventory.js';
 import { initFriends } from './js/rooms/friends.js';
@@ -12,12 +12,13 @@ import { initSettings } from './js/rooms/settings.js';
 
 const tg = window.Telegram?.WebApp;
 
-// Глобальное состояние
+// Глобальное состояние приложения
 const state = { 
     user: null, 
     coins: 0 
 };
 
+// Ссылки на экраны (Scenes)
 const scenes = {
     home: document.getElementById('scene-home'),
     game: document.getElementById('game-container'),
@@ -30,180 +31,179 @@ const scenes = {
     gameOver: document.getElementById('game-over')
 };
 
-// Функция переключения экранов
+/**
+ * Основная функция навигации
+ * @param {string} roomName - ключ из объекта scenes
+ */
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
-    // Скрываем все экраны
+    // 1. Скрываем абсолютно все экраны
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
     
     const target = scenes[roomName];
-    if (target) {
-        target.classList.remove('hidden');
+    if (!target) {
+        console.error(`[Navigation] Экран ${roomName} не найден!`);
+        return;
+    }
 
-        // ПЕРЕНОС КОШЕЛЬКА (чтобы кнопка появилась в нужной комнате)
-        if (window.wallet && window.wallet.tonConnectUI) {
-            let walletContainerId = null;
-            if (roomName === 'shop') walletContainerId = 'shop-ton-wallet';
-            if (roomName === 'settings') walletContainerId = 'settings-ton-wallet';
+    // 2. Показываем целевой экран
+    target.classList.remove('hidden');
 
-            if (walletContainerId) {
-                // Принудительно отрисовываем кнопку в контейнере комнаты
-                window.wallet.tonConnectUI.setConnectButtonRoot(`#${walletContainerId}`);
-            }
+    // 3. Логика для TON Connect (перемещение кнопки кошелька)
+    if (window.wallet && window.wallet.tonConnectUI) {
+        let walletContainerSelector = null;
+        if (roomName === 'shop') walletContainerSelector = '#shop-ton-wallet';
+        if (roomName === 'settings') walletContainerSelector = '#settings-ton-wallet';
+
+        if (walletContainerSelector && document.querySelector(walletContainerSelector)) {
+            window.wallet.tonConnectUI.setConnectButtonRoot(walletContainerSelector);
         }
+    }
 
-        // Остановка игры при уходе с экрана игры
-        if (roomName !== 'game' && window.game) {
-            window.game.isRunning = false;
+    // 4. Управление состоянием игры
+    if (window.game) {
+        if (roomName === 'game') {
+            window.game.resize(); // Адаптация под размер экрана
+            window.game.start();  // Запуск цикла игры
+        } else {
+            window.game.isRunning = false; // Стоп, если ушли с экрана игры
         }
+    }
 
-        try {
-            switch(roomName) {
-                case 'game':
-                    if (window.game) {
-                        window.game.resize();
-                        window.game.start();
-                    }
-                    break;
-                case 'shop': initShop(); break;
-                case 'inventory': initInventory(); break;
-                case 'friends': initFriends(); break;
-                case 'daily': initDaily(); break;
-                case 'leaderboard': initLeaderboard(); break;
-                case 'settings': initSettings(); break;
-                case 'home':
-                    updateGlobalUI();
-                    break;
-            }
-        } catch (err) {
-            console.error(`[Error] Ошибка комнаты ${roomName}:`, err);
+    // 5. Инициализация специфической логики комнаты
+    try {
+        switch(roomName) {
+            case 'shop':        initShop(); break;
+            case 'inventory':   initInventory(); break;
+            case 'friends':     initFriends(); break;
+            case 'daily':       initDaily(); break;
+            case 'leaderboard': initLeaderboard(); break;
+            case 'settings':    initSettings(); break;
+            case 'home':        updateGlobalUI(); break;
         }
+    } catch (err) {
+        console.error(`[RoomInit] Ошибка в ${roomName}:`, err);
     }
 }
 
-// Делаем функцию доступной глобально
+// Делаем доступным для inline onclick в HTML (если нужно)
 window.showRoom = showRoom;
 
+/**
+ * Инициализация при загрузке
+ */
 async function init() {
-    console.log("[Init] Приложение запускается...");
+    console.log("[Init] Запуск Mini App...");
     
     if (tg) {
         tg.ready();
         tg.expand(); 
         tg.setHeaderColor('#4ec0ca'); 
         tg.setBackgroundColor('#4ec0ca');
-        tg.enableClosingConfirmation();
     }
 
-    // 1. Инициализация Кошелька
+    // 1. Кошелек
     try {
         window.wallet = new WalletManager((isConnected) => {
-            console.log("[TON] Статус кошелька:", isConnected ? "Подключен" : "Отключен");
+            console.log("[TON] Статус:", isConnected ? "Connected" : "Disconnected");
         });
     } catch (e) {
-        console.error("[Init] WalletManager error:", e);
+        console.error("[Init] Wallet error:", e);
     }
     
-    // 2. Инициализация Игры
+    // 2. Игра
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, handleGameOver);
     }
 
-    // 3. Настройка кликов по кнопкам
-    const setupClick = (id, room) => {
+    // 3. Привязка событий клика (Учитывая твою панель 800x160)
+    const bindClick = (id, room) => {
         const el = document.getElementById(id);
-        if (el) {
-            el.onclick = (e) => {
-                e.preventDefault();
-                showRoom(room);
-            };
-        }
+        if (el) el.onclick = (e) => { e.preventDefault(); showRoom(room); };
     };
 
-    setupClick('btn-start', 'game');
-    setupClick('btn-shop', 'shop');
-    setupClick('btn-leaderboard-panel', 'leaderboard');
-    setupClick('btn-friends', 'friends');
-    setupClick('btn-inventory', 'inventory');
-    setupClick('btn-settings', 'settings');
-    setupClick('btn-home-panel', 'home'); 
-    
-    setupClick('btn-top-icon', 'leaderboard');
-    setupClick('btn-daily-icon', 'daily');
+    // Кнопки нижней панели
+    bindClick('btn-shop', 'shop');
+    bindClick('btn-inventory', 'inventory');
+    bindClick('btn-home-panel', 'home'); 
+    bindClick('btn-friends', 'friends');
+    bindClick('btn-settings', 'settings');
 
+    // Кнопки на главном экране (иконки ТОП и ДЕЙЛИ)
+    bindClick('btn-start', 'game');
+    bindClick('btn-top-icon', 'leaderboard');
+    bindClick('btn-daily-icon', 'daily');
+
+    // Все кнопки "Назад" ( .btn-home )
     document.querySelectorAll('.btn-home').forEach(btn => {
-        btn.onclick = (e) => {
-            e.preventDefault();
-            showRoom('home');
-        };
+        btn.onclick = (e) => { e.preventDefault(); showRoom('home'); };
     });
 
+    // Рестарт после проигрыша
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) btnRestart.onclick = () => showRoom('home');
 
-    // Кнопка возрождения
+    // Кнопка возрождения (Revive)
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.onclick = async () => {
-            try {
-                const res = await api.spendCoin(); 
-                if (res !== null && !res.error) {
-                    state.coins = res;
-                    updateGlobalUI();
-                    showRoom('game');
-                    window.game?.revive();
-                } else {
-                    tg?.showAlert("Недостаточно монет!");
-                }
-            } catch (e) {
-                console.error("Revive error:", e);
+            const res = await api.spendCoin(); 
+            if (res !== null && !res.error) {
+                state.coins = res;
+                updateGlobalUI();
+                showRoom('game');
+                window.game?.revive();
+            } else {
+                tg?.showAlert("Need more coins!");
             }
         };
     }
 
-    // 4. Авторизация игрока
+    // 4. Загрузка данных игрока
     try {
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 
-        
-        if (authData && authData.user) {
+        if (authData?.user) {
             state.user = authData.user;
             state.coins = authData.user.coins || 0;
             updateGlobalUI();
         }
     } catch (e) {
-        console.error("[Auth] Fail:", e);
+        console.error("[Auth] Error:", e);
     }
 }
 
+/**
+ * Обработка окончания игры
+ */
 function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
     const finalScoreEl = document.getElementById('final-score');
     if (finalScoreEl) finalScoreEl.innerText = score;
     
     const btnRevive = document.getElementById('btn-revive');
-    if (btnRevive) {
-        btnRevive.style.display = reviveUsed ? 'none' : 'block';
-    }
+    if (btnRevive) btnRevive.style.display = reviveUsed ? 'none' : 'block';
     
-    api.saveScore(score).catch(e => console.error("Score save failed:", e));
+    api.saveScore(score).catch(console.error);
 }
 
+/**
+ * Обновление баланса во всех местах
+ */
 function updateGlobalUI() {
-    const balanceIds = ['coin-balance', 'revive-balance', 'header-coins'];
-    balanceIds.forEach(id => {
+    const coinValue = Number(state.coins).toLocaleString();
+    const targets = ['coin-balance', 'revive-balance', 'header-coins'];
+    targets.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.innerText = state.coins;
+        if (el) el.innerText = coinValue;
     });
 }
 
-window.updateGlobalUI = updateGlobalUI;
-window.state = state;
-
+// Запуск инициализации
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {

@@ -22,21 +22,19 @@
 
         <div id="scene-home" class="screen">
             <div class="side-buttons">
-                <img src="assets/top.png" id="btn-top-icon" class="icon-btn">
-                <img src="assets/daily.png" id="btn-daily-icon" class="icon-btn">
+                <img src="assets/top.png" id="btn-top-icon" class="icon-btn" alt="Top">
+                <img src="assets/daily.png" id="btn-daily-icon" class="icon-btn" alt="Daily">
             </div>
 
-            <h1 class="game-title">FLAPPY TON</h1>
-            <img src="assets/birdmenu.png" class="menu-bird-decoration" alt="Bird Menu">
+            <div class="game-title">FLAPPY TON</div>
 
-            <button id="btn-start" class="play-btn">PLAY</button>
+            <button id="btn-start">PLAY</button>
 
             <div class="menu-buttons-panel">
                 <button id="btn-shop">SHOP</button>
-                <button id="btn-leaderboard-panel">TOP</button>
-                <button id="btn-home-panel">HOME</button>
+                <button id="btn-inventory">INV</button>
+                <button id="btn-home-panel">HOME</button> 
                 <button id="btn-friends">FRIENDS</button>
-                <button id="btn-inventory">ITEMS</button> 
                 <button id="btn-settings">GEAR</button>
             </div>
             
@@ -73,7 +71,7 @@
                 <button id="btn-revive" class="primary-btn">REVIVE (1 Coin)</button>
             </div>
             <button id="btn-restart" class="secondary-btn">MAIN MENU</button>
-            <button id="btn-share" class="secondary-btn">SHARE RESULT</button>
+            <button id="btn-share" class="secondary-btn" style="margin-top: 10px;">SHARE RESULT</button>
         </div>
 
         <div id="scene-leaderboard" class="screen hidden">
@@ -88,7 +86,7 @@
             <button class="btn-home">BACK</button>
             <h3>FRIENDS</h3>
             <div class="room-content friends-list" id="friends-content"></div>
-            <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
+            <button class="primary-btn" id="btn-invite-real" style="margin-top: 20px;">INVITE FRIEND</button>
         </div>
 
         <div id="scene-inventory" class="screen hidden">

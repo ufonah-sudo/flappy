@@ -1,0 +1,73 @@
+#scene-home {
+    background: transparent;
+    backdrop-filter: none;
+    justify-content: center;
+    padding-top: 0;
+    overflow: hidden;
+}
+
+.side-buttons {
+    position: absolute;
+    top: 90px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    pointer-events: none;
+    z-index: 60;
+}
+
+.icon-btn {
+    width: 60px; height: 60px;
+    cursor: pointer; pointer-events: auto;
+    transition: transform 0.1s;
+    filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3));
+}
+.icon-btn:active { transform: scale(0.9); }
+
+.game-title {
+    width: 85%;
+    max-width: 500px;
+    aspect-ratio: 500 / 312;
+    background: url('../assets/flappyname.png') no-repeat center center;
+    background-size: contain;
+    text-indent: -9999px;
+    margin: 0 auto 10px auto;
+    animation: floatTitle 3s ease-in-out infinite;
+}
+
+@keyframes floatTitle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.menu-bird-decoration { display: none; } /* Убрали для центровки PLAY */
+
+#btn-start {
+    width: 140px; height: 140px;
+    background: url('../assets/knopka.png') no-repeat center center;
+    background-size: contain;
+    border: none; cursor: pointer; text-indent: -9999px;
+    margin-bottom: 25px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+    transition: transform 0.1s;
+}
+#btn-start:active { transform: scale(0.92); }
+
+.menu-buttons-panel {
+    display: flex;
+    flex-direction: row; 
+    width: 95%; max-width: 600px;
+    aspect-ratio: 800 / 160;
+    background: url('../assets/panel.png') no-repeat center center;
+    background-size: contain;
+    position: relative;
+    margin-top: 10px;
+}
+
+.menu-buttons-panel button {
+    flex: 1;
+    background: transparent; border: none;
+    color: transparent; height: 100%; cursor: pointer;
+}

@@ -1,13 +1,13 @@
 import * as api from '../../api.js'; 
 
 export function initDaily() {
-    // Используем window.state, так как мы привязали его в main.js
     const state = window.state;
     const updateGlobalUI = window.updateGlobalUI;
 
-    const container = document.querySelector('#scene-daily .daily-grid');
+    // Ищем контейнер именно в нужной сцене
+    const container = document.querySelector('#scene-daily #daily-content');
     if (!container) {
-        console.warn("[Daily] Container .daily-grid not found");
+        console.warn("[Daily] Container #daily-content not found");
         return;
     }
 
@@ -21,10 +21,11 @@ export function initDaily() {
         { day: 7, reward: 100, icon: '💎' },
     ];
 
-    // Берем данные пользователя безопасно
+    // Если данных нет, по умолчанию 1 день
     const userCurrentDay = state?.user?.daily_step || 1;
-    
-    // Простая логика отрисовки
+    // Проверка, забирал ли сегодня (нужен флаг daily_claimed из БД)
+    const alreadyClaimedToday = state?.user?.daily_claimed || false; 
+
     container.innerHTML = dailyRewards.map(item => {
         const isClaimed = item.day < userCurrentDay;
         const isCurrent = item.day === userCurrentDay;
@@ -34,41 +35,48 @@ export function initDaily() {
                 <div class="daily-day">День ${item.day}</div>
                 <div class="daily-icon">${item.icon}</div>
                 <div class="daily-reward">+${item.reward}</div>
-                ${isCurrent ? `<button id="btn-claim-daily" class="claim-btn">Забрать</button>` : ''}
+                ${isCurrent && !alreadyClaimedToday ? 
+                    `<button id="btn-claim-daily" class="primary-btn" style="padding: 5px; font-size: 10px; margin-top: 5px;">GET</button>` 
+                    : isClaimed || (isCurrent && alreadyClaimedToday) ? '<div class="check-mark">✅</div>' : ''}
             </div>
         `;
     }).join('');
 
-    // Вешаем событие
     const claimBtn = document.getElementById('btn-claim-daily');
     if (claimBtn) {
-        claimBtn.onclick = async () => {
+        claimBtn.onclick = async (e) => {
+            e.preventDefault();
             try {
-                // Визуальный фидбек сразу
                 claimBtn.disabled = true;
-                claimBtn.innerText = "⏳...";
+                claimBtn.innerText = "⏳";
 
-                // Здесь в будущем будет: await api.claimDaily();
+                // Эмуляция запроса к API
                 console.log("[Daily] Claiming reward for day:", userCurrentDay);
                 
-                // Обновляем состояние
+                const rewardObj = dailyRewards[userCurrentDay - 1];
+                if (!rewardObj) return;
+
+                // В будущем здесь: const res = await api.claimDaily();
+                
                 if (state) {
-                    state.coins += dailyRewards[userCurrentDay - 1].reward;
-                    // Обновляем интерфейс везде
+                    state.coins += rewardObj.reward;
+                    // Помечаем в локальном стейте, что забрали
+                    if (state.user) state.user.daily_claimed = true; 
                     if (typeof updateGlobalUI === 'function') updateGlobalUI();
                 }
                 
-                claimBtn.innerText = "Получено";
-                claimBtn.classList.add('btn-disabled');
+                // Перерисовываем комнату, чтобы кнопка исчезла и появилась галочка
+                initDaily();
 
                 if (window.Telegram?.WebApp) {
-                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                    window.Telegram.WebApp.showAlert(`Поздравляем! +${dailyRewards[userCurrentDay - 1].reward} монет!`);
+                    const tg = window.Telegram.WebApp;
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.showAlert(`Success! +${rewardObj.reward} coins!`);
                 }
             } catch (e) {
                 console.error("Daily claim error:", e);
                 claimBtn.disabled = false;
-                claimBtn.innerText = "Забрать";
+                claimBtn.innerText = "GET";
             }
         };
     }

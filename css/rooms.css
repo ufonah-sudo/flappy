@@ -1,0 +1,83 @@
+.screen {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    z-index: 50; text-align: center;
+    padding: 80px 20px 20px 20px;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: scale(0.95);
+    background: rgba(26, 33, 46, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+.screen:not(.hidden) {
+    opacity: 1; pointer-events: auto;
+    transform: scale(1); z-index: 100;
+}
+
+.hidden { display: none !important; }
+
+.screen h3 {
+    color: #f7d51d; font-size: 24px; margin: 0 0 20px 0;
+    text-transform: uppercase; letter-spacing: 2px;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.5);
+}
+
+.btn-home {
+    position: absolute; top: 20px; left: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white; padding: 6px 14px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    z-index: 1100; backdrop-filter: blur(5px);
+}
+
+/* SHOP */
+.shop-section { width: 100%; max-width: 400px; margin-bottom: 25px; }
+.shop-section h4 { text-align: left; color: #888; font-size: 12px; margin: 0 0 10px 5px; }
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.shop-card.coin-pack {
+    background: rgba(255, 255, 255, 0.08); border-radius: 16px;
+    padding: 20px; display: flex; flex-direction: column;
+    align-items: center; border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pack-icon { font-size: 40px; margin-bottom: 10px; }
+.pack-amount { font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+.shop-item {
+    background: rgba(255, 255, 255, 0.08); margin-bottom: 10px;
+    padding: 12px 15px; border-radius: 12px; display: flex;
+    justify-content: space-between; align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* LEADERBOARD & FRIENDS */
+#leaderboard-list, .friends-list, .inventory-items { width: 100%; max-width: 400px; }
+.leader-item, .friend-card, .inventory-card {
+    display: flex; align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px; padding: 12px 15px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.leader-item.top-rank {
+    background: linear-gradient(90deg, rgba(247, 213, 29, 0.1) 0%, rgba(247, 213, 29, 0.0) 100%);
+    border-left: 3px solid #f7d51d;
+}
+.rank-col { width: 30px; font-size: 16px; font-weight: bold; }
+.name-col { flex-grow: 1; text-align: left; padding-left: 10px; font-weight: 500; }
+.score-col { color: #f7d51d; font-weight: bold; }
+
+/* SETTINGS & DAILY */
+.settings-options { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
+.settings-btn {
+    width: 100%; background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1); color: white;
+    padding: 15px; border-radius: 12px; display: flex; justify-content: space-between;
+}
+.daily-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 400px; }
+.daily-card {
+    background: rgba(255, 255, 255, 0.1); border-radius: 12px;
+    padding: 10px; display: flex; flex-direction: column; align-items: center; height: 100px;
+}
+.daily-card.current { border: 2px solid #f7d51d; background: rgba(247, 213, 29, 0.2); }
