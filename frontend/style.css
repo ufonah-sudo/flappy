@@ -73,7 +73,7 @@ body, html {
     left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
+    display: flex; /* Оставляем как в основе */
     flex-direction: column;
     align-items: center;
     z-index: 50;
@@ -92,11 +92,17 @@ body, html {
     backdrop-filter: blur(10px); /* Размытие фона игры */
 }
 
-/* Активная сцена */
+/* КРИТИЧЕСКАЯ ПРАВКА: Активная сцена */
 .screen:not(.hidden) {
     opacity: 1;
     pointer-events: auto;
     transform: scale(1);
+    z-index: 100; /* Выводим активный экран вперед */
+}
+
+/* КРИТИЧЕСКАЯ ПРАВКА: Полное скрытие неактивных */
+.hidden {
+    display: none !important; /* Это освобождает место для кликов по PLAY */
 }
 
 /* Исключения: Главная и Игра должны быть прозрачными */
@@ -105,10 +111,6 @@ body, html {
     backdrop-filter: none;
     justify-content: center; /* Центрируем контент */
     padding-top: 0;
-}
-
-.hidden {
-    display: none !important;
 }
 
 /* Заголовки страниц */
@@ -217,8 +219,8 @@ body, html {
     display: flex;
     flex-direction: row; 
     width: 100%;
-    max-width: 360px;
-    height: 72px; /* Под твою нарезку */
+    max-width: 400px; /* Увеличил до 400 чтобы 800px картинка влезала лучше */
+    height: 80px;  /* Пропорция 5:1 (400/80) для твоей 800/160 */
     background: url('assets/panel.png') no-repeat center center;
     background-size: contain;
     position: relative;
@@ -229,9 +231,7 @@ body, html {
     flex: 1;
     background: transparent;
     border: none;
-    /* Если на картинке панели есть иконки, раскомментируй следующую строку: */
-    /* text-indent: -9999px; */
-    color: transparent; /* Или скрываем текст так */
+    color: transparent; 
     height: 100%;
     cursor: pointer;
 }
@@ -267,7 +267,7 @@ body, html {
 
 /* Game Over Экран */
 #game-over {
-    background: rgba(0, 0, 0, 0.85); /* Чуть темнее */
+    background: rgba(0, 0, 0, 0.85); 
     backdrop-filter: blur(5px);
 }
 
