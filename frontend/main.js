@@ -111,10 +111,14 @@ async function init() {
     const setupClick = (id, room) => {
         const el = document.getElementById(id);
         if (el) {
+            console.log(`[Init] Кнопка ${id} найдена, вешаю клик.`);
             el.onclick = (e) => {
                 e.preventDefault();
+                e.stopPropagation(); // Чтобы клик не улетел в игру
                 showRoom(room);
             };
+        } else {
+            console.warn(`[Init] Кнопка ${id} НЕ НАЙДЕНА в HTML!`);
         }
     };
 
