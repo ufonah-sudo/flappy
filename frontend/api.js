@@ -58,7 +58,7 @@ async function apiRequest(endpoint, method = 'POST', extraData = {}) {
         if (response.status === 204) return { success: true };
 
         // 2. Обработка JSON
-        constcontentType = response.headers.get("content-type");
+        const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
             const responseData = await response.json();
             

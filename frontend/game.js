@@ -5,7 +5,7 @@ export class Game {
         this.onGameOver = onGameOver;
         
         // Настройки птицы
-        this.bird = { x: 50, y: 0, size: 40, velocity: 0, rotation: 0 };
+        this.bird = { x: 50, y: 0, size: 34, velocity: 0, rotation: 0 }; // Уменьшил размер для лучшего геймплея
         this.pipes = [];
         this.score = 0;
         
@@ -26,86 +26,76 @@ export class Game {
         // Анимация спрайта
         this.frameIndex = 0;
         this.tickCount = 0;
-        this.ticksPerFrame = 8; // Чуть замедлил анимацию крыльев для плавности
+        this.ticksPerFrame = 6; 
 
-        // Физика (будет пересчитана в resize)
+        // Физика (инициализируется в resize)
         this.gravity = 0;
         this.jump = 0;
         this.pipeSpeed = 0;
         
         // Таймеры
         this.pipeSpawnTimer = 0;
-        this.pipeSpawnThreshold = 100; // Динамический порог
+        this.pipeSpawnThreshold = 100;
         this.animationId = null;
 
-        // --- УПРАВЛЕНИЕ ---
-        this.handleInput = (e) => {
-            // Блокируем стандартные действия (скролл и т.д.) только если игра идет
-            if (this.isRunning && e.cancelable) e.preventDefault();
-            this.flap();
-        };
-
-        this.handleKeyDown = (e) => {
-            if (e.code === 'Space') {
-                this.flap();
-            }
-        };
+        // --- ПРИВЯЗКА МЕТОДОВ (Чтобы не терять this) ---
+        this.loop = this.loop.bind(this);
+        this.handleInput = this.handleInput.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleResize = this.resize.bind(this);
 
         // Привязка событий
         this.canvas.addEventListener('mousedown', this.handleInput);
         this.canvas.addEventListener('touchstart', this.handleInput, { passive: false });
         window.addEventListener('keydown', this.handleKeyDown);
-
-        // Адаптивность
-        this.handleResize = () => this.resize();
         window.addEventListener('resize', this.handleResize);
         
-        // Инициализация размеров
         this.resize();
     }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-
-        // Стартовая позиция
-        this.bird.x = this.canvas.width / 4; 
-        if (!this.isRunning) this.bird.y = this.canvas.height / 2;
+        // Учитываем devicePixelRatio для четкости на Retina-экранах
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = window.innerWidth * dpr;
+        this.canvas.height = window.innerHeight * dpr;
+        this.ctx.scale(dpr, dpr);
         
-        // Адаптивная физика (настройка под разные экраны)
-        this.gravity = this.canvas.height * 0.00065;
-        this.jump = -this.canvas.height * 0.0125; // Чуть усилил прыжок
-        this.pipeSpeed = this.canvas.width * 0.008; // Скорость зависит от ширины
+        // Визуальный размер канваса (CSS)
+        this.canvas.style.width = window.innerWidth + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
 
-        // Частота труб: чем шире экран, тем больше расстояние между ними в пикселях, но одинаково по времени
-        // Примерно каждые 1600мс при 60fps
-        this.pipeSpawnThreshold = Math.floor(100 * (this.canvas.width / 400));
-        // Ограничиваем, чтобы не было слишком редко
-        if (this.pipeSpawnThreshold > 180) this.pipeSpawnThreshold = 180;
-        if (this.pipeSpawnThreshold < 90) this.pipeSpawnThreshold = 90;
+        this.bird.x = window.innerWidth / 4; 
+        if (!this.isRunning) this.bird.y = window.innerHeight / 2;
+        
+        // Адаптивная физика
+        this.gravity = window.innerHeight * 0.0006;
+        this.jump = -window.innerHeight * 0.0115;
+        this.pipeSpeed = window.innerWidth * 0.007;
+
+        this.pipeSpawnThreshold = Math.floor(110 * (window.innerWidth / 400));
+        this.pipeSpawnThreshold = Math.max(90, Math.min(180, this.pipeSpawnThreshold));
     }
 
     start() {
         if (this.animationId) cancelAnimationFrame(this.animationId);
         this.score = 0;
         this.pipes = [];
-        this.bird.y = this.canvas.height / 2;
+        this.bird.y = window.innerHeight / 2;
         this.bird.velocity = 0;
         this.bird.rotation = 0;
         this.reviveUsed = false;
         this.isRunning = true;
         this.isPaused = false;
         
-        this.playSound('start'); // Пример вызова звука
+        this.playSound('start');
         this.loop();
     }
 
     revive() {
         this.reviveUsed = true;
-        // Очищаем трубы вокруг птицы (Safety Zone)
-        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 300 || p.x < this.bird.x - 150);
-        this.bird.velocity = 0;
-        this.bird.y = Math.max(0, Math.min(this.bird.y, this.canvas.height - 100)); // Возвращаем в безопасную зону
+        // Очищаем трубы в радиусе 400 пикселей впереди
+        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 400 || p.x < this.bird.x - 50);
+        this.bird.velocity = -2; // Небольшой подброс при возрождении
         this.isRunning = true;
         this.loop();
     }
@@ -116,27 +106,33 @@ export class Game {
         this.playSound('flap');
     }
 
+    handleInput(e) {
+        if (this.isRunning && e.cancelable) e.preventDefault();
+        this.flap();
+    }
+
+    handleKeyDown(e) {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            this.flap();
+        }
+    }
+
     playSound(type) {
-        // Проверяем настройки звука из localStorage
         const soundEnabled = localStorage.getItem('sound') !== 'off';
         if (!soundEnabled) return;
-
-        // Здесь ты можешь подключить реальные звуки
-        // const audio = new Audio(`assets/sounds/${type}.mp3`);
-        // audio.play().catch(() => {});
+        // Реализация звука...
     }
 
     spawnPipe() {
-        const gap = this.canvas.height * 0.28; // 28% от высоты экрана — просвет
-        const minPipeHeight = 80;
-        const maxPipeHeight = this.canvas.height - gap - minPipeHeight;
-        
-        // Рандомная высота
+        const gap = window.innerHeight * 0.30; // Чуть увеличил просвет для баланса
+        const minPipeHeight = 100;
+        const maxPipeHeight = window.innerHeight - gap - minPipeHeight;
         const pipeHeight = Math.floor(Math.random() * (maxPipeHeight - minPipeHeight)) + minPipeHeight;
 
         this.pipes.push({
-            x: this.canvas.width,
-            width: 75, // Ширина трубы
+            x: window.innerWidth,
+            width: 70, 
             top: pipeHeight,
             bottom: pipeHeight + gap,
             passed: false
@@ -146,23 +142,21 @@ export class Game {
     update() {
         if (!this.isRunning) return;
 
-        // 1. Физика птицы
         this.bird.velocity += this.gravity;
         this.bird.y += this.bird.velocity;
 
-        // Расчет поворота (клюв вниз при падении, вверх при прыжке)
-        // Плавный поворот
-        const targetRotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.bird.velocity * 0.1)));
-        this.bird.rotation += (targetRotation - this.bird.rotation) * 0.5;
+        // Поворот птицы
+        const targetRotation = Math.min(Math.PI / 3, Math.max(-Math.PI / 8, (this.bird.velocity * 0.08)));
+        this.bird.rotation += (targetRotation - this.bird.rotation) * 0.3;
 
-        // 2. Анимация крыльев
+        // Анимация крыльев
         this.tickCount++;
         if (this.tickCount > this.ticksPerFrame) {
             this.tickCount = 0;
             this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
         }
 
-        // 3. Трубы
+        // Трубы
         this.pipeSpawnTimer++;
         if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
             this.spawnPipe();
@@ -173,122 +167,76 @@ export class Game {
             const pipe = this.pipes[i];
             pipe.x -= this.pipeSpeed;
 
-            // Хитбокс птицы (сужаем для честности)
-            const padding = 8;
-            const birdHitbox = {
-                top: this.bird.y + padding,
-                bottom: this.bird.y + this.bird.size - padding,
-                left: this.bird.x + padding,
-                right: this.bird.x + this.bird.size - padding
-            };
-
-            // Проверка столкновения
+            // Хитбокс (уменьшен для честности игры)
+            const p = 6; 
             if (
-                birdHitbox.right > pipe.x && 
-                birdHitbox.left < pipe.x + pipe.width &&
-                (birdHitbox.top < pipe.top || birdHitbox.bottom > pipe.bottom)
+                this.bird.x + this.bird.size - p > pipe.x && 
+                this.bird.x + p < pipe.x + pipe.width &&
+                (this.bird.y + p < pipe.top || this.bird.y + this.bird.size - p > pipe.bottom)
             ) {
-                this.playSound('hit');
                 this.gameOver();
                 return;
             }
 
-            // Начисление очков
             if (!pipe.passed && pipe.x + pipe.width < this.bird.x) {
                 pipe.passed = true;
                 this.score++;
                 this.playSound('score');
-                // Диспатчим событие для UI
                 window.dispatchEvent(new CustomEvent('scoreUpdate', { detail: this.score }));
             }
 
-            // Удаление старых труб
-            if (pipe.x < -pipe.width) {
-                this.pipes.splice(i, 1);
-            }
+            if (pipe.x < -pipe.width) this.pipes.splice(i, 1);
         }
 
-        // 4. Смерть об пол или потолок
-        if (this.bird.y + this.bird.size > this.canvas.height || this.bird.y < -this.bird.size) {
-            this.playSound('hit');
+        // Столкновение с краями
+        if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < 0) {
             this.gameOver();
         }
     }
 
     draw() {
-        // Очистка
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-        // Трубы
+        // Отрисовка труб
         this.pipes.forEach(pipe => {
-            // Тело трубы (Градиент для объема)
-            const gradient = this.ctx.createLinearGradient(pipe.x, 0, pipe.x + pipe.width, 0);
-            gradient.addColorStop(0, '#558021'); // Темно-зеленый
-            gradient.addColorStop(0.2, '#98e346'); // Светлый блик
-            gradient.addColorStop(1, '#558021'); 
+            const grad = this.ctx.createLinearGradient(pipe.x, 0, pipe.x + pipe.width, 0);
+            grad.addColorStop(0, '#558021');
+            grad.addColorStop(0.3, '#98e346');
+            grad.addColorStop(1, '#558021');
 
-            this.ctx.fillStyle = gradient;
-            this.ctx.strokeStyle = '#2d4c12';
+            this.ctx.fillStyle = grad;
             this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = '#2d4c12';
 
-            // Верх
+            // Верхняя труба
             this.ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
-            this.ctx.strokeRect(pipe.x, -2, pipe.width, pipe.top + 2); // -2 чтобы скрыть верхнюю грань
+            this.ctx.strokeRect(pipe.x, -2, pipe.width, pipe.top + 2);
             
-            // Низ
-            this.ctx.fillRect(pipe.x, pipe.bottom, pipe.width, this.canvas.height - pipe.bottom);
-            this.ctx.strokeRect(pipe.x, pipe.bottom, pipe.width, this.canvas.height - pipe.bottom);
-
-            // Шапки труб
-            const capHeight = 24;
-            const capOverhang = 4;
-            
-            this.ctx.fillStyle = gradient;
-            
-            // Верхняя шапка
-            this.ctx.fillRect(pipe.x - capOverhang, pipe.top - capHeight, pipe.width + (capOverhang*2), capHeight);
-            this.ctx.strokeRect(pipe.x - capOverhang, pipe.top - capHeight, pipe.width + (capOverhang*2), capHeight);
-            
-            // Нижняя шапка
-            this.ctx.fillRect(pipe.x - capOverhang, pipe.bottom, pipe.width + (capOverhang*2), capHeight);
-            this.ctx.strokeRect(pipe.x - capOverhang, pipe.bottom, pipe.width + (capOverhang*2), capHeight);
+            // Нижняя труба
+            this.ctx.fillRect(pipe.x, pipe.bottom, pipe.width, window.innerHeight - pipe.bottom);
+            this.ctx.strokeRect(pipe.x, pipe.bottom, pipe.width, window.innerHeight - pipe.bottom);
         });
 
-        // Птица
+        // Отрисовка птицы
         this.ctx.save();
-        const centerX = this.bird.x + this.bird.size / 2;
-        const centerY = this.bird.y + this.bird.size / 2;
-        
-        this.ctx.translate(centerX, centerY);
+        this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
         this.ctx.rotate(this.bird.rotation);
 
         const currentImg = this.birdSprites[this.frameIndex];
-        
         if (currentImg && currentImg.complete) {
-            this.ctx.drawImage(
-                currentImg, 
-                -this.bird.size / 2, 
-                -this.bird.size / 2, 
-                this.bird.size, 
-                this.bird.size
-            );
+            this.ctx.drawImage(currentImg, -this.bird.size / 2, -this.bird.size / 2, this.bird.size, this.bird.size);
         } else {
-            // Фоллбэк (если картинка не загрузилась)
             this.ctx.fillStyle = '#f7d51d';
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, this.bird.size / 2, 0, Math.PI * 2);
-            this.ctx.fill();
-            this.ctx.stroke();
+            this.ctx.fillRect(-this.bird.size / 2, -this.bird.size / 2, this.bird.size, this.bird.size);
         }
-        
         this.ctx.restore();
     }
 
     gameOver() {
         if (!this.isRunning) return;
         this.isRunning = false;
+        this.playSound('hit');
         if (this.animationId) cancelAnimationFrame(this.animationId);
-        // Вызываем колбек, переданный из main.js
         if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
     }
 
@@ -296,13 +244,12 @@ export class Game {
         if (!this.isRunning) return;
         this.update();
         this.draw();
-        this.animationId = requestAnimationFrame(() => this.loop());
+        this.animationId = requestAnimationFrame(this.loop);
     }
 
     destroy() {
         this.isRunning = false;
-        if (this.animationId) cancelAnimationFrame(this.animationId);
-        
+        cancelAnimationFrame(this.animationId);
         window.removeEventListener('resize', this.handleResize);
         window.removeEventListener('keydown', this.handleKeyDown);
         this.canvas.removeEventListener('mousedown', this.handleInput);
