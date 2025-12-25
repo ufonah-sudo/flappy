@@ -12,7 +12,7 @@ export function initShop() {
     container.innerHTML = `
         <div class="shop-section">
             <h4 style="color: #f7d51d; margin-bottom: 12px; font-size: 14px; text-align: left;">💎 ПОПОЛНИТЬ БАЛАНС</h4>
-            <div id="shop-ton-wallet" style="margin-bottom: 15px; display: flex; justify-content: center;"></div>
+            <div id="shop-ton-wallet" style="margin-bottom: 15px; display: flex; justify-content: center; min-height: 40px;"></div>
             
             <div class="shop-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="shop-card" style="background: rgba(255,255,255,0.07); padding: 15px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
@@ -43,13 +43,17 @@ export function initShop() {
                     </div>
                     <button class="buy-ingame-btn secondary-btn" data-item="magnet" data-price="50" style="margin: 0; padding: 8px 15px; width: auto; font-size: 12px;">КУПИТЬ</button>
                 </div>
-            </div>
+                </div>
         </div>
     `;
 
-    // Рендерим кнопку кошелька в магазине
+    // Безопасный рендер кнопки TON
     if (window.wallet && window.wallet.tonConnectUI) {
-        window.wallet.tonConnectUI.setConnectButtonRoot('#shop-ton-wallet');
+        try {
+            window.wallet.tonConnectUI.setConnectButtonRoot('#shop-ton-wallet');
+        } catch (e) {
+            console.warn("[Shop] Ошибка привязки кнопки TON:", e);
+        }
     }
 
     // 1. Обработка покупки за TON
@@ -73,11 +77,9 @@ export function initShop() {
                 const originalText = button.innerText;
                 button.innerHTML = `⏳...`;
                 
-                // Отправляем транзакцию через WalletManager
                 const tx = await window.wallet.sendTransaction(amount);
                 
                 if (tx) {
-                    // Подтверждаем на бэкенде
                     const res = await api.buyCoins(amount);
                     if (res && !res.error) {
                         state.coins = res.newBalance;
@@ -109,7 +111,7 @@ export function initShop() {
             if (state.coins < cost) {
                 if (tg) {
                     tg.HapticFeedback.notificationOccurred('error');
-                    tg.showAlert("Недостаточно монет! Соберите их в игре или купите за TON.");
+                    tg.showAlert("Недостаточно монет!");
                 }
                 return;
             }
@@ -118,23 +120,26 @@ export function initShop() {
                 button.disabled = true;
                 button.innerText = "⏳";
                 
-                // Здесь будет запрос: await api.buyItem(item);
+                // Вызов API для покупки предмета
+                const res = await api.buyItem(item); 
                 
-                state.coins -= cost;
-                if (window.updateGlobalUI) window.updateGlobalUI();
-                
-                if (tg) {
-                    tg.HapticFeedback.impactOccurred('medium');
+                if (res && !res.error) {
+                    state.coins = res.newBalance;
+                    // Обновляем количество в state.powerups
+                    if (state.powerups) {
+                        state.powerups[item] = (state.powerups[item] || 0) + 1;
+                    }
+                    
+                    if (window.updateGlobalUI) window.updateGlobalUI();
+                    if (tg) tg.HapticFeedback.impactOccurred('medium');
+                    
+                    button.innerText = "ГОТОВО";
+                    button.style.color = "#4ec0ca";
+                    
+                    setTimeout(() => {
+                       initShop(); // Перерисовываем для сброса состояния кнопок
+                    }, 1500);
                 }
-                
-                button.innerText = "ГОТОВО";
-                button.style.color = "#4ec0ca";
-                
-                // Через 2 секунды возвращаем кнопку в исходное состояние (или помечаем как куплено)
-                setTimeout(() => {
-                   initShop();
-                }, 2000);
-
             } catch (err) {
                 button.disabled = false;
                 button.innerText = "КУПИТЬ";
