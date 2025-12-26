@@ -25,6 +25,7 @@ const state = {
         music: true
     },
     powerups: {
+        heart: 0, // Добавлено для логики возрождения
         shield: 0,
         gap: 0,
         magnet: 0,
@@ -44,7 +45,7 @@ const scenes = {
     daily: document.getElementById('scene-daily'),
     settings: document.getElementById('scene-settings'),
     gameOver: document.getElementById('game-over'),
-    pauseMenu: document.getElementById('pause-menu') // Добавлено
+    pauseMenu: document.getElementById('pause-menu')
 };
 
 /**
@@ -61,42 +62,28 @@ function showRoom(roomName) {
     if (!target) return;
     target.classList.remove('hidden');
 
-    // --- Управление Header (Балансы) ---
+    // --- Управление Header ---
     const header = document.getElementById('header');
     if (header) {
-        header.style.display = (roomName === 'game' || roomName === 'pauseMenu') ? 'none' : 'flex';
+        header.style.display = (roomName === 'game' || roomName === 'pauseMenu' || roomName === 'gameOver') ? 'none' : 'flex';
     }
 
-    // --- Кнопка вызова паузы (Триггер) ---
+    // --- Управление Паузой ---
     const pauseTrigger = document.getElementById('btn-pause-trigger');
     if (pauseTrigger) {
-        // Показываем кнопку паузы ТОЛЬКО во время активной игры
         pauseTrigger.classList.toggle('hidden', roomName !== 'game');
     }
 
-    // --- Управление Нижней Панелью ---
+    // --- Управление Нижней Панелью (ФИКС ВИДИМОСТИ) ---
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
         const hideOn = ['game', 'gameOver', 'modeSelection', 'pauseMenu'];
         if (hideOn.includes(roomName)) {
-            bottomPanel.classList.add('hidden');
-            bottomPanel.style.display = 'none';
+            bottomPanel.style.setProperty('display', 'none', 'important');
         } else {
-            bottomPanel.classList.remove('hidden');
-            bottomPanel.style.display = 'flex'; 
-        }
-    }
-
-    // Управление TON Connect
-    if (window.wallet && window.wallet.tonConnectUI) {
-        let walletContainerSelector = null;
-        if (roomName === 'shop') walletContainerSelector = '#shop-ton-wallet';
-        if (roomName === 'settings') walletContainerSelector = '#settings-ton-wallet';
-
-        if (walletContainerSelector && document.querySelector(walletContainerSelector)) {
-            try {
-                window.wallet.tonConnectUI.setConnectButtonRoot(walletContainerSelector);
-            } catch (e) { console.warn("[TON] Ошибка кнопки:", e); }
+            // Принудительно включаем видимость для главного меню и других комнат
+            bottomPanel.style.setProperty('display', 'flex', 'important');
+            bottomPanel.style.zIndex = "10001";
         }
     }
 
@@ -105,11 +92,10 @@ function showRoom(roomName) {
         const activeEngine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
         if (activeEngine) {
             activeEngine.resize();
-            activeEngine.isRunning = true; // Важно для выхода из паузы
+            activeEngine.isRunning = true;
             activeEngine.start(); 
         }
     } else if (roomName !== 'pauseMenu') {
-        // Останавливаем всё, если мы не в игре и не в меню паузы
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
     }
@@ -155,7 +141,7 @@ async function init() {
         if (el) el.onclick = (e) => { e.preventDefault(); showRoom(room); };
     };
 
-    // Привязка кнопок
+    // Навигация
     bindClick('btn-shop', 'shop');
     bindClick('btn-inventory', 'inventory');
     bindClick('btn-home-panel', 'home'); 
@@ -165,15 +151,14 @@ async function init() {
     bindClick('btn-daily-icon', 'daily');
     bindClick('btn-start', 'modeSelection');
 
-    // Кнопки режимов
-    const setMode = (mode) => { state.currentMode = mode; showRoom('game'); };
+    // Режимы
     const btnCl = document.getElementById('btn-mode-classic');
-    if (btnCl) btnCl.onclick = () => setMode('classic');
+    if (btnCl) btnCl.onclick = () => { state.currentMode = 'classic'; showRoom('game'); };
     const btnAr = document.getElementById('btn-mode-arcade');
-    if (btnAr) btnAr.onclick = () => setMode('arcade');
+    if (btnAr) btnAr.onclick = () => { state.currentMode = 'arcade'; showRoom('game'); };
     bindClick('btn-back-to-home', 'home');
 
-    // Кнопки ПАУЗЫ
+    // Пауза
     const btnPause = document.getElementById('btn-pause-trigger');
     if (btnPause) {
         btnPause.onclick = () => {
@@ -184,20 +169,12 @@ async function init() {
     }
 
     const btnResume = document.getElementById('btn-resume');
-    if (btnResume) {
-        btnResume.onclick = () => {
-            // Просто возвращаемся в комнату 'game', движки активируются в showRoom
-            showRoom('game');
-        };
-    }
+    if (btnResume) btnResume.onclick = () => showRoom('game');
 
     const btnExit = document.getElementById('btn-exit-home');
     if (btnExit) btnExit.onclick = () => showRoom('home');
 
-    const btnRestartPause = document.getElementById('btn-restart-pause');
-    if (btnRestartPause) btnRestartPause.onclick = () => showRoom('game');
-
-    // Переключатели звука в паузе
+    // Звук
     const btnSound = document.getElementById('btn-toggle-sound');
     if (btnSound) {
         btnSound.onclick = () => {
@@ -206,26 +183,35 @@ async function init() {
         };
     }
 
-    // Реввайв и рестарт
-    const btnRestart = document.getElementById('btn-restart');
-    if (btnRestart) btnRestart.onclick = () => showRoom('home');
-
+    // --- ЭКРАН СМЕРТИ (GAME OVER) ---
+    
+    // 1. Кнопка возрождения (тратит СЕРДЕЧКО из инвентаря)
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        btnRevive.onclick = async () => {
-            if (state.lives > 0) {
-                state.lives--;
+        btnRevive.onclick = () => {
+            if (state.powerups.heart > 0) {
+                state.powerups.heart--; 
                 updateGlobalUI();
                 showRoom('game');
-                if (state.currentMode === 'classic') window.game?.revive();
-                else window.arcadeGame?.revive();
-            } else {
-                tg?.showAlert("У вас нет сердечек ❤️");
+                const engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
+                if (engine) engine.revive(); 
             }
         };
     }
 
-    // Авторизация (API)
+    // 2. Кнопка PLAY AGAIN (Заново)
+    const btnRestart = document.getElementById('btn-restart');
+    if (btnRestart) {
+        btnRestart.onclick = () => showRoom('game');
+    }
+
+    // 3. Кнопка EXIT (В главное меню)
+    const btnExitGameOver = document.getElementById('btn-exit-gameover');
+    if (btnExitGameOver) {
+        btnExitGameOver.onclick = () => showRoom('home');
+    }
+
+    // Авторизация
     try {
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 
@@ -245,14 +231,22 @@ async function init() {
     showRoom('home'); 
 }
 
+/**
+ * Обработка окончания игры
+ */
 function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
     const finalScoreEl = document.getElementById('final-score');
     if (finalScoreEl) finalScoreEl.innerText = score;
+    
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        btnRevive.style.display = (!reviveUsed && state.lives > 0) ? 'block' : 'none';
+        // Показываем кнопку только если еще не возрождались И есть сердечки
+        const hasHeart = state.powerups.heart > 0;
+        btnRevive.style.display = (!reviveUsed && hasHeart) ? 'block' : 'none';
+        btnRevive.innerText = `USE HEART ❤️ (Left: ${state.powerups.heart})`;
     }
+    
     api.saveScore(score).catch(err => console.error("[Score] Ошибка:", err));
 }
 

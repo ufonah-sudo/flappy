@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Flappy Bird TON</title>
     
-    <link rel="stylesheet" href="/css/base.css?v=1.3">
+    <link rel="stylesheet" href="/css/base.css"> 
     <link rel="stylesheet" href="/frontend/style.css">
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -30,13 +31,19 @@
 
         <div id="scene-home" class="screen">
             <div class="side-buttons">
-                <img src="/frontend/assets/top.png" id="btn-top-icon" class="icon-btn" alt="Top">
-                <img src="/frontend/assets/daily.png" id="btn-daily-icon" class="icon-btn" alt="Daily">
+                <div class="side-btn-wrapper">
+                    <img src="/frontend/assets/top.png" id="btn-top-icon" alt="Top">
+                </div>
+                <div class="side-btn-wrapper">
+                    <img src="/frontend/assets/daily.png" id="btn-daily-icon" alt="Daily">
+                </div>
             </div>
 
-            <div class="game-title">FLAPPY TON</div>
+            <div class="game-logo-container">
+                <h1 class="game-title">FLAPPY TON</h1>
+            </div>
 
-            <button id="btn-start">PLAY</button>
+            <button id="btn-start" class="primary-btn pulse">PLAY</button>
 
             <p class="promo-text">Invite friends & get +5 Coins</p>
         </div>
@@ -46,21 +53,21 @@
                 <h2 class="mode-title">SELECT MODE</h2>
                 
                 <div class="mode-cards">
-                    <button id="btn-mode-classic" class="mode-card">
+                    <div id="btn-mode-classic" class="mode-card">
                         <div class="mode-icon">🐦</div>
                         <div class="mode-info">
                             <span class="mode-name">CLASSIC</span>
                             <span class="mode-desc">Standard Flappy</span>
                         </div>
-                    </button>
+                    </div>
 
-                    <button id="btn-mode-arcade" class="mode-card">
+                    <div id="btn-mode-arcade" class="mode-card">
                         <div class="mode-icon">🚀</div>
                         <div class="mode-info">
                             <span class="mode-name">ARCADE</span>
                             <span class="mode-desc">Abilities & Speed</span>
                         </div>
-                    </button>
+                    </div>
                 </div>
 
                 <button id="btn-back-to-home" class="secondary-btn">BACK</button>
@@ -77,63 +84,64 @@
             <div class="pause-content">
                 <h2>PAUSE</h2>
                 <button id="btn-resume" class="primary-btn">RESUME</button>
-                <button id="btn-restart-pause" class="secondary-btn">RESTART</button>
-                <button id="btn-exit-home" class="secondary-btn">MAIN MENU</button>
+                <button id="btn-exit-home" class="secondary-btn">EXIT TO MENU</button>
                 
                 <div class="settings-row">
                     <button id="btn-toggle-sound" class="icon-btn">🔊 Sound</button>
-                    <button id="btn-toggle-music" class="icon-btn">🎵 Music</button>
                 </div>
             </div>
-        </div>
-
-        <div id="scene-shop" class="screen hidden">
-            <h3>COIN SHOP</h3>
-            <div id="shop-ton-wallet"></div> 
-            <div class="room-content shop-grid" id="shop-content"></div>
-        </div>
-
-        <div id="scene-settings" class="screen hidden">
-            <h3>SETTINGS</h3>
-            <div id="settings-ton-wallet"></div>
-            <div class="room-content settings-options" id="settings-content"></div>
         </div>
 
         <div id="game-over" class="screen hidden">
             <h2 class="status-title">GAME OVER</h2>
             <div class="result-box">
-                <p>Your Score</p>
+                <p>Score</p>
                 <span id="final-score">0</span>
-                <p>Coins: <span id="revive-balance">0</span></p>
             </div>
-            <div id="revive-container">
-                <button id="btn-revive" class="primary-btn">REVIVE (1 Coin)</button>
+            
+            <div id="revive-section">
+                <button id="btn-revive" class="primary-btn">USE HEART ❤️</button>
             </div>
-            <button id="btn-restart" class="secondary-btn">RESTART</button>
-            <button id="btn-share" class="secondary-btn" style="margin-top: 10px;">SHARE RESULT</button>
+
+            <div class="game-over-buttons">
+                <button id="btn-restart" class="primary-btn">PLAY AGAIN</button>
+                <button id="btn-exit-gameover" class="secondary-btn">MAIN MENU</button>
+            </div>
+            
+            <button id="btn-share" class="secondary-btn" style="margin-top: 15px;">SHARE RESULT</button>
+        </div>
+
+        <div id="scene-shop" class="screen hidden">
+            <h3>SHOP</h3>
+            <div id="shop-ton-wallet"></div> 
+            <div class="room-content" id="shop-content"></div>
         </div>
 
         <div id="scene-leaderboard" class="screen hidden">
             <h3>TOP PLAYERS</h3>
-            <div class="room-content" id="leaderboard-list">
-                <p class="loading-text">Loading...</p>
-            </div>
+            <div class="room-content" id="leaderboard-list"></div>
         </div>
 
         <div id="scene-friends" class="screen hidden">
             <h3>FRIENDS</h3>
-            <div class="room-content friends-list" id="friends-content"></div>
-            <button class="primary-btn" id="btn-invite-real" style="margin-top: 20px;">INVITE FRIEND</button>
+            <div class="room-content" id="friends-content"></div>
+            <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
         </div>
 
         <div id="scene-inventory" class="screen hidden">
             <h3>INVENTORY</h3>
-            <div class="room-content inventory-items" id="inventory-content"></div>
+            <div class="room-content" id="inventory-content"></div>
         </div>
 
         <div id="scene-daily" class="screen hidden">
             <h3>DAILY REWARD</h3>
-            <div class="room-content daily-grid" id="daily-content"></div>
+            <div class="room-content" id="daily-content"></div>
+        </div>
+
+        <div id="scene-settings" class="screen hidden">
+            <h3>SETTINGS</h3>
+            <div id="settings-ton-wallet"></div>
+            <div class="room-content" id="settings-content"></div>
         </div>
 
         <div class="menu-buttons-panel">
@@ -143,9 +151,10 @@
 
             <button id="btn-inventory" class="nav-btn">
                 <img src="/frontend/assets/invent.png" alt="Inventory">
+                <span class="item-badge hidden" data-powerup="heart">0</span>
             </button>
 
-            <button id="btn-home-panel" class="nav-btn home-btn">
+            <button id="btn-home-panel" class="nav-btn">
                 <img src="/frontend/assets/home.png" alt="Home">
             </button> 
 

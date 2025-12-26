@@ -2,7 +2,7 @@
    base.css - ГЛОБАЛЬНЫЕ СТИЛИ И НАВИГАЦИЯ
    ========================================= */
 
-/* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ --- */
+/* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ И ФИКСЫ МОБИЛОК --- */
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
@@ -21,6 +21,7 @@ body, html {
     position: fixed; 
     top: 0;
     left: 0;
+    /* Фон зафиксирован, чтобы не дергался при открытии клавиатуры или скролле */
     background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
@@ -35,6 +36,8 @@ body, html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* Все события кликов проходят сквозь главный контейнер к кнопкам */
+    pointer-events: none; 
 }
 
 /* --- 2. ВЕРХНЯЯ ПАНЕЛЬ (HEADER) --- */
@@ -45,7 +48,6 @@ body, html {
     display: flex;
     justify-content: center;
     z-index: 1000;
-    pointer-events: none;
 }
 
 .header-balances {
@@ -56,7 +58,7 @@ body, html {
     border-radius: 25px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    pointer-events: auto;
+    pointer-events: auto; /* Разрешаем клики по балансам */
 }
 
 .balance-item {
@@ -69,31 +71,31 @@ body, html {
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
+/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (ФИКС ВИДИМОСТИ) --- */
 .menu-buttons-panel {
-    position: fixed;
-    bottom: env(safe-area-inset-bottom, 20px);
-    left: 50%;
-    transform: translateX(-50%);
-    width: 95%;
-    max-width: 450px;
-    height: 80px;
-    display: flex; /* Убрал !important, чтобы JS мог управлять через класс .hidden */
+    position: fixed !important;
+    bottom: env(safe-area-inset-bottom, 20px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 95% !important;
+    max-width: 450px !important;
+    height: 80px !important;
+    display: flex; 
     justify-content: space-around;
     align-items: center;
-    background: rgba(0, 0, 0, 0.3); /* Легкий фон для видимости */
+    background: rgba(0, 0, 0, 0.4) !important;
     border-radius: 25px;
-    backdrop-filter: blur(5px);
-    z-index: 9999;
-    pointer-events: auto;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    backdrop-filter: blur(10px);
+    z-index: 10001 !important; /* Самый высокий приоритет в меню */
+    pointer-events: auto !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .menu-buttons-panel.hidden {
     display: none !important;
 }
 
-/* --- 4. КНОПКИ --- */
+/* --- 4. КНОПКИ НАВИГАЦИИ --- */
 .nav-btn {
     background: transparent;
     border: none;
@@ -101,25 +103,37 @@ body, html {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 55px;
-    height: 55px;
+    width: 60px;
+    height: 60px;
     cursor: pointer;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
+    pointer-events: auto;
 }
 
 .nav-btn img {
-    width: 100%;
-    height: 100%;
+    width: 85%;
+    height: 85%;
     object-fit: contain;
     pointer-events: none;
 }
 
-/* Баджи для инвентаря (количество предметов) */
+#btn-home-panel {
+    width: 85px;
+    height: 85px;
+    transform: translateY(-12px);
+}
+
+#btn-home-panel img { width: 100%; height: 100%; }
+
+.nav-btn:active { transform: scale(0.8); }
+#btn-home-panel:active { transform: translateY(-12px) scale(0.8); }
+
+/* Баджи (количество предметов) */
 .item-badge {
     position: absolute;
-    top: -5px;
-    right: -5px;
+    top: 5px;
+    right: 5px;
     background: #ff3b30;
     color: white;
     font-size: 10px;
@@ -129,21 +143,7 @@ body, html {
     border: 1px solid white;
 }
 
-#btn-home-panel {
-    width: 75px;
-    height: 75px;
-    transform: translateY(-10px);
-}
-
-.nav-btn:active {
-    transform: scale(0.85);
-}
-
-#btn-home-panel:active {
-    transform: translateY(-10px) scale(0.85);
-}
-
-/* --- 5. ЭКРАНЫ И ПАУЗА --- */
+/* --- 5. ЭКРАНЫ И ИХ СЛОИ --- */
 .screen {
     position: absolute;
     top: 0;
@@ -154,7 +154,15 @@ body, html {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    z-index: 100;
+    pointer-events: auto; /* Экраны должны ловить клики */
+}
+
+/* Специальные фоны для экранов */
+#scene-home { background: transparent; }
+#scene-shop, #scene-inventory, #scene-leaderboard, #scene-friends, #scene-daily, #scene-settings {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
 }
 
 #pause-menu {
@@ -163,69 +171,82 @@ body, html {
     z-index: 11000;
 }
 
-.pause-content {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 30px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 80%;
-    max-width: 300px;
+/* --- 6. ЭКРАН СМЕРТИ (НОВОЕ) --- */
+#game-over {
+    background: rgba(0,0,0,0.9);
+    z-index: 10500;
 }
 
+.game-over-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 80%;
+    max-width: 250px;
+    margin-top: 20px;
+}
+
+/* --- 7. КНОПКИ И МОДЫ --- */
+.primary-btn {
+    background: #f7d51d;
+    color: #333;
+    padding: 16px 30px;
+    border-radius: 20px;
+    font-weight: 900;
+    border: none;
+    box-shadow: 0 5px 0 #b8860b;
+    width: 100%;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.primary-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 #b8860b;
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 14px 25px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 100%;
+    cursor: pointer;
+}
+
+/* Кнопка триггера паузы */
 #btn-pause-trigger {
     position: fixed;
     top: 20px;
     right: 20px;
     z-index: 5000;
-    background: rgba(0, 0, 0, 0.4);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    width: 45px;
-    height: 45px;
-    border-radius: 12px;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    backdrop-filter: blur(5px);
-}
-
-/* --- 6. МОДЫ И КНОПКИ --- */
-.mode-card {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(255, 255, 255, 0.2);
+    width: 50px;
+    height: 50px;
     border-radius: 15px;
-    padding: 15px;
+    color: white;
+    font-size: 24px;
     display: flex;
     align-items: center;
-    gap: 15px;
-    width: 100%;
-    transition: background 0.2s;
+    justify-content: center;
+    pointer-events: auto;
 }
 
-.mode-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.2); }
-
-.primary-btn {
-    background: #f7d51d;
-    color: #333;
-    padding: 15px 30px;
-    border-radius: 25px;
-    font-weight: 800;
-    border: none;
-    box-shadow: 0 4px 0 #b8860b;
-}
-
-.secondary-btn {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    padding: 12px 25px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
+/* Утилиты */
 .hidden { display: none !important; }
 
-/* Иконки */
-#btn-top-icon { content: url('/frontend/assets/top.png'); width: 50px; height: 50px; }
-#btn-daily-icon { content: url('/frontend/assets/daily.png'); width: 50px; height: 50px; }
+/* Ассеты иконок */
+#btn-top-icon { content: url('/frontend/assets/top.png'); width: 50px; height: 50px; cursor: pointer; pointer-events: auto; }
+#btn-daily-icon { content: url('/frontend/assets/daily.png'); width: 50px; height: 50px; cursor: pointer; pointer-events: auto; }
+
+.side-buttons {
+    position: absolute;
+    top: 100px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 1001;
+}
