@@ -1,0 +1,8 @@
+# 1. Собрать все измененные файлы (index.html, base.css, main.js)
+git add .
+
+# 2. Зафиксировать изменения (коммит)
+git commit -m "fix: connect base.css in index.html and update paths"
+
+# 3. Отправить в облако (на GitHub/Vercel)
+git push
