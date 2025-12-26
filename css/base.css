@@ -1,11 +1,10 @@
 /* =========================================
-   base.css - ГЛОБАЛЬНЫЕ СТИЛИ И НАВИГАЦИЯ
+   base.css - ИДЕАЛЬНАЯ ВЕРСИЯ
    ========================================= */
 
-/* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ И ФИКСЫ МОБИЛОК --- */
+/* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ --- */
 * {
     box-sizing: border-box;
-    /* Убираем серое выделение при нажатии на iOS */
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none;
     user-select: none;
@@ -37,47 +36,124 @@ body, html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* События проходят сквозь, если не пойманы элементами */
     pointer-events: none; 
 }
 
-/* --- 2. ВЕРХНЯЯ ПАНЕЛЬ (HEADER) --- */
-#header {
-    position: fixed;
-    top: env(safe-area-inset-top, 15px);
+/* --- 2. ЛОГОТИП И ГЛАВНЫЙ ЭКРАН --- */
+.game-logo-container {
+    width: 280px; 
+    height: 175px; 
+    background: url('/frontend/assets/logo.png') no-repeat center center;
+    background-size: contain;
+    margin-bottom: 40px;
+    pointer-events: none;
+}
+.game-title { display: none; } /* Скрываем текст, если есть PNG */
+
+/* --- 3. ТОП И ДЕЙЛИ (ПО БОКАМ) --- */
+.side-buttons {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 15px) + 75px);
+    left: 0;
+    right: 0;
     width: 100%;
     display: flex;
-    justify-content: center;
-    z-index: 1000;
+    justify-content: space-between;
+    padding: 0 20px;
+    pointer-events: none;
+    z-index: 1001;
 }
 
-.header-balances {
-    display: flex;
-    gap: 15px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 8px 20px;
-    border-radius: 25px;
-    backdrop-filter: blur(10px);
+.side-btn-wrapper {
+    pointer-events: auto;
+    width: 50px;
+    height: 50px;
+    transition: transform 0.1s ease;
+}
+
+.side-btn-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* --- 4. ПАУЗА И ИГРОВОЙ ЭКРАН --- */
+#btn-pause-trigger {
+    position: fixed !important;
+    top: env(safe-area-inset-top, 20px) !important;
+    left: 20px !important;
+    right: auto !important;
+    width: 45px;
+    height: 45px;
+    background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: auto;
 }
 
-.balance-item {
-    color: #f7d51d;
-    font-weight: 800;
-    font-size: 18px;
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+#score-overlay {
+    position: absolute;
+    top: 60px;
+    font-size: 48px;
+    font-weight: 900;
+    text-shadow: 2px 2px 0 #000;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* --- 5. МАГАЗИН И ИНВЕНТАРЬ --- */
+.room-content {
+    width: 100%;
+    max-width: 450px;
+    height: 60vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+#shop-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.shop-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 15px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 5px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
 }
 
-.gold-coin-icon {
-    color: #FFD700;
-    font-size: 20px;
+.shop-icon { font-size: 32px; margin-bottom: 8px; }
+.shop-name { font-size: 14px; font-weight: bold; margin-bottom: 5px; opacity: 0.8; }
+.shop-price { color: #f7d51d; font-weight: 800; margin-bottom: 12px; }
+
+.buy-btn {
+    background: #f7d51d;
+    color: #000;
+    border: none;
+    padding: 10px;
+    border-radius: 12px;
+    font-weight: 900;
+    width: 100%;
+    cursor: pointer;
 }
 
-/* --- 3. НИЖНЯЯ ПАНЕЛЬ (ПРОЗРАЧНАЯ ПО ТВОЕЙ ПРОСЬБЕ) --- */
+/* --- 6. НИЖНЯЯ ПАНЕЛЬ И БАДЖИ --- */
 .menu-buttons-panel {
     position: fixed !important;
     bottom: env(safe-area-inset-bottom, 20px) !important;
@@ -89,49 +165,22 @@ body, html {
     display: flex; 
     justify-content: space-around;
     align-items: center;
-    background: transparent !important; /* Серый фон удален */
+    background: transparent !important;
     z-index: 10001 !important;
     pointer-events: auto !important;
 }
 
-/* --- 4. КНОПКИ НАВИГАЦИИ И ОТДАЧА --- */
 .nav-btn {
     background: transparent;
     border: none;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     width: 60px;
     height: 60px;
-    cursor: pointer;
-    transition: transform 0.1s ease; /* Быстрая отдача */
     position: relative;
+    cursor: pointer;
 }
 
-.nav-btn img {
-    width: 85%;
-    height: 85%;
-    object-fit: contain;
-    pointer-events: none;
-}
+.nav-btn img { width: 80%; height: 80%; object-fit: contain; }
 
-#btn-home-panel {
-    width: 85px;
-    height: 85px;
-    transform: translateY(-12px);
-}
-
-/* Эффект нажатия (отдача для iPhone) */
-.nav-btn:active, .primary-btn:active, .secondary-btn:active, .side-btn-wrapper:active {
-    transform: scale(0.92) !important;
-}
-
-#btn-home-panel:active {
-    transform: translateY(-12px) scale(0.92) !important;
-}
-
-/* Баджи (авто-скрытие через JS) */
 .item-badge {
     position: absolute;
     top: 5px;
@@ -139,35 +188,18 @@ body, html {
     background: #ff3b30;
     color: white;
     font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
     font-weight: bold;
-    border: 1px solid white;
+    border: 1.5px solid white;
     z-index: 10;
 }
 
-/* --- 5. ТОП И ДЕЙЛИ (ПО БОКАМ) --- */
-.side-buttons {
-    position: absolute;
-    top: calc(env(safe-area-inset-top, 15px) + 80px);
-    left: 0;
-    right: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-between; /* Разносит влево и вправо */
-    padding: 0 20px;
-    pointer-events: none;
-    z-index: 1001;
-}
-
-.side-btn-wrapper {
-    pointer-events: auto;
-    width: 55px;
-    height: 55px;
-    transition: transform 0.1s ease;
-}
-
-/* --- 6. ЭКРАНЫ И МОДАЛКИ --- */
+/* --- 7. ЭКРАНЫ (SCREENS) --- */
 .screen {
     position: absolute;
     top: 0;
@@ -182,51 +214,65 @@ body, html {
     pointer-events: auto;
 }
 
+/* Затемнение для комнат */
 #scene-shop, #scene-inventory, #scene-leaderboard, #scene-friends, #scene-daily, #scene-settings {
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(15px);
+    z-index: 2000; /* Выше чем главное меню */
 }
 
-/* --- 7. КНОПКИ (БЕЗ ТЕНЕЙ) --- */
+#game-over {
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+}
+
+/* --- 8. КНОПКИ И ЭФФЕКТЫ --- */
 .primary-btn {
     background: #f7d51d;
     color: #333;
-    padding: 16px 30px;
+    padding: 18px 40px;
     border-radius: 20px;
     font-weight: 900;
     border: none;
-    width: 100%;
+    font-size: 20px;
     cursor: pointer;
-    text-transform: uppercase;
-    box-shadow: none !important; /* Убрана лишняя тень */
-    transition: transform 0.1s ease;
+    box-shadow: 0 4px 0 #b8860b;
 }
 
 .secondary-btn {
     background: rgba(255, 255, 255, 0.1);
     color: white;
     padding: 14px 25px;
-    border-radius: 20px;
+    border-radius: 15px;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    width: 100%;
     cursor: pointer;
-    transition: transform 0.1s ease;
 }
 
-/* --- 8. ВЫБОР РЕЖИМА (СТИЛЬ КАРТОЧЕК) --- */
-.mode-card {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 15px;
+.nav-btn:active, .primary-btn:active, .buy-btn:active, .side-btn-wrapper:active, .secondary-btn:active {
+    transform: scale(0.92) !important;
+}
+
+.header-balances {
+    position: fixed;
+    top: env(safe-area-inset-top, 15px);
     display: flex;
-    align-items: center;
-    gap: 20px;
-    width: 100%;
-    color: white;
-    cursor: pointer;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 20px;
+    border-radius: 25px;
+    pointer-events: auto;
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Утилиты */
 .hidden { display: none !important; }
+
+/* Анимация пульсации для кнопки Play */
+.pulse {
+    animation: pulse-animation 2s infinite;
+}
+@keyframes pulse-animation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}

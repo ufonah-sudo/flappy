@@ -24,7 +24,6 @@ const state = {
         sound: true,
         music: true
     },
-    // Выдаем по 3 способности при старте
     powerups: {
         heart: 3,
         shield: 3,
@@ -34,6 +33,7 @@ const state = {
     }
 };
 
+// Сцены (убедись, что ID в HTML совпадают)
 const scenes = {
     home: document.getElementById('scene-home'),
     modeSelection: document.getElementById('scene-mode-selection'),
@@ -54,6 +54,7 @@ const scenes = {
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
+    // Скрываем все сцены
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
@@ -62,42 +63,51 @@ function showRoom(roomName) {
     if (!target) return;
     target.classList.remove('hidden');
 
-    // --- Управление Header ---
-    const header = document.getElementById('header');
+    // --- Управление Header (Балансы) ---
+    const header = document.querySelector('.header-balances') || document.getElementById('header');
     if (header) {
-        header.style.display = (roomName === 'game' || roomName === 'pauseMenu' || roomName === 'gameOver') ? 'none' : 'flex';
+        const hideHeaderOn = ['game', 'pauseMenu', 'gameOver', 'modeSelection'];
+        header.classList.toggle('hidden', hideHeaderOn.includes(roomName));
     }
 
-    // --- Управление Паузой ---
+    // --- Кнопка Паузы ---
     const pauseTrigger = document.getElementById('btn-pause-trigger');
     if (pauseTrigger) {
         pauseTrigger.classList.toggle('hidden', roomName !== 'game');
     }
 
-    // --- Управление Нижней Панелью ---
+    // --- Нижняя Панель Навигации ---
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
         const hideOn = ['game', 'gameOver', 'modeSelection', 'pauseMenu'];
         if (hideOn.includes(roomName)) {
-            bottomPanel.style.setProperty('display', 'none', 'important');
+            bottomPanel.style.display = 'none';
         } else {
-            bottomPanel.style.setProperty('display', 'flex', 'important');
+            bottomPanel.style.display = 'flex';
         }
     }
 
-    // Управление игровыми движками
+    // --- Управление игровыми движками ---
+    const activeEngine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
+    const idleEngine = state.currentMode === 'classic' ? window.arcadeGame : window.game;
+
     if (roomName === 'game') {
-        const activeEngine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
+        if (idleEngine) idleEngine.isRunning = false; // Глушим второй движок
         if (activeEngine) {
             activeEngine.resize();
+            activeEngine.init(); // Важно: сброс параметров птицы
             activeEngine.isRunning = true;
             activeEngine.start(); 
         }
-    } else if (roomName !== 'pauseMenu') {
+    } else if (roomName === 'pauseMenu') {
+        if (activeEngine) activeEngine.isRunning = false;
+    } else {
+        // Если мы в любой другой комнате - выключаем оба движка
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
     }
 
+    // --- Инициализация логики конкретной комнаты ---
     try {
         switch(roomName) {
             case 'shop':      initShop(); break;
@@ -108,7 +118,7 @@ function showRoom(roomName) {
             case 'settings':  initSettings(); break;
         }
         updateGlobalUI(); 
-    } catch (err) { console.error(`[RoomInit] Ошибка:`, err); }
+    } catch (err) { console.error(`[RoomInit] Ошибка в ${roomName}:`, err); }
 }
 
 window.showRoom = showRoom;
@@ -120,20 +130,24 @@ async function init() {
     if (tg) {
         tg.ready();
         tg.expand(); 
+        tg.enableClosingConfirmation(); // Чтобы случайно не закрыли игру свипом
     }
 
+    // Кошелек
     try {
         window.wallet = new WalletManager((isConnected) => {
             console.log("[TON] Статус:", isConnected ? "Connected" : "Disconnected");
         });
     } catch (e) { console.error("[TON] Ошибка кошелька:", e); }
     
+    // Движки
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, handleGameOver);
         window.arcadeGame = new ArcadeGame(canvas, handleGameOver);
     }
 
+    // Универсальный биндер кликов
     const bindClick = (id, room) => {
         const el = document.getElementById(id);
         if (el) el.onclick = (e) => { 
@@ -153,7 +167,7 @@ async function init() {
     bindClick('btn-daily-icon', 'daily');
     bindClick('btn-start', 'modeSelection');
 
-    // Режимы
+    // Выбор режима
     const btnCl = document.getElementById('btn-mode-classic');
     if (btnCl) btnCl.onclick = () => { 
         tg?.HapticFeedback.impactOccurred('medium');
@@ -171,10 +185,9 @@ async function init() {
     // Пауза
     const btnPause = document.getElementById('btn-pause-trigger');
     if (btnPause) {
-        btnPause.onclick = () => {
+        btnPause.onclick = (e) => {
+            e.stopPropagation();
             tg?.HapticFeedback.selectionChanged();
-            if (window.game) window.game.isRunning = false;
-            if (window.arcadeGame) window.arcadeGame.isRunning = false;
             showRoom('pauseMenu');
         };
     }
@@ -183,12 +196,12 @@ async function init() {
     if (btnResume) btnResume.onclick = () => {
         tg?.HapticFeedback.impactOccurred('light');
         showRoom('game');
-    }
+    };
 
     const btnExit = document.getElementById('btn-exit-home');
     if (btnExit) btnExit.onclick = () => showRoom('home');
 
-    // Звук
+    // Настройки
     const btnSound = document.getElementById('btn-toggle-sound');
     if (btnSound) {
         btnSound.onclick = () => {
@@ -197,8 +210,7 @@ async function init() {
         };
     }
 
-    // --- ЭКРАН СМЕРТИ (GAME OVER) ---
-    
+    // Рестарт и Возрождение
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.onclick = () => {
@@ -206,9 +218,9 @@ async function init() {
                 tg?.HapticFeedback.notificationOccurred('success');
                 state.powerups.heart--; 
                 updateGlobalUI();
-                showRoom('game');
                 const engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
                 if (engine) engine.revive(); 
+                showRoom('game');
             } else {
                 tg?.HapticFeedback.notificationOccurred('error');
             }
@@ -220,7 +232,7 @@ async function init() {
         btnRestart.onclick = () => {
             tg?.HapticFeedback.impactOccurred('medium');
             showRoom('game');
-        }
+        };
     }
 
     const btnExitGameOver = document.getElementById('btn-exit-gameover');
@@ -239,7 +251,9 @@ async function init() {
                 lives: authData.user.lives ?? state.lives,
                 crystals: authData.user.crystals ?? state.crystals
             });
-            if (authData.user.powerups) state.powerups = { ...state.powerups, ...authData.user.powerups };
+            if (authData.user.powerups) {
+                state.powerups = { ...state.powerups, ...authData.user.powerups };
+            }
         }
     } catch (e) { console.error("[Auth] Ошибка:", e); }
 
@@ -252,20 +266,18 @@ async function init() {
  * Обработка окончания игры
  */
 function handleGameOver(score, reviveUsed) {
-    showRoom('gameOver');
     const finalScoreEl = document.getElementById('final-score');
     if (finalScoreEl) finalScoreEl.innerText = score;
     
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        // Кнопка видна всегда, если еще не возрождались в этом раунде
-        btnRevive.style.display = reviveUsed ? 'none' : 'block';
-        btnRevive.innerHTML = `USE HEART ❤️ <br><small>(Left: ${state.powerups.heart})</small>`;
-        
-        // Визуально блокируем, если 0 сердец
+        // Прячем кнопку, если уже возрождались
+        btnRevive.style.display = reviveUsed ? 'none' : 'flex';
+        btnRevive.innerHTML = `<span>USE HEART ❤️</span><small>(Left: ${state.powerups.heart})</small>`;
         btnRevive.style.opacity = state.powerups.heart > 0 ? "1" : "0.5";
     }
     
+    showRoom('gameOver');
     api.saveScore(score).catch(err => console.error("[Score] Ошибка:", err));
 }
 
@@ -282,32 +294,24 @@ function updateGlobalUI() {
     setInner('header-coins', coinValue);
     setInner('header-crystals', crystalValue);
 
-    // Золотая иконка монеты
-    const coinEl = document.getElementById('coin-balance');
-    if (coinEl) coinEl.innerHTML = `<span class="gold-coin-icon">🟡</span> ${coinValue}`;
+    // Обновляем все счетчики жизней и кристаллов в UI
+    document.querySelectorAll('.stat-lives, #header-lives').forEach(el => el.innerText = state.lives);
+    document.querySelectorAll('.stat-crystals').forEach(el => el.innerText = state.crystals);
 
-    document.querySelectorAll('.stat-lives, #header-lives, #revive-lives-count').forEach(el => {
-        el.innerText = state.lives;
-    });
-
-    document.querySelectorAll('.stat-crystals').forEach(el => {
-        el.innerText = state.crystals;
-    });
-
+    // Обновление баджей инвентаря
     if (state.powerups) {
         Object.keys(state.powerups).forEach(key => {
-            // Ищем баджи в инвентаре на нижней панели и в самой комнате инвентаря
             const badges = document.querySelectorAll(`.item-badge[data-powerup="${key}"]`);
             badges.forEach(badge => {
-                badge.innerText = state.powerups[key];
-                // Скрываем бадж на нижней панели, если предметов 0
-                if (state.powerups[key] <= 0) badge.classList.add('hidden');
-                else badge.classList.remove('hidden');
+                const count = state.powerups[key] || 0;
+                badge.innerText = count;
+                badge.classList.toggle('hidden', count <= 0);
             });
         });
     }
 }
 
+// Запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {

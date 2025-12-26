@@ -5,7 +5,6 @@ export class ArcadeGame extends Game {
         super(canvas, onGameOver);
         this.resetArcadeState();
         
-        // Настройки шансов появления
         this.arcadeConfig = {
             coinChance: 0.6,
             itemChance: 0.15,
@@ -17,43 +16,58 @@ export class ArcadeGame extends Game {
 
     resetArcadeState() {
         this.coins = [];
-        this.items = []; // Предметы, летящие на поле
+        this.items = [];
         this.activePowerups = {
             shield: 0,
             magnet: 0,
             ghost: 0,
             gap: 0
         };
+        // Сбрасываем базовые параметры, чтобы птица появилась
+        this.score = 0;
+        this.pipes = [];
+        this.gap = 150; 
+        this.frame = 0;
+    }
+
+    // Инициализация перед стартом (важно для фикса "невидимой птицы")
+    init() {
+        this.resetArcadeState();
+        if (this.bird) {
+            this.bird.y = this.canvas.height / 2;
+            this.bird.velocity = 0;
+        }
     }
 
     start() {
-        this.resetArcadeState();
-        super.start();
+        this.init(); 
+        this.isRunning = true;
+        this.gameLoop(); // Запускаем цикл отрисовки
     }
 
-    // Перезаписываем создание препятствий, чтобы добавить туда монеты и бонусы
     createPipe() {
-        super.createPipe(); // Создаем стандартную трубу
-        
+        super.createPipe(); 
         const lastPipe = this.pipes[this.pipes.length - 1];
         
-        // 1. Генерируем монету в центре прохода трубы
+        // 1. Монеты
         if (Math.random() < this.arcadeConfig.coinChance) {
             this.coins.push({
                 x: lastPipe.x + lastPipe.width / 2,
                 y: lastPipe.top + (this.gap / 2),
-                collected: false
+                collected: false,
+                angle: 0 // Для анимации вращения
             });
         }
 
-        // 2. Генерируем случайный предмет из инвентаря
+        // 2. Предметы
         if (Math.random() < this.arcadeConfig.itemChance) {
             const types = ['shield', 'magnet', 'ghost', 'gap'];
             const randomType = types[Math.floor(Math.random() * types.length)];
             this.items.push({
-                x: lastPipe.x + 150, // Чуть дальше трубы
-                y: Math.random() * (this.canvas.height - 200) + 100,
-                type: randomType
+                x: lastPipe.x + 200, 
+                y: Math.random() * (this.canvas.height - 300) + 150,
+                type: randomType,
+                oscillation: 0 // Плавное движение вверх-вниз
             });
         }
     }
@@ -61,9 +75,9 @@ export class ArcadeGame extends Game {
     update() {
         if (!this.isRunning) return;
 
-        // Применяем бонус GAP (расширение прохода) динамически
-        const targetGap = this.activePowerups.gap > 0 ? 250 : 150;
-        this.gap += (targetGap - this.gap) * 0.1;
+        // Эффект расширения прохода
+        const targetGap = this.activePowerups.gap > 0 ? 260 : 160;
+        this.gap += (targetGap - this.gap) * 0.05;
 
         super.update();
         this.updateArcadeElements();
@@ -71,63 +85,70 @@ export class ArcadeGame extends Game {
     }
 
     updateArcadeElements() {
-        // Уменьшаем таймеры активных бонусов
+        // Таймеры бонусов
         Object.keys(this.activePowerups).forEach(key => {
             if (this.activePowerups[key] > 0) this.activePowerups[key]--;
         });
 
-        // Двигаем монеты
+        // Монеты + Магнит
         this.coins.forEach(coin => {
             coin.x -= this.speed;
+            coin.angle += 0.1;
 
-            // Логика магнита
             if (this.activePowerups.magnet > 0) {
                 const dist = Math.hypot(this.bird.x - coin.x, this.bird.y - coin.y);
                 if (dist < this.arcadeConfig.magnetRadius) {
-                    coin.x += (this.bird.x - coin.x) * 0.15;
-                    coin.y += (this.bird.y - coin.y) * 0.15;
+                    coin.x += (this.bird.x - coin.x) * 0.2;
+                    coin.y += (this.bird.y - coin.y) * 0.2;
                 }
             }
         });
 
-        // Двигаем предметы
-        this.items.forEach(item => { item.x -= this.speed; });
+        // Предметы + Плавное покачивание
+        this.items.forEach(item => {
+            item.x -= this.speed;
+            item.oscillation += 0.05;
+            item.y += Math.sin(item.oscillation) * 1.5;
+        });
 
-        // Чистим массивы от того, что улетело за экран
         this.coins = this.coins.filter(c => c.x > -50 && !c.collected);
         this.items = this.items.filter(i => i.x > -50);
     }
 
     checkPowerupCollisions() {
-        // Сбор монет
+        // Сбор монет (дистанция 35px)
         this.coins.forEach(coin => {
-            if (Math.hypot(this.bird.x - coin.x, this.bird.y - coin.y) < 30) {
+            if (Math.hypot(this.bird.x - coin.x, this.bird.y - coin.y) < 35) {
                 coin.collected = true;
-                window.state.coins += 1; // Добавляем в глобальный баланс
+                window.state.coins += 1;
                 if (window.updateGlobalUI) window.updateGlobalUI();
+                // Хэптик при сборе монеты
+                window.Telegram?.WebApp.HapticFeedback.impactOccurred('light');
             }
         });
 
         // Сбор предметов
         this.items.forEach((item, index) => {
-            if (Math.hypot(this.bird.x - item.x, this.bird.y - item.y) < 35) {
+            if (Math.hypot(this.bird.x - item.x, this.bird.y - item.y) < 40) {
                 this.activatePowerup(item.type);
                 this.items.splice(index, 1);
+                window.Telegram?.WebApp.HapticFeedback.notificationOccurred('success');
             }
         });
 
-        // Перезаписываем проверку столкновений для GHOST и SHIELD
+        // Логика бессмертия (GHOST)
         if (this.activePowerups.ghost > 0) {
-            // В режиме призрака игнорируем трубы, проверяем только пол/потолок
             if (this.bird.y + this.bird.radius >= this.canvas.height || this.bird.y <= 0) {
                 this.gameOver();
             }
         } else {
-            // Обычная проверка столкновений
+            // Обычная коллизия или Щит
             if (this.checkCollision()) {
                 if (this.activePowerups.shield > 0) {
-                    this.activePowerups.shield = 0; // Щит ломается
-                    this.pipes.shift(); // Убираем ближайшую трубу, чтобы не удариться снова
+                    this.activePowerups.shield = 0;
+                    // Отбрасываем трубы подальше, чтобы дать игроку окно
+                    this.pipes = this.pipes.filter(p => p.x > this.bird.x + 100);
+                    window.Telegram?.WebApp.HapticFeedback.notificationOccurred('warning');
                 } else {
                     this.gameOver();
                 }
@@ -137,43 +158,51 @@ export class ArcadeGame extends Game {
 
     activatePowerup(type) {
         this.activePowerups[type] = this.arcadeConfig.activeDuration;
-        // Можно добавить звуковой эффект
-        console.log(`Powerup collected: ${type}`);
+        console.log(`Arcade: ${type} activated!`);
     }
 
     draw() {
         const ctx = this.ctx;
         
-        // 1. Прозрачность для GHOST
         if (this.activePowerups.ghost > 0) ctx.globalAlpha = this.arcadeConfig.ghostOpacity;
-        
         super.draw();
         ctx.globalAlpha = 1.0;
 
-        // 2. Рисуем монеты
+        // Рисуем монеты (Красивые, с обводкой)
         this.coins.forEach(coin => {
-            ctx.fillStyle = "#f7d51d";
+            ctx.save();
+            ctx.translate(coin.x, coin.y);
+            ctx.scale(Math.cos(coin.angle), 1); // Эффект вращения
+            ctx.fillStyle = "#FFD700";
             ctx.beginPath();
-            ctx.arc(coin.x, coin.y, 12, 0, Math.PI * 2);
+            ctx.arc(0, 0, 12, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = "#000";
+            ctx.strokeStyle = "#B8860B";
+            ctx.lineWidth = 2;
             ctx.stroke();
+            ctx.restore();
         });
 
-        // 3. Рисуем предметы (иконки или символы)
+        // Рисуем предметы
         this.items.forEach(item => {
-            ctx.fillStyle = "#ff00ff";
-            ctx.font = "20px Arial";
-            const icons = { shield: '🛡️', magnet: '🧲', ghost: '👻', gap: '↕️' };
-            ctx.fillText(icons[item.type] || '?', item.x, item.y);
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            const icons = { shield: '🛡️', magnet: '🧲', ghost: '👻', gap: '↔️' };
+            ctx.fillText(icons[item.type] || '🎁', item.x, item.y);
         });
 
-        // 4. Эффекты вокруг птицы
+        // Визуальные эффекты активных бонусов
+        this.drawPowerupEffects();
+    }
+
+    drawPowerupEffects() {
+        const ctx = this.ctx;
         if (this.activePowerups.shield > 0) {
             ctx.strokeStyle = "#00fbff";
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(this.bird.x, this.bird.y, 30, 0, Math.PI * 2);
+            ctx.arc(this.bird.x, this.bird.y, this.bird.radius + 10, 0, Math.PI * 2);
             ctx.stroke();
         }
         
@@ -181,7 +210,7 @@ export class ArcadeGame extends Game {
             ctx.strokeStyle = "#ff3333";
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.arc(this.bird.x, this.bird.y, 40, 0, Math.PI * 2);
+            ctx.arc(this.bird.x, this.bird.y, this.bird.radius + 15, 0, Math.PI * 2);
             ctx.stroke();
             ctx.setLineDash([]);
         }

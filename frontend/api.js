@@ -18,13 +18,13 @@ function getInitData() {
 }
 
 /**
- * Универсальный метод запроса (Экспортирован!)
+ * Универсальный метод запроса
  */
 export async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     const initData = getInitData();
     const url = `${API_BASE}/${endpoint}`;
 
-    // Логирование важно для отладки на Vercel
+    // Логирование для отладки
     console.log(`[🚀 API REQUEST] ${url}`, extraData);
 
     const controller = new AbortController();
@@ -69,7 +69,7 @@ export async function apiRequest(endpoint, method = 'POST', extraData = {}) {
     }
 }
 
-// --- МЕТОДЫ ---
+// --- МЕТОДЫ АВТОРИЗАЦИИ ---
 
 export async function authPlayer(startParam) {
     return await apiRequest('auth', 'POST', { startParam });
@@ -77,12 +77,30 @@ export async function authPlayer(startParam) {
 
 export async function fetchBalance() {
     const data = await apiRequest('auth', 'POST', { action: 'get_user' }); 
-    // Если пришла ошибка от apiRequest, возвращаем null, чтобы отличить от 0 монет
     if (data.error) return null;
     return (data && data.user && typeof data.user.coins === 'number') ? data.user.coins : 0;
 }
 
+// --- МЕТОДЫ МОНЕТ И МАГАЗИНА ---
+
+export async function buyCoins(amount) {
+    // Вызывается после успешной транзакции в TON
+    return await apiRequest('coins', 'POST', { action: 'buy_coins', amount: amount });
+}
+
+/**
+ * Покупка игрового предмета (способности) за монеты
+ */
+export async function buyItem(itemType) {
+    // Важно: бэкенд api/coins.js должен уметь обрабатывать action 'buy_item'
+    return await apiRequest('coins', 'POST', { 
+        action: 'buy_item', 
+        item: itemType 
+    });
+}
+
 export async function spendCoin() {
+    // Используется для ревайва за монеты, если сердца кончились
     const data = await apiRequest('coins', 'POST', { action: 'spend_revive' }); 
     if (data && !data.error && typeof data.newBalance === 'number') {
         return data.newBalance; 
@@ -90,9 +108,7 @@ export async function spendCoin() {
     return { error: true };
 }
 
-export async function buyCoins(amount) {
-    return await apiRequest('coins', 'POST', { action: 'buy_coins', amount: amount });
-}
+// --- МЕТОДЫ СЧЕТА И ЛИДЕРБОРДА ---
 
 export async function saveScore(score) {
     return await apiRequest('scores', 'POST', { action: 'save_score', score: score });
@@ -101,4 +117,10 @@ export async function saveScore(score) {
 export async function getLeaderboard() {
     const data = await apiRequest('scores', 'POST', { action: 'get_leaderboard' });
     return (data && Array.isArray(data.leaderboard)) ? data.leaderboard : [];
+}
+
+// --- МЕТОДЫ ДРУЗЕЙ (Если понадобится в friends.js) ---
+
+export async function getFriends() {
+    return await apiRequest('auth', 'POST', { action: 'get_friends' });
 }
