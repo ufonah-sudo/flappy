@@ -1,4 +1,8 @@
-/* --- ГЛОБАЛЬНЫЕ СБРОСЫ --- */
+/* =========================================
+   base.css - ГЛОБАЛЬНЫЕ СТИЛИ И НАВИГАЦИЯ
+   ========================================= */
+
+/* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ --- */
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
@@ -12,14 +16,16 @@ body, html {
     padding: 0;
     width: 100%;
     height: 100vh;
-    height: -webkit-fill-available;
+    height: -webkit-fill-available; /* Фикс для Safari/iOS */
     overflow: hidden;
     position: fixed; 
     top: 0;
     left: 0;
-    /* Исправленный путь: выходим из css/ и идем в frontend/assets/ */
-    background: #4ec0ca url('../frontend/assets/fon.png') no-repeat center center;
+    
+    /* ФОН: Абсолютный путь от корня (/) */
+    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
     background-size: cover;
+    
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
     touch-action: none;
@@ -34,7 +40,7 @@ body, html {
     overflow: hidden;
 }
 
-/* --- ВЕРХНЯЯ ПАНЕЛЬ (HEADER) --- */
+/* --- 2. ВЕРХНЯЯ ПАНЕЛЬ (HEADER) --- */
 #header {
     position: fixed;
     top: env(safe-area-inset-top, 15px);
@@ -42,7 +48,7 @@ body, html {
     display: flex;
     justify-content: center;
     z-index: 1000;
-    pointer-events: none;
+    pointer-events: none; /* Пропускает клики сквозь прозрачные зоны */
 }
 
 .header-balances {
@@ -53,7 +59,7 @@ body, html {
     border-radius: 25px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    pointer-events: auto;
+    pointer-events: auto; /* Баланс кликабелен */
 }
 
 .balance-item {
@@ -66,7 +72,7 @@ body, html {
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* --- НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
+/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
 .menu-buttons-panel {
     position: fixed;
     bottom: env(safe-area-inset-bottom, 20px);
@@ -75,53 +81,79 @@ body, html {
     width: 95%;
     max-width: 450px;
     height: 85px; 
-    background: rgba(0, 0, 0, 0.7) !important; /* Сделал чуть темнее для теста */
+    
+    background: rgba(0, 0, 0, 0.7) !important;
     backdrop-filter: blur(15px);
     border-radius: 25px;
-    display: flex !important; /* Принудительно показываем */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    
+    display: flex !important; /* Гарантия видимости панели */
     justify-content: space-around;
     align-items: center;
     z-index: 9999;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
     pointer-events: auto !important;
 }
 
-/* Базовый стиль для всех кнопок навигации */
+/* --- 4. КНОПКИ НАВИГАЦИИ (НАСТРОЙКИ) --- */
 .nav-btn {
-    display: block !important;
-    width: 55px !important;
-    height: 55px !important;
+    display: block !important;       /* Обязательно block для отображения фона */
+    width: 55px !important;          /* Жесткая ширина */
+    height: 55px !important;         /* Жесткая высота */
+    
     background-color: transparent;
-    background-size: contain !important;
+    background-size: contain !important; /* Вписывает картинку целиком */
     background-repeat: no-repeat !important;
     background-position: center !important;
+    
     border: none;
     cursor: pointer;
     transition: transform 0.1s ease;
 }
 
-/* Применяем рабочий путь ко всем иконкам */
-#btn-shop { background-image: url('../frontend/assets/shop.png') !important; }
-#btn-inventory { background-image: url('../frontend/assets/invent.png') !important; }
-#btn-home-panel { 
-    background-image: url('../frontend/assets/home.png') !important;
-    width: 75px !important; /* Главная кнопка чуть больше остальных */
-    height: 75px !important;
-}
-#btn-friends { background-image: url('../frontend/assets/friends.png') !important; }
-#btn-settings { background-image: url('../frontend/assets/settings.png') !important; }
-
-
-
-/* Кнопки главного экрана */
-#btn-daily-icon { content: url('../frontend/assets/daily.png'); }
-#btn-top-icon { content: url('../frontend/assets/top.png'); }
-
+/* Эффект нажатия */
 .nav-btn:active {
-    transform: scale(0.85);
+    transform: scale(0.9);
+    filter: brightness(0.8);
 }
 
+/* --- 5. КАРТИНКИ КНОПОК (АБСОЛЮТНЫЕ ПУТИ ОТ КОРНЯ) --- */
+/* Слэш в начале (/) означает: искать в папке frontend в корне сайта */
+
+#btn-shop { 
+    background-image: url('/frontend/assets/shop.png') !important; 
+}
+
+#btn-inventory { 
+    background-image: url('/frontend/assets/invent.png') !important; 
+}
+
+#btn-friends { 
+    background-image: url('/frontend/assets/friends.png') !important; 
+}
+
+#btn-settings { 
+    background-image: url('/frontend/assets/settings.png') !important; 
+}
+
+/* Центральная кнопка Home (покрупнее) */
+#btn-home-panel { 
+    background-image: url('/frontend/assets/home.png') !important;
+    width: 75px !important;
+    height: 75px !important;
+    transform: translateY(-5px); /* Слегка приподнята */
+}
+
+/* Сохраняем подъем при клике для Home */
+#btn-home-panel:active {
+    transform: translateY(-5px) scale(0.9);
+}
+
+/* --- 6. ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ --- */
 .hidden {
     display: none !important;
 }
+
+/* Иконки на главном экране (для страховки) */
+#btn-daily-icon { content: url('/frontend/assets/daily.png'); }
+#btn-top-icon { content: url('/frontend/assets/top.png'); }
