@@ -72,8 +72,7 @@ body, html {
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
-/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (ПОЛНОСТЬЮ ПРОЗРАЧНАЯ) --- */
+/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (ПРОЗРАЧНАЯ) --- */
 .menu-buttons-panel {
     position: fixed;
     bottom: env(safe-area-inset-bottom, 20px);
@@ -83,7 +82,6 @@ body, html {
     max-width: 450px;
     height: 85px; 
     
-    /* УДАЛЕНО: фон, блюр, рамки и тени */
     background: transparent !important; 
     backdrop-filter: none !important;
     border: none !important;
@@ -96,14 +94,23 @@ body, html {
     pointer-events: auto !important;
 }
 
-/* На всякий случай убедимся, что у кнопок тоже нет лишних фонов */
+/* --- 4. КНОПКИ --- */
 .nav-btn {
-    background-color: transparent !important;
+    background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
+    padding: 0;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    width: 60px;  
+    height: 60px;
+    transition: transform 0.1s ease;
+    cursor: pointer;
 }
-/* Стиль для картинок внутри (если используешь <img> в HTML) */
+
+/* Настройка картинки внутри кнопки */
 .nav-btn img {
     width: 100% !important;
     height: 100% !important;
@@ -111,20 +118,17 @@ body, html {
     pointer-events: none;
 }
 
-/* Особый стиль для кнопки Home (Центральная) */
+/* Центральная кнопка Home */
 #btn-home-panel {
-    width: 75px !important;
-    height: 75px !important;
-    min-width: 75px;
-    transform: translateY(-8px); /* Сильнее приподнял для акцента */
+    width: 80px !important;
+    height: 80px !important;
+    transform: translateY(-8px);
 }
 
-/* --- 5. ПУТИ К ИКОНКАМ (ДЛЯ ВАРИАНТА БЕЗ <img> В HTML) --- */
-#btn-shop { background-image: url('/frontend/assets/shop.png') !important; }
-#btn-inventory { background-image: url('/frontend/assets/invent.png') !important; }
-#btn-friends { background-image: url('/frontend/assets/friends.png') !important; }
-#btn-settings { background-image: url('/frontend/assets/settings.png') !important; }
-#btn-home-panel { background-image: url('/frontend/assets/home.png') !important; }
+/* --- 5. УДАЛЕНИЕ ФОНОВ (ЧТОБЫ НЕ БЫЛО КАШИ) --- */
+#btn-shop, #btn-inventory, #btn-friends, #btn-settings, #btn-home-panel {
+    background-image: none !important;
+}
 
 /* Эффекты нажатия */
 .nav-btn:active {
@@ -139,6 +143,6 @@ body, html {
     display: none !important;
 }
 
-/* Кнопки на главном экране (Top, Daily) */
+/* Иконки на главном экране (Top, Daily) */
 #btn-top-icon { content: url('/frontend/assets/top.png'); width: 50px; height: 50px; }
 #btn-daily-icon { content: url('/frontend/assets/daily.png'); width: 50px; height: 50px; }
