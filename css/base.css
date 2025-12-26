@@ -5,7 +5,6 @@
 /* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ И ФИКСЫ МОБИЛОК --- */
 * {
     box-sizing: border-box;
-    /* Убираем серое выделение при нажатии на iOS */
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none;
     user-select: none;
@@ -37,7 +36,6 @@ body, html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* События проходят сквозь, если не пойманы элементами */
     pointer-events: none; 
 }
 
@@ -72,12 +70,7 @@ body, html {
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-.gold-coin-icon {
-    color: #FFD700;
-    font-size: 20px;
-}
-
-/* --- 3. НИЖНЯЯ ПАНЕЛЬ (ПРОЗРАЧНАЯ ПО ТВОЕЙ ПРОСЬБЕ) --- */
+/* --- 3. НИЖНЯЯ ПАНЕЛЬ --- */
 .menu-buttons-panel {
     position: fixed !important;
     bottom: env(safe-area-inset-bottom, 20px) !important;
@@ -89,7 +82,7 @@ body, html {
     display: flex; 
     justify-content: space-around;
     align-items: center;
-    background: transparent !important; /* Серый фон удален */
+    background: transparent !important;
     z-index: 10001 !important;
     pointer-events: auto !important;
 }
@@ -105,7 +98,7 @@ body, html {
     width: 60px;
     height: 60px;
     cursor: pointer;
-    transition: transform 0.1s ease; /* Быстрая отдача */
+    transition: transform 0.1s ease;
     position: relative;
 }
 
@@ -122,49 +115,33 @@ body, html {
     transform: translateY(-12px);
 }
 
-/* Эффект нажатия (отдача для iPhone) */
-.nav-btn:active, .primary-btn:active, .secondary-btn:active, .side-btn-wrapper:active {
-    transform: scale(0.92) !important;
-}
-
-#btn-home-panel:active {
-    transform: translateY(-12px) scale(0.92) !important;
-}
-
-/* Баджи (авто-скрытие через JS) */
-.item-badge {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: #ff3b30;
-    color: white;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-weight: bold;
-    border: 1px solid white;
-    z-index: 10;
-}
-
-/* --- 5. ТОП И ДЕЙЛИ (ПО БОКАМ) --- */
-.side-buttons {
-    position: absolute;
-    top: calc(env(safe-area-inset-top, 15px) + 80px);
+/* --- 5. АНИМАЦИЯ ОБЛАКОВ --- */
+.sky-container {
+    position: fixed;
+    top: 0;
     left: 0;
-    right: 0;
     width: 100%;
-    display: flex;
-    justify-content: space-between; /* Разносит влево и вправо */
-    padding: 0 20px;
+    height: 100%;
+    z-index: 1; 
     pointer-events: none;
-    z-index: 1001;
+    overflow: hidden;
 }
 
-.side-btn-wrapper {
-    pointer-events: auto;
-    width: 55px;
-    height: 55px;
-    transition: transform 0.1s ease;
+.cloud {
+    position: absolute;
+    opacity: 0.6;
+    pointer-events: none;
+    animation: floatClouds linear infinite;
+}
+
+.c1 { top: 10%; width: 120px; animation-duration: 25s; }
+.c2 { top: 25%; width: 90px;  animation-duration: 35s; animation-delay: -5s; }
+.c3 { top: 40%; width: 150px; animation-duration: 30s; animation-delay: -10s; }
+.c4 { top: 15%; width: 100px; animation-duration: 40s; animation-delay: -15s; }
+
+@keyframes floatClouds {
+    from { transform: translateX(-150px); }
+    to { transform: translateX(110vw); }
 }
 
 /* --- 6. ЭКРАНЫ И МОДАЛКИ --- */
@@ -187,7 +164,7 @@ body, html {
     backdrop-filter: blur(10px);
 }
 
-/* --- 7. КНОПКИ (БЕЗ ТЕНЕЙ) --- */
+/* --- 7. КНОПКИ И ЭФФЕКТЫ --- */
 .primary-btn {
     background: #f7d51d;
     color: #333;
@@ -198,7 +175,6 @@ body, html {
     width: 100%;
     cursor: pointer;
     text-transform: uppercase;
-    box-shadow: none !important; /* Убрана лишняя тень */
     transition: transform 0.1s ease;
 }
 
@@ -213,19 +189,15 @@ body, html {
     transition: transform 0.1s ease;
 }
 
-/* --- 8. ВЫБОР РЕЖИМА (СТИЛЬ КАРТОЧЕК) --- */
-.mode-card {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    width: 100%;
-    color: white;
-    cursor: pointer;
+/* Глобальный фикс кликабельности */
+.nav-btn, .ui-btn-action, .primary-btn, .secondary-btn, .mode-card {
+    pointer-events: auto !important;
+}
+
+/* Универсальный эффект нажатия для всех элементов */
+button:active, .nav-btn:active, .mode-card:active, .ui-btn-action:active, .side-btn-wrapper:active {
+    transform: scale(0.92) !important;
+    filter: brightness(0.9);
 }
 
 /* Утилиты */

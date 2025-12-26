@@ -1,48 +1,81 @@
+/* =========================================
+   home.css - ГЛАВНЫЙ ЭКРАН (ОБНОВЛЕННЫЙ)
+   ========================================= */
+
 #scene-home {
     background: transparent;
     backdrop-filter: none;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* Центровка по вертикали */
+    align-items: center;     /* Центровка по горизонтали */
     padding-top: 0;
     overflow: hidden;
     background: none !important; 
-}
-
-/* Кнопки ТОП и DAILY сверху */
-.side-buttons {
-    position: absolute;
-    top: env(safe-area-inset-top, 20px);
-    left: 0;
+    position: relative;
     width: 100%;
+    height: 100%;
+}
+
+/* 1. БЛОК КНОПОК ТОП И DAILY (СПРАВА) */
+.side-buttons-container {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 20px) + 70px);
+    right: 20px; 
     display: flex;
-    justify-content: space-between;
-    padding: 0 20px;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 1001;
     pointer-events: none;
-    z-index: 60;
 }
 
-.icon-btn {
-    width: 60px; 
-    height: 60px;
-    cursor: pointer; 
+.ui-btn-action {
     pointer-events: auto;
-    transition: transform 0.1s;
-    filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3));
+    width: 55px; 
+    height: 55px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.1s ease;
 }
-.icon-btn:active { transform: scale(0.9); }
 
-/* ЛОГОТИП (500x312) — ИСПРАВЛЕН ПУТЬ */
+.ui-btn-action img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+
+.ui-btn-action:active {
+    transform: scale(0.9);
+}
+
+/* 2. ЛОГОТИП В ЦЕНТРЕ */
+.game-logo-container {
+    width: 85%;
+    max-width: 320px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px; /* Отступ до кнопки PLAY */
+    z-index: 10;
+}
+
+.main-logo-img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    animation: floatTitle 3s ease-in-out infinite;
+}
+
+/* Старый стиль логотипа (для совместимости, если не используешь <img>) */
 .game-title {
-    width: 80%;
-    max-width: 320px; 
+    width: 320px; 
     aspect-ratio: 500 / 312;
-    /* Выходим из css/, заходим во frontend/assets/ */
     background: url('../frontend/assets/flappyname.png') no-repeat center center;
     background-size: contain;
     text-indent: -9999px;
-    margin: 0 auto 20px auto;
+    margin: 0 auto;
     animation: floatTitle 3s ease-in-out infinite;
 }
 
@@ -51,22 +84,27 @@
     50% { transform: translateY(-15px); }
 }
 
-/* КНОПКА PLAY (knopka.png) — ИСПРАВЛЕН ПУТЬ */
+/* 3. КНОПКА PLAY (knopka.png) */
 #btn-start {
     width: 160px; 
     height: 160px;
-    /* Выходим из css/, заходим во frontend/assets/ */
     background: url('../frontend/assets/knopka.png') no-repeat center center;
     background-size: contain;
     border: none; 
     cursor: pointer; 
-    text-indent: -9999px;
+    /* Если внутри кнопки есть текст "PLAY", убираем его, если он не нужен */
+    /* color: transparent; */ 
     margin-bottom: 40px;
     filter: drop-shadow(0 8px 15px rgba(0,0,0,0.3));
     transition: transform 0.1s;
+    z-index: 11;
 }
-#btn-start:active { transform: scale(0.92); }
 
+#btn-start:active { 
+    transform: scale(0.92); 
+}
+
+/* 4. ДОПОЛНИТЕЛЬНЫЕ ЭЛЕМЕНТЫ */
 .promo-text {
     color: white;
     font-weight: bold;
@@ -77,6 +115,7 @@
     border-radius: 20px;
 }
 
-.menu-buttons-panel {
+/* Скрываем нижнюю панель на главном экране (как ты и просил) */
+#scene-home ~ .menu-buttons-panel {
     display: none !important; 
 }

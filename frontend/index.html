@@ -14,6 +14,13 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
 <body>
+    <div class="sky-container">
+        <img src="/frontend/assets/cloud1.png" class="cloud c1" alt="">
+        <img src="/frontend/assets/cloud2.png" class="cloud c2" alt="">
+        <img src="/frontend/assets/cloud3.png" class="cloud c3" alt="">
+        <img src="/frontend/assets/cloud4.png" class="cloud c4" alt="">
+    </div>
+
     <div id="app">
         
         <div id="header"> 
@@ -30,29 +37,28 @@
         </div>
 
         <div id="scene-home" class="screen">
-            <div class="side-buttons">
-                <div class="side-btn-wrapper">
-                    <img src="/frontend/assets/top.png" id="btn-top-icon" alt="Top">
-                </div>
-                <div class="side-btn-wrapper">
-                    <img src="/frontend/assets/daily.png" id="btn-daily-icon" alt="Daily">
-                </div>
-            </div>
+    <div class="side-buttons-container">
+        <button id="btn-top" class="ui-btn-action">
+            <img src="/frontend/assets/top.png" alt="Top">
+        </button>
+        <button id="btn-daily" class="ui-btn-action">
+            <img src="/frontend/assets/daily.png" alt="Daily">
+        </button>
+    </div>
 
             <div class="game-logo-container">
-                <h1 class="game-title">FLAPPY TON</h1>
+                <img src="/frontend/assets/flappyname.png" class="main-logo-img" alt="FLAPPY TON">
             </div>
 
             <button id="btn-start" class="primary-btn pulse">PLAY</button>
-
-            </div>
+        </div>
 
         <div id="scene-mode-selection" class="screen hidden">
             <div class="mode-selection-container">
                 <h2 class="mode-title">SELECT MODE</h2>
                 
                 <div class="mode-cards">
-                    <div id="btn-mode-classic" class="mode-card">
+                    <div id="btn-mode-classic" class="mode-card clickable-effect">
                         <div class="mode-icon">🐦</div>
                         <div class="mode-info">
                             <span class="mode-name">CLASSIC</span>
@@ -60,7 +66,7 @@
                         </div>
                     </div>
 
-                    <div id="btn-mode-arcade" class="mode-card">
+                    <div id="btn-mode-arcade" class="mode-card clickable-effect">
                         <div class="mode-icon">🚀</div>
                         <div class="mode-info">
                             <span class="mode-name">ARCADE</span>
@@ -84,7 +90,6 @@
                 <h2>PAUSE</h2>
                 <button id="btn-resume" class="primary-btn">RESUME</button>
                 <button id="btn-exit-home" class="secondary-btn">EXIT TO MENU</button>
-                
                 <div class="settings-row">
                     <button id="btn-toggle-sound" class="icon-btn">🔊 Sound</button>
                 </div>
@@ -97,16 +102,13 @@
                 <p>Score</p>
                 <span id="final-score">0</span>
             </div>
-            
             <div id="revive-section">
                 <button id="btn-revive" class="primary-btn">USE HEART ❤️</button>
             </div>
-
             <div class="game-over-buttons">
                 <button id="btn-restart" class="primary-btn">PLAY AGAIN</button>
                 <button id="btn-exit-gameover" class="secondary-btn">MAIN MENU</button>
             </div>
-            
             <button id="btn-share" class="secondary-btn" style="margin-top: 15px;">SHARE RESULT</button>
         </div>
 
@@ -147,21 +149,17 @@
             <button id="btn-shop" class="nav-btn">
                 <img src="/frontend/assets/shop.png" alt="Shop">
             </button>
-
             <button id="btn-inventory" class="nav-btn">
                 <img src="/frontend/assets/invent.png" alt="Inventory">
                 <span class="item-badge hidden" data-powerup="heart">0</span>
                 <span class="item-badge hidden" data-powerup="shield">0</span>
             </button>
-
             <button id="btn-home-panel" class="nav-btn">
                 <img src="/frontend/assets/home.png" alt="Home">
             </button> 
-
             <button id="btn-friends" class="nav-btn">
                 <img src="/frontend/assets/friends.png" alt="Friends">
             </button>
-
             <button id="btn-settings" class="nav-btn">
                 <img src="/frontend/assets/settings.png" alt="Settings">
             </button>

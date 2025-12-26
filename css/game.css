@@ -1,38 +1,46 @@
+/* =========================================
+   game.css - ИГРОВОЙ ПРОЦЕСС И РЕЗУЛЬТАТЫ
+   ========================================= */
+
 /* Контейнер игры */
 #game-container { 
-    background: transparent; 
-    backdrop-filter: none; 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent !important; 
     display: flex;
     justify-content: center; 
-    padding-top: 0; 
     overflow: hidden;
-    z-index: 10; /* Чуть ниже, чем основные меню */
+    z-index: 10; /* Под основным интерфейсом меню */
 }
 
 /* Холст отрисовки */
 #game-canvas { 
     display: block; 
-    width: 100%; 
-    height: 100%; 
-    touch-action: none; /* Предотвращаем скролл при тапах в игре */
+    width: 100vw; 
+    height: 100vh; 
+    object-fit: cover;
+    touch-action: none; 
 }
 
 /* Текущий счет во время полета */
 #score-overlay {
     position: absolute; 
-    top: 12%; 
+    top: 15%; /* Чуть ниже, чтобы не сливаться с балансом */
     width: 100%; 
     text-align: center;
     font-size: 80px; 
     font-weight: 900; 
     color: white;
-    /* Улучшенная обводка для читаемости на любом фоне */
     text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; 
     z-index: 20; 
     pointer-events: none;
+    user-select: none;
 }
 
-/* Экран проигрыша */
+/* Экран проигрыша (GAME OVER) */
 #game-over { 
     background: rgba(0, 0, 0, 0.85); 
     backdrop-filter: blur(8px); 
@@ -41,14 +49,14 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    z-index: 100; /* Поверх игры */
+    z-index: 1000; /* Поверх всего во время проигрыша */
 }
 
 .status-title { 
     font-size: 48px; 
     color: #f7941d; 
     text-shadow: 4px 4px 0 #000; 
-    margin-bottom: 30px; 
+    margin-bottom: 20px; 
     text-transform: uppercase;
 }
 
@@ -57,65 +65,72 @@
     background: #ded895; 
     border: 4px solid #543847;
     border-radius: 12px; 
-    padding: 25px 50px; 
-    margin-bottom: 30px; 
+    padding: 20px 40px; 
+    margin-bottom: 25px; 
     color: #e67e22;
     text-align: center;
-    box-shadow: 0 10px 0 rgba(0,0,0,0.3);
+    box-shadow: 0 8px 0 rgba(0,0,0,0.3);
 }
 
 .result-box p {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     text-transform: uppercase;
     color: #543847;
     font-weight: bold;
 }
 
 #final-score {
-    font-size: 64px;
+    font-size: 60px;
     font-weight: 900;
     display: block;
     color: white;
     text-shadow: 3px 3px 0 #543847;
-    margin: 10px 0;
+    margin: 5px 0;
 }
 
-/* Кнопки управления */
-.primary-btn, .secondary-btn {
-    width: 100%; 
-    max-width: 260px;
-    padding: 18px; 
-    font-size: 18px; 
-    font-weight: 800; 
-    border-radius: 8px; 
-    border: 2px solid #000;
-    cursor: pointer; 
-    text-transform: uppercase;
-    transition: transform 0.1s;
+/* Кнопки в Game Over (специфичные для этого экрана) */
+.game-over-buttons {
+    width: 100%;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.primary-btn {
+#game-over .primary-btn {
     background: #f7941d;
     color: white;
-    box-shadow: 0 6px 0 #b36b15; 
-    margin-bottom: 15px;
+    box-shadow: 0 6px 0 #b36b15 !important; 
+    border: 2px solid #000;
+    border-radius: 12px;
 }
 
-.secondary-btn {
+#game-over .secondary-btn {
     background: #ffffff; 
     color: #543847; 
-    box-shadow: 0 6px 0 #999; 
-    margin-top: 5px;
+    box-shadow: 0 6px 0 #999 !important; 
+    border: 2px solid #000;
+    border-radius: 12px;
 }
 
-.primary-btn:active, .secondary-btn:active { 
-    transform: translateY(4px); 
-    box-shadow: 0 2px 0 #000; 
+/* Эффект нажатия (переопределяем для игровых кнопок с тенями) */
+#game-over .primary-btn:active, 
+#game-over .secondary-btn:active { 
+    transform: translateY(4px) scale(0.98); 
+    box-shadow: 0 2px 0 #000 !important; 
 }
 
-/* TON Connect кнопки */
+/* Режим Аркада: пульсация при выборе */
+.mode-card.active {
+    border: 2px solid #f7d51d !important;
+    background: rgba(247, 213, 29, 0.2) !important;
+    box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
+}
+
+/* TON Connect */
 #shop-ton-wallet, #settings-ton-wallet { 
     margin: 15px 0;
-    transform: scale(1.1);
+    display: flex;
+    justify-content: center;
 }
