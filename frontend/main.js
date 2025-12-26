@@ -12,21 +12,14 @@ import { initSettings } from './js/rooms/settings.js';
 
 const tg = window.Telegram?.WebApp;
 
-// 1. Глобальное состояние приложения
 const state = { 
     user: null, 
     coins: 0, 
     lives: 5, 
     crystals: 1,
-    powerups: {
-        shield: 0,
-        gap: 0,
-        magnet: 0,
-        ghost: 0
-    }
+    powerups: { shield: 0, gap: 0, magnet: 0, ghost: 0 }
 };
 
-// Ссылки на экраны
 const scenes = {
     home: document.getElementById('scene-home'),
     game: document.getElementById('game-container'),
@@ -39,54 +32,50 @@ const scenes = {
     gameOver: document.getElementById('game-over')
 };
 
-/**
- * Основная функция навигации
- */
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
-    // Скрываем все экраны
+    // 1. Скрываем все экраны
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
     
+    // 2. Показываем целевой
     const target = scenes[roomName];
-    if (!target) return;
-    target.classList.remove('hidden');
+    if (target) target.classList.remove('hidden');
 
-    // --- УПРАВЛЕНИЕ ОТОБРАЖЕНИЕМ БАЛАНСА (HEADER) ---
+    // 3. Управление Header (Баланс) - показываем ВЕЗДЕ кроме самой игры
     const header = document.getElementById('header');
     if (header) {
-        // Показываем только в home, shop и inventory
-        const showHeader = ['home', 'shop', 'inventory'].includes(roomName);
-        header.style.display = showHeader ? 'flex' : 'none';
+        header.style.display = (roomName === 'game') ? 'none' : 'flex';
     }
 
-    // Управление нижней панелью
+    // 4. Управление нижней панелью кнопок
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
-        // Скрываем панель только в самой игре
-        bottomPanel.style.display = (roomName === 'game') ? 'none' : 'flex';
+        // Панель видна везде, кроме активного процесса игры и экрана Game Over
+        const hidePanel = ['game', 'gameOver'].includes(roomName);
+        bottomPanel.style.display = hidePanel ? 'none' : 'flex';
+        // Форсируем pointer-events, чтобы кнопки всегда нажимались
+        bottomPanel.style.pointerEvents = 'auto';
     }
 
-    // --- ИСПРАВЛЕНО: Этот блок теперь ВНУТРИ функции showRoom ---
-    
-    // Безопасная инициализация TON Connect
+    // 5. Безопасная инициализация TON Connect
     if (window.wallet && window.wallet.tonConnectUI) {
-        let walletContainerSelector = null;
-        if (roomName === 'shop') walletContainerSelector = '#shop-ton-wallet';
-        if (roomName === 'settings') walletContainerSelector = '#settings-ton-wallet';
+        let container = null;
+        if (roomName === 'shop') container = '#shop-ton-wallet';
+        if (roomName === 'settings') container = '#settings-ton-wallet';
 
-        if (walletContainerSelector && document.querySelector(walletContainerSelector)) {
+        if (container && document.querySelector(container)) {
             try {
-                window.wallet.tonConnectUI.setConnectButtonRoot(walletContainerSelector);
+                window.wallet.tonConnectUI.setConnectButtonRoot(container);
             } catch (e) {
-                console.warn("[TON] Ошибка смены корня кнопки:", e);
+                console.warn("[TON] Ошибка смены корня:", e);
             }
         }
     }
 
-    // Управление состоянием игры
+    // 6. Управление состоянием игры
     if (window.game) {
         if (roomName === 'game') {
             window.game.resize();
@@ -96,17 +85,17 @@ function showRoom(roomName) {
         }
     }
 
-    // Инициализация специфической логики комнаты
+    // 7. Инициализация логики комнат
     try {
         switch(roomName) {
-            case 'shop':      initShop(); break;
+            case 'shop': initShop(); break;
             case 'inventory': initInventory(); break;
-            case 'friends':   initFriends(); break;
-            case 'daily':     initDaily(); break;
+            case 'friends': initFriends(); break;
+            case 'daily': initDaily(); break;
             case 'leaderboard': initLeaderboard(); break;
-            case 'settings':  initSettings(); break;
-            default:          updateGlobalUI(); break;
+            case 'settings': initSettings(); break;
         }
+        updateGlobalUI();
     } catch (err) {
         console.error(`[RoomInit] Ошибка в ${roomName}:`, err);
     }
@@ -114,40 +103,42 @@ function showRoom(roomName) {
 
 window.showRoom = showRoom;
 
-/**
- * Инициализация при загрузке
- */
 async function init() {
+    console.log("[App] Инициализация...");
     if (tg) {
         tg.ready();
         tg.expand(); 
         try {
-            if (tg.isVersionAtLeast('6.1')) {
-                tg.setHeaderColor('#4ec0ca');
-                tg.setBackgroundColor('#4ec0ca');
-            }
+            tg.setHeaderColor('#4ec0ca');
+            tg.setBackgroundColor('#4ec0ca');
         } catch(e) {}
     }
 
+    // Инициализация кошелька
     try {
         window.wallet = new WalletManager((isConnected) => {
             console.log("[TON] Статус:", isConnected ? "Connected" : "Disconnected");
         });
-    } catch (e) { 
-        console.error("[TON] Ошибка инициализации кошелька:", e); 
-    }
+    } catch (e) { console.error("[TON] Ошибка:", e); }
     
+    // Инициализация игры
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, handleGameOver);
     }
 
+    // Привязка кликов (с проверкой на существование)
     const bindClick = (id, room) => {
         const el = document.getElementById(id);
-        if (el) el.onclick = (e) => { 
-            e.preventDefault(); 
-            showRoom(room); 
-        };
+        if (el) {
+            el.onclick = (e) => { 
+                e.preventDefault();
+                console.log(`[Click] Кнопка ${id} -> ${room}`);
+                showRoom(room); 
+            };
+        } else {
+            console.warn(`[Init] Кнопка с id "${id}" не найдена в HTML`);
+        }
     };
 
     bindClick('btn-shop', 'shop');
@@ -162,34 +153,21 @@ async function init() {
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) btnRestart.onclick = () => showRoom('home');
 
-    const btnRevive = document.getElementById('btn-revive');
-    if (btnRevive) {
-        btnRevive.onclick = async () => {
-            if (state.lives > 0) {
-                state.lives--;
-                updateGlobalUI();
-                showRoom('game');
-                window.game?.revive();
-            } else {
-                tg?.showAlert("У вас нет сердечек ❤️");
-            }
-        };
-    }
-
+    // Авторизация
     try {
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 
         if (authData?.user) {
-            state.user = authData.user;
-            state.coins = authData.user.coins ?? state.coins;
-            state.lives = authData.user.lives ?? state.lives;
-            state.crystals = authData.user.crystals ?? state.crystals;
-            if (authData.user.powerups) {
-                state.powerups = { ...state.powerups, ...authData.user.powerups };
-            }
+            Object.assign(state, {
+                user: authData.user,
+                coins: authData.user.coins ?? state.coins,
+                lives: authData.user.lives ?? state.lives,
+                crystals: authData.user.crystals ?? state.crystals,
+                powerups: authData.user.powerups ? { ...state.powerups, ...authData.user.powerups } : state.powerups
+            });
         }
     } catch (e) {
-        console.error("[Auth] Ошибка API, используем локальный state:", e);
+        console.error("[Auth] Ошибка API:", e);
     }
 
     window.state = state; 
@@ -207,7 +185,7 @@ function handleGameOver(score, reviveUsed) {
         btnRevive.style.display = (!reviveUsed && state.lives > 0) ? 'block' : 'none';
     }
     
-    api.saveScore(score).catch(err => console.error("[Score] Ошибка сохранения:", err));
+    api.saveScore(score).catch(err => console.error("[Score] Ошибка:", err));
 }
 
 function updateGlobalUI() {
@@ -215,29 +193,20 @@ function updateGlobalUI() {
     const coinValue = Number(state.coins).toLocaleString();
     const crystalValue = Number(state.crystals).toLocaleString();
     
-    // 1. Монеты
+    // Обновляем монеты
     const headerCoins = document.getElementById('header-coins');
     if (headerCoins) headerCoins.innerText = coinValue;
 
-    const coinEl = document.getElementById('coin-balance');
-    if (coinEl) {
-        coinEl.innerHTML = `<span class="gold-coin">💰</span> ${coinValue}`;
-    }
+    // Обновляем кристаллы
+    const headerCrystals = document.getElementById('header-crystals');
+    if (headerCrystals) headerCrystals.innerText = crystalValue;
 
-    // 2. Жизни
+    // Обновляем жизни
     document.querySelectorAll('.stat-lives, #header-lives, #revive-lives-count').forEach(el => {
         el.innerText = state.lives;
     });
 
-    // 3. Кристаллы (Обновляем и в шапке!)
-    const headerCrystals = document.getElementById('header-crystals');
-    if (headerCrystals) headerCrystals.innerText = crystalValue;
-
-    document.querySelectorAll('.stat-crystals').forEach(el => {
-        el.innerText = state.crystals;
-    });
-
-    // 4. Способности
+    // Обновляем бейджи предметов
     if (state.powerups) {
         Object.keys(state.powerups).forEach(key => {
             const badge = document.querySelector(`.item-badge[data-powerup="${key}"]`);
@@ -246,6 +215,7 @@ function updateGlobalUI() {
     }
 }
 
+// Запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
