@@ -106,8 +106,9 @@ body, html {
     align-items: center;
     width: 60px;  
     height: 60px;
-    transition: transform 0.1s ease;
     cursor: pointer;
+    /* Плавная анимация возврата (эффект пружины) */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.1s ease !important;
 }
 
 /* Настройка картинки внутри кнопки */
@@ -125,17 +126,22 @@ body, html {
     transform: translateY(-8px);
 }
 
-/* --- 5. УДАЛЕНИЕ ФОНОВ (ЧТОБЫ НЕ БЫЛО КАШИ) --- */
-#btn-shop, #btn-inventory, #btn-friends, #btn-settings, #btn-home-panel {
-    background-image: none !important;
+/* --- 5. ЭФФЕКТЫ НАЖАТИЯ (FEEDBACK) --- */
+
+.nav-btn:active {
+    transform: scale(0.85) !important; /* Уменьшение при тапе */
+    opacity: 0.7 !important;           /* Легкая прозрачность */
 }
 
-/* Эффекты нажатия */
-.nav-btn:active {
-    transform: scale(0.85);
-}
 #btn-home-panel:active {
-    transform: translateY(-8px) scale(0.85);
+    /* Сохраняем положение в воздухе и уменьшаем */
+    transform: translateY(-8px) scale(0.85) !important;
+    opacity: 0.7 !important;
+}
+
+/* Убираем фоны, чтобы не было наложения */
+#btn-shop, #btn-inventory, #btn-friends, #btn-settings, #btn-home-panel {
+    background-image: none !important;
 }
 
 /* --- 6. ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ --- */

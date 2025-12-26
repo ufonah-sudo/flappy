@@ -62,13 +62,21 @@ function showRoom(roomName) {
     }
 
     // Управление нижней панелью
-    const bottomPanel = document.querySelector('.menu-buttons-panel');
-    if (bottomPanel) {
-        // Скрываем панель только в игре и на экране проигрыша
-        const isGameActive = ['game', 'gameOver'].includes(roomName);
-        bottomPanel.style.display = isGameActive ? 'none' : 'flex';
-        bottomPanel.style.pointerEvents = 'auto';
+    // Управление нижней панелью
+const bottomPanel = document.querySelector('.menu-buttons-panel');
+if (bottomPanel) {
+    // Панель должна быть СКРЫТА, если мы в игре ИЛИ на экране Game Over
+    const isPlaying = (roomName === 'game' || roomName === 'gameOver');
+    
+    if (isPlaying) {
+        bottomPanel.style.display = 'none';
+        console.log("[UI] Панель скрыта для режима:", roomName);
+    } else {
+        bottomPanel.style.display = 'flex';
+        console.log("[UI] Панель показана для комнаты:", roomName);
     }
+}
+
 
     // Безопасная инициализация TON Connect
     if (window.wallet && window.wallet.tonConnectUI) {
