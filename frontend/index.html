@@ -12,6 +12,39 @@
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
+    <style>
+        /* Жесткий фикс фона и теней */
+        body {
+            background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center !important;
+            background-size: cover !important;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        /* Логотип 500x312 (в масштабе для экрана) */
+        .game-logo-container {
+            width: 280px; 
+            margin: 20px auto;
+            pointer-events: none;
+        }
+        .game-logo-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* УБИРАЕМ ЕБУЧУЮ ТЕНЬ У КНОПКИ PLAY РАЗ И НАВСЕГДА */
+        #btn-start {
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
+            text-shadow: none !important;
+            -webkit-appearance: none;
+            background: #f7d51d; /* Цвет из твоего дизайна */
+        }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -40,130 +73,65 @@
             </div>
 
             <div class="game-logo-container">
-                <h1 class="game-title">FLAPPY TON</h1>
+                <img src="/frontend/flappyname.png" alt="Flappy Bird">
             </div>
 
             <button id="btn-start" class="primary-btn pulse">PLAY</button>
         </div>
 
-        <div id="scene-mode-selection" class="screen hidden">
-            <div class="mode-selection-container">
-                <h2 class="mode-title">SELECT MODE</h2>
-                
-                <div class="mode-cards">
-                    <div id="btn-mode-classic" class="mode-card">
-                        <div class="mode-icon">🐦</div>
-                        <div class="mode-info">
-                            <span class="mode-name">CLASSIC</span>
-                            <span class="mode-desc">Standard Flappy</span>
-                        </div>
-                    </div>
-
-                    <div id="btn-mode-arcade" class="mode-card">
-                        <div class="mode-icon">🚀</div>
-                        <div class="mode-info">
-                            <span class="mode-name">ARCADE</span>
-                            <span class="mode-desc">Abilities & Speed</span>
-                        </div>
-                    </div>
-                </div>
-
-                <button id="btn-back-to-home" class="secondary-btn">BACK</button>
+        <div id="scene-mode-selection" class="screen hidden" style="background: rgba(0,0,0,0.85);">
+            <h2 style="color: white; margin-bottom: 30px;">SELECT MODE</h2>
+            <div class="mode-cards">
+                <div id="btn-mode-classic" class="mode-card">CLASSIC</div>
+                <div id="btn-mode-arcade" class="mode-card" style="margin-top: 15px;">ARCADE</div>
             </div>
+            <button id="btn-back-to-home" class="secondary-btn" style="margin-top: 40px;">BACK</button>
         </div>
 
         <div id="game-container" class="screen hidden">
             <canvas id="game-canvas"></canvas>
             <div id="score-overlay">0</div>
-            <button id="btn-pause-trigger" class="hidden">⏸️</button>
-        </div>
-
-        <div id="pause-menu" class="screen hidden">
-            <div class="pause-content">
-                <h2>PAUSE</h2>
-                <button id="btn-resume" class="primary-btn">RESUME</button>
-                <button id="btn-exit-home" class="secondary-btn">EXIT TO MENU</button>
-                
-                <div class="settings-row" style="margin-top: 20px;">
-                    <button id="btn-toggle-sound" class="secondary-btn">🔊 Sound: ON</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="game-over" class="screen hidden">
-            <h2 class="status-title">GAME OVER</h2>
-            <div class="result-box">
-                <p>Score</p>
-                <span id="final-score">0</span>
-            </div>
-            
-            <div id="revive-section">
-                <button id="btn-revive" class="primary-btn">USE HEART ❤️</button>
-            </div>
-
-            <div class="game-over-buttons" style="display: flex; gap: 10px; margin-top: 20px;">
-                <button id="btn-restart" class="primary-btn">RESTART</button>
-                <button id="btn-exit-gameover" class="secondary-btn">HOME</button>
-            </div>
-        </div>
-
-        <div id="scene-shop" class="screen hidden">
-            <h3>SHOP</h3>
-            <div id="shop-ton-wallet"></div> 
-            <div class="room-content" id="shop-content"></div>
-        </div>
-
-        <div id="scene-leaderboard" class="screen hidden">
-            <h3>TOP PLAYERS</h3>
-            <div class="room-content" id="leaderboard-list"></div>
-        </div>
-
-        <div id="scene-friends" class="screen hidden">
-            <h3>FRIENDS</h3>
-            <div class="room-content" id="friends-content"></div>
-            <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
-        </div>
-
-        <div id="scene-inventory" class="screen hidden">
-            <h3>INVENTORY</h3>
-            <div class="room-content" id="inventory-content"></div>
-        </div>
-
-        <div id="scene-daily" class="screen hidden">
-            <h3>DAILY REWARD</h3>
-            <div class="room-content" id="daily-content"></div>
-        </div>
-
-        <div id="scene-settings" class="screen hidden">
-            <h3>SETTINGS</h3>
-            <div id="settings-ton-wallet"></div>
-            <div class="room-content" id="settings-content"></div>
+            <button id="btn-pause-trigger">⏸️</button>
         </div>
 
         <div class="menu-buttons-panel">
             <button id="btn-shop" class="nav-btn">
                 <img src="/frontend/assets/shop.png" alt="Shop">
             </button>
-
             <button id="btn-inventory" class="nav-btn">
                 <img src="/frontend/assets/invent.png" alt="Inventory">
                 <span class="item-badge hidden" data-powerup="heart">0</span>
-                <span class="item-badge hidden" data-powerup="shield">0</span>
             </button>
-
             <button id="btn-home-panel" class="nav-btn">
                 <img src="/frontend/assets/home.png" alt="Home">
             </button> 
-
             <button id="btn-friends" class="nav-btn">
                 <img src="/frontend/assets/friends.png" alt="Friends">
             </button>
-
             <button id="btn-settings" class="nav-btn">
                 <img src="/frontend/assets/settings.png" alt="Settings">
             </button>
         </div>
 
+        <div id="pause-menu" class="screen hidden">
+            <button id="btn-resume" class="primary-btn">RESUME</button>
+            <button id="btn-exit-home" class="secondary-btn">EXIT</button>
+        </div>
+
+        <div id="game-over" class="screen hidden">
+            <h2>GAME OVER</h2>
+            <div class="result-box"><span id="final-score">0</span></div>
+            <button id="btn-revive" class="primary-btn">USE HEART ❤️</button>
+            <button id="btn-restart" class="primary-btn">RESTART</button>
+            <button id="btn-exit-gameover" class="secondary-btn">HOME</button>
+        </div>
+
+        <div id="scene-shop" class="screen hidden"><div class="room-content" id="shop-content"></div></div>
+        <div id="scene-leaderboard" class="screen hidden"><div class="room-content" id="leaderboard-list"></div></div>
+        <div id="scene-friends" class="screen hidden"><div class="room-content" id="friends-content"></div></div>
+        <div id="scene-inventory" class="screen hidden"><div class="room-content" id="inventory-content"></div></div>
+        <div id="scene-daily" class="screen hidden"><div class="room-content" id="daily-content"></div></div>
+        <div id="scene-settings" class="screen hidden"><div id="settings-content"></div></div>
     </div>
 
     <script type="module" src="/main.js"></script>
