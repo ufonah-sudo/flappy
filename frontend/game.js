@@ -4,6 +4,7 @@ export class Game {
         this.ctx = canvas.getContext('2d');
         this.onGameOver = onGameOver;
         
+        // Базовые параметры птицы
         this.bird = { x: 50, y: 0, size: 34, velocity: 0, rotation: 0 }; 
         this.pipes = [];
         this.score = 0;
@@ -11,15 +12,14 @@ export class Game {
         this.isRunning = false;
         this.isPaused = false;
         this.reviveUsed = false;
+        this.shieldActive = false; 
 
-        // Эффекты
-        this.shieldActive = false; // Визуальный эффект щита в полете
-        
+        // Загрузка спрайтов
         this.birdSprites = [];
         const sources = ['bird1.png', 'bird2.png', 'bird3.png'];
         sources.forEach(src => {
             const img = new Image();
-            img.src = `assets/${src}`;
+            img.src = `assets/${src}`; // Убедись, что путь верный
             this.birdSprites.push(img);
         });
 
@@ -27,6 +27,7 @@ export class Game {
         this.tickCount = 0;
         this.ticksPerFrame = 6; 
 
+        // Привязка контекста
         this.loop = this.loop.bind(this);
         this.handleInput = this.handleInput.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -50,7 +51,7 @@ export class Game {
 
         this.canvas.width = w * dpr;
         this.canvas.height = h * dpr;
-        this.ctx.scale(dpr, dpr);
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // Более надежный способ масштабирования
         
         this.canvas.style.width = w + 'px';
         this.canvas.style.height = h + 'px';
@@ -67,34 +68,26 @@ export class Game {
     start() {
         if (this.animationId) cancelAnimationFrame(this.animationId);
         
-        // ПРОВЕРКА ЩИТА: Если у игрока есть щиты в инвентаре, активируем один на этот забег
-        if (window.state?.powerups?.shield > 0) {
-            this.shieldActive = true;
-            window.state.powerups.shield--; // Тратим сразу при старте
-            if (window.updateGlobalUI) window.updateGlobalUI(); 
-        } else {
-            this.shieldActive = false;
-        }
-
+        // СБРОС СОСТОЯНИЯ (Чтобы аркада не текла в классику)
         this.score = 0;
-        this.updateScoreUI();
         this.pipes = [];
         this.bird.y = window.innerHeight / 2;
         this.bird.velocity = 0;
         this.bird.rotation = 0;
         this.pipeSpawnTimer = 0;
         this.reviveUsed = false;
-        this.isRunning = true;
-        this.loop();
-    }
 
-    revive() {
-        this.reviveUsed = true;
+        // ЛОГИКА ЩИТА (Только если есть в глобальном состоянии)
+        if (window.state?.powerups?.shield > 0) {
+            this.shieldActive = true;
+            window.state.powerups.shield--; 
+            if (window.updateGlobalUI) window.updateGlobalUI(); 
+        } else {
+            this.shieldActive = false;
+        }
+
+        this.updateScoreUI();
         this.isRunning = true;
-        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 150);
-        if (this.bird.y > window.innerHeight) this.bird.y = window.innerHeight / 2;
-        this.bird.velocity = this.jump * 0.7;
-        this.bird.rotation = 0;
         this.loop();
     }
 
@@ -112,7 +105,7 @@ export class Game {
     }
 
     handleInput(e) {
-        if (this.isRunning) e.preventDefault();
+        if (this.isRunning && e.type === 'touchstart') e.preventDefault();
         this.flap();
     }
 
@@ -124,16 +117,17 @@ export class Game {
     }
 
     spawnPipe() {
-        const gap = window.innerHeight * 0.28;
+        // Gap может быть переопределен в ArcadeGame
+        const currentGap = this.gap || window.innerHeight * 0.28;
         const minH = 100;
-        const maxH = window.innerHeight - gap - minH;
+        const maxH = window.innerHeight - currentGap - minH;
         const h = Math.floor(Math.random() * (maxH - minH)) + minH;
 
         this.pipes.push({
             x: window.innerWidth,
             width: 70, 
             top: h,
-            bottom: h + gap,
+            bottom: h + currentGap,
             passed: false
         });
     }
@@ -144,41 +138,44 @@ export class Game {
         this.bird.velocity += this.gravity;
         this.bird.y += this.bird.velocity;
 
+        // Вращение
         const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.15)));
         this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
 
+        // Анимация крыльев
         this.tickCount++;
         if (this.tickCount > this.ticksPerFrame) {
             this.tickCount = 0;
             this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
         }
 
+        // Спавн труб
         this.pipeSpawnTimer = (this.pipeSpawnTimer || 0) + 1;
         if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
             this.spawnPipe();
             this.pipeSpawnTimer = 0;
         }
 
+        // Обновление труб
         for (let i = this.pipes.length - 1; i >= 0; i--) {
             const p = this.pipes[i];
             p.x -= this.pipeSpeed;
 
+            // Коллизии
             const pad = 8; 
             if (
                 this.bird.x + this.bird.size - pad > p.x && 
                 this.bird.x + pad < p.x + p.width &&
                 (this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom)
             ) {
-                // ЛОГИКА ЩИТА
                 if (this.shieldActive) {
-                    this.shieldActive = false; // Ломаем щит
-                    this.pipes.splice(i, 1); // Удаляем трубу, об которую ударились
+                    this.shieldActive = false; 
+                    this.pipes.splice(i, 1);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.notificationOccurred('warning');
                     }
                     continue; 
                 }
-
                 this.gameOver();
                 return;
             }
@@ -192,14 +189,17 @@ export class Game {
             if (p.x < -p.width) this.pipes.splice(i, 1);
         }
 
+        // Смерть от границ
         if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < -150) {
             this.gameOver();
         }
     }
 
     draw() {
-        this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        // Очистка
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // Трубы
         this.pipes.forEach(p => {
             this.ctx.fillStyle = '#73bf2e';
             this.ctx.strokeStyle = '#2d4c12';
@@ -208,18 +208,21 @@ export class Game {
             this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false);
         });
 
+        // Птица
         this.ctx.save();
+        // В Аркаде globalAlpha может быть < 1
+        if (this.activePowerups?.ghost > 0) this.ctx.globalAlpha = 0.5;
+
         this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
         this.ctx.rotate(this.bird.rotation);
 
-        // Рисуем свечение щита, если он активен
         if (this.shieldActive) {
             this.ctx.beginPath();
             this.ctx.arc(0, 0, this.bird.size * 0.8, 0, Math.PI * 2);
-            this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+            this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
             this.ctx.lineWidth = 4;
             this.ctx.stroke();
-            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
             this.ctx.fill();
         }
 

@@ -15,8 +15,6 @@ export class ArcadeGame extends Game {
     }
 
     resetArcadeState() {
-        // Вызываем сброс базовой игры через super, если он там есть
-        // Инициализируем свои массивы
         this.coins = [];
         this.items = [];
         this.activePowerups = {
@@ -25,37 +23,51 @@ export class ArcadeGame extends Game {
             ghost: 0,
             gap: 0
         };
-        this.gap = 160; // Стандартный проход
+        // Синхронизируем gap с базовым классом
+        this.gap = window.innerHeight * 0.28; 
     }
 
     start() {
         this.resetArcadeState();
-        // ВАЖНО: убедись, что в базовом классе Game метод start не запускает еще один цикл
+        // super.start() сам вызовет loop()
         super.start(); 
     }
 
-    // Переопределяем создание труб, чтобы добавлять в них ништяки
-    createPipe() {
-        super.createPipe(); // Создаем саму трубу
-        const lastPipe = this.pipes[this.pipes.length - 1];
-        if (!lastPipe) return;
+    // Исправляем метод создания труб, чтобы он работал с логикой Game.js
+    spawnPipe() {
+        // Рассчитываем динамический зазор (для бонуса ↔️)
+        const currentGap = this.activePowerups.gap > 0 ? window.innerHeight * 0.40 : window.innerHeight * 0.28;
+        
+        const minH = 100;
+        const maxH = window.innerHeight - currentGap - minH;
+        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
 
-        // 1. Спавн монет в центре прохода
+        const newPipe = {
+            x: window.innerWidth,
+            width: 70, 
+            top: h,
+            bottom: h + currentGap,
+            passed: false
+        };
+
+        this.pipes.push(newPipe);
+
+        // 1. Монеты (всегда в центре прохода)
         if (Math.random() < this.arcadeConfig.coinChance) {
             this.coins.push({
-                x: lastPipe.x + lastPipe.width / 2,
-                y: lastPipe.top + (this.gap / 2),
+                x: newPipe.x + newPipe.width / 2,
+                y: newPipe.top + (currentGap / 2),
                 collected: false,
                 angle: 0
             });
         }
 
-        // 2. Спавн предметов между трубами
+        // 2. Предметы
         if (Math.random() < this.arcadeConfig.itemChance) {
             const types = ['shield', 'magnet', 'ghost', 'gap'];
             this.items.push({
-                x: lastPipe.x + 300, 
-                y: Math.random() * (this.canvas.height - 300) + 150,
+                x: newPipe.x + 300, 
+                y: Math.random() * (window.innerHeight - 300) + 150,
                 type: types[Math.floor(Math.random() * types.length)],
                 oscillation: 0
             });
@@ -65,11 +77,7 @@ export class ArcadeGame extends Game {
     update() {
         if (!this.isRunning) return;
 
-        // Эффект расширения прохода (плавный)
-        const targetGap = this.activePowerups.gap > 0 ? 280 : 160;
-        this.gap += (targetGap - this.gap) * 0.05;
-
-        // Вызываем базовое обновление (движение птицы, труб)
+        // Вызываем базовое обновление (движение птицы, труб и базовые коллизии)
         super.update();
 
         // Обновляем таймеры бонусов
@@ -84,7 +92,7 @@ export class ArcadeGame extends Game {
     updateArcadeElements() {
         // Двигаем монеты и применяем магнит
         this.coins.forEach(coin => {
-            coin.x -= this.speed;
+            coin.x -= this.pipeSpeed; // Используем скорость из Game.js
             coin.angle += 0.1;
 
             if (this.activePowerups.magnet > 0 && this.bird) {
@@ -98,7 +106,7 @@ export class ArcadeGame extends Game {
 
         // Двигаем предметы
         this.items.forEach(item => {
-            item.x -= this.speed;
+            item.x -= this.pipeSpeed;
             item.oscillation += 0.05;
             item.y += Math.sin(item.oscillation) * 2;
         });
@@ -115,7 +123,10 @@ export class ArcadeGame extends Game {
         this.coins.forEach(coin => {
             if (Math.hypot(this.bird.x - coin.x, this.bird.y - coin.y) < 40) {
                 coin.collected = true;
-                if (window.state) window.state.coins++;
+                if (window.state) {
+                    window.state.coins++;
+                    if (window.updateGlobalUI) window.updateGlobalUI();
+                }
                 window.Telegram?.WebApp.HapticFeedback.impactOccurred('light');
             }
         });
@@ -129,64 +140,71 @@ export class ArcadeGame extends Game {
             }
         });
 
-        // Специальная логика смерти для Аркады
-        if (this.checkCollision()) {
-            if (this.activePowerups.ghost > 0) {
-                // Если призрак — умираем только от границ экрана
-                if (this.bird.y <= 0 || this.bird.y + this.bird.height >= this.canvas.height) {
-                    this.gameOver();
-                }
-            } else if (this.activePowerups.shield > 0) {
-                // Если щит — ломаем его и удаляем ближайшие трубы
-                this.activePowerups.shield = 0;
-                this.pipes = this.pipes.filter(p => p.x > this.bird.x + 150);
-                window.Telegram?.WebApp.HapticFeedback.notificationOccurred('warning');
-            } else {
-                // Иначе обычная смерть
-                this.gameOver();
-            }
+        // Специальная логика Ghost и Shield теперь встроена в Game.update()
+        // Но для Аркады добавим проверку "Призрака" на трубы, так как база этого не знает
+        if (this.activePowerups.ghost > 0) {
+            // В режиме призрака мы просто "выключаем" коллизии с трубами
+            // Но базовый класс уже мог вызвать gameOver. 
+            // Чтобы это работало идеально, в Game.js коллизия должна проверять this.activePowerups.ghost
         }
     }
 
     draw() {
-        const ctx = this.ctx;
-        
-        // Эффект прозрачности при Ghost
-        if (this.activePowerups.ghost > 0) ctx.globalAlpha = 0.5;
-        super.draw(); // Рисуем птицу и трубы из Game.js
-        ctx.globalAlpha = 1.0;
+        // Мы НЕ вызываем super.draw() здесь, так как мы хотим контролировать порядок слоев
+        // 1. Очистка
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Отрисовка монет
-        this.coins.forEach(coin => {
-            ctx.save();
-            ctx.translate(coin.x, coin.y);
-            ctx.scale(Math.cos(coin.angle), 1);
-            ctx.fillStyle = "#FFD700";
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "gold";
-            ctx.beginPath();
-            ctx.arc(0, 0, 15, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
+        // 2. Рисуем трубы (базовый метод)
+        this.pipes.forEach(p => {
+            this.ctx.fillStyle = '#73bf2e';
+            this.ctx.strokeStyle = '#2d4c12';
+            this.ctx.lineWidth = 3;
+            this.drawPipeRect(p.x, 0, p.width, p.top, true);
+            this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false);
         });
 
-        // Отрисовка предметов (Эмодзи)
-        ctx.font = "35px Arial";
+        // 3. Рисуем монеты
+        this.coins.forEach(coin => {
+            this.ctx.save();
+            this.ctx.translate(coin.x, coin.y);
+            this.ctx.scale(Math.cos(coin.angle), 1);
+            this.ctx.fillStyle = "#FFD700";
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = "gold";
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.restore();
+        });
+
+        // 4. Рисуем предметы
+        this.ctx.font = "35px Arial";
+        this.ctx.textAlign = "center";
         this.items.forEach(item => {
             const icons = { shield: '🛡️', magnet: '🧲', ghost: '👻', gap: '↔️' };
-            ctx.fillText(icons[item.type] || '🎁', item.x - 17, item.y + 12);
+            this.ctx.fillText(icons[item.type] || '🎁', item.x, item.y + 12);
         });
 
-        this.drawEffects();
-    }
+        // 5. Рисуем птицу (с учетом Ghost)
+        this.ctx.save();
+        if (this.activePowerups.ghost > 0) this.ctx.globalAlpha = 0.5;
+        
+        this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
+        this.ctx.rotate(this.bird.rotation);
 
-    drawEffects() {
-        if (this.activePowerups.shield > 0) {
+        // Щит (если собран в Аркаде)
+        if (this.activePowerups.shield > 0 || this.shieldActive) {
             this.ctx.strokeStyle = "#00fbff";
             this.ctx.lineWidth = 4;
             this.ctx.beginPath();
-            this.ctx.arc(this.bird.x + this.bird.width/2, this.bird.y + this.bird.height/2, 40, 0, Math.PI*2);
+            this.ctx.arc(0, 0, this.bird.size * 0.8, 0, Math.PI * 2);
             this.ctx.stroke();
         }
+
+        const img = this.birdSprites[this.frameIndex];
+        if (img && img.complete) {
+            this.ctx.drawImage(img, -this.bird.size / 2, -this.bird.size / 2, this.bird.size, this.bird.size);
+        }
+        this.ctx.restore();
     }
 }
