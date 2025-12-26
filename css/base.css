@@ -72,7 +72,6 @@ body, html {
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (ПРОЗРАЧНАЯ) --- */
 /* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
 .menu-buttons-panel {
     position: fixed;
@@ -88,16 +87,18 @@ body, html {
     border: none !important;
     box-shadow: none !important;
     
-    /* УБРАЛИ !important ТУТ */
-    display: flex; 
-    
+    display: flex; /* Без !important для управления из main.js */
     justify-content: space-around;
     align-items: center;
     z-index: 9999 !important;
     pointer-events: auto !important;
 }
 
-/* --- 4. КНОПКИ --- */
+.menu-buttons-panel.hidden {
+    display: none !important;
+}
+
+/* --- 4. КНОПКИ НАВИГАЦИИ --- */
 .nav-btn {
     background: transparent !important;
     border: none !important;
@@ -110,13 +111,9 @@ body, html {
     width: 60px;  
     height: 60px;
     cursor: pointer;
-    /* Плавная анимация возврата (эффект пружины) */
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.1s ease !important;
 }
-.menu-buttons-panel.hidden {
-    display: none !important;
-}
-/* Настройка картинки внутри кнопки */
+
 .nav-btn img {
     width: 100% !important;
     height: 100% !important;
@@ -124,36 +121,125 @@ body, html {
     pointer-events: none;
 }
 
-/* Центральная кнопка Home */
 #btn-home-panel {
     width: 80px !important;
     height: 80px !important;
     transform: translateY(-8px);
 }
 
-/* --- 5. ЭФФЕКТЫ НАЖАТИЯ (FEEDBACK) --- */
-
+/* Эффекты нажатия */
 .nav-btn:active {
-    transform: scale(0.85) !important; /* Уменьшение при тапе */
-    opacity: 0.7 !important;           /* Легкая прозрачность */
+    transform: scale(0.85) !important;
+    opacity: 0.7 !important;
 }
 
 #btn-home-panel:active {
-    /* Сохраняем положение в воздухе и уменьшаем */
     transform: translateY(-8px) scale(0.85) !important;
     opacity: 0.7 !important;
 }
 
-/* Убираем фоны, чтобы не было наложения */
-#btn-shop, #btn-inventory, #btn-friends, #btn-settings, #btn-home-panel {
-    background-image: none !important;
+/* --- 5. ЭКРАН ВЫБОРА РЕЖИМА (НОВОЕ) --- */
+#scene-mode-selection {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(5px);
+}
+
+.mode-selection-container {
+    width: 85%;
+    max-width: 350px;
+    text-align: center;
+}
+
+.mode-title {
+    font-size: 28px;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 0px #000;
+}
+
+.mode-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.mode-card {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.mode-card:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.mode-icon {
+    font-size: 30px;
+}
+
+.mode-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.mode-name {
+    font-weight: 800;
+    font-size: 18px;
+    color: #f7d51d;
+}
+
+.mode-desc {
+    font-size: 12px;
+    opacity: 0.8;
 }
 
 /* --- 6. ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ --- */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
 .hidden {
     display: none !important;
 }
 
-/* Иконки на главном экране (Top, Daily) */
+/* Кнопки на главном экране */
 #btn-top-icon { content: url('/frontend/assets/top.png'); width: 50px; height: 50px; }
 #btn-daily-icon { content: url('/frontend/assets/daily.png'); width: 50px; height: 50px; }
+
+/* Общие стили кнопок */
+.primary-btn, .secondary-btn {
+    padding: 12px 25px;
+    border-radius: 20px;
+    border: none;
+    font-weight: 800;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
