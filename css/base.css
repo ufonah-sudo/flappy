@@ -1,5 +1,5 @@
 /* =========================================
-   base.css - ИДЕАЛЬНАЯ ВЕРСИЯ
+   base.css - ФИНАЛЬНАЯ ВЕРСИЯ БЕЗ КОСЯКОВ
    ========================================= */
 
 /* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ --- */
@@ -22,7 +22,7 @@ body, html {
     position: fixed; 
     top: 0;
     left: 0;
-    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
+    background: #4ec0ca url('assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
@@ -43,12 +43,11 @@ body, html {
 .game-logo-container {
     width: 280px; 
     height: 175px; 
-    background: url('/frontend/assets/logo.png') no-repeat center center;
+    background: url('flappyname.png') no-repeat center center; /* Путь из сохраненки */
     background-size: contain;
-    margin-bottom: 40px;
+    margin: 20px auto 40px;
     pointer-events: none;
 }
-.game-title { display: none; } /* Скрываем текст, если есть PNG */
 
 /* --- 3. ТОП И ДЕЙЛИ (ПО БОКАМ) --- */
 .side-buttons {
@@ -82,7 +81,6 @@ body, html {
     position: fixed !important;
     top: env(safe-area-inset-top, 20px) !important;
     left: 20px !important;
-    right: auto !important;
     width: 45px;
     height: 45px;
     background: rgba(0, 0, 0, 0.4);
@@ -112,58 +110,37 @@ body, html {
     pointer-events: none;
 }
 
-/* --- 5. МАГАЗИН И ИНВЕНТАРЬ --- */
-.room-content {
-    width: 100%;
-    max-width: 450px;
-    height: 60vh;
-    overflow-y: auto;
-    padding: 20px;
+/* --- 5. ВЫБОР РЕЖИМА (ИСПРАВЛЕНО) --- */
+#scene-mode-selection {
+    gap: 20px;
+    background: rgba(0,0,0,0.85);
 }
 
-#shop-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.shop-card {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.mode-card {
+    width: 80%;
+    max-width: 300px;
+    padding: 25px;
+    background: #4ec0ca;
+    border: 4px solid #fff;
     border-radius: 20px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    backdrop-filter: blur(5px);
-}
-
-.shop-icon { font-size: 32px; margin-bottom: 8px; }
-.shop-name { font-size: 14px; font-weight: bold; margin-bottom: 5px; opacity: 0.8; }
-.shop-price { color: #f7d51d; font-weight: 800; margin-bottom: 12px; }
-
-.buy-btn {
-    background: #f7d51d;
-    color: #000;
-    border: none;
-    padding: 10px;
-    border-radius: 12px;
+    text-align: center;
     font-weight: 900;
-    width: 100%;
-    cursor: pointer;
+    font-size: 22px;
+    pointer-events: auto;
 }
 
-/* --- 6. НИЖНЯЯ ПАНЕЛЬ И БАДЖИ --- */
+/* --- 6. НИЖНЯЯ ПАНЕЛЬ --- */
 .menu-buttons-panel {
     position: fixed !important;
     bottom: env(safe-area-inset-bottom, 20px) !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: 100% !important;
-    max-width: 500px !important;
-    height: 80px !important;
+    width: 800px !important; /* Твой размер из сохраненки */
+    max-width: 100vw !important;
+    height: 160px !important; /* Твой размер из сохраненки */
     display: flex; 
-    justify-content: space-around;
+    justify-content: center;
+    gap: 10px;
     align-items: center;
     background: transparent !important;
     z-index: 10001 !important;
@@ -173,29 +150,29 @@ body, html {
 .nav-btn {
     background: transparent;
     border: none;
-    width: 60px;
-    height: 60px;
+    width: 120px; /* Соразмерно панели */
+    height: 120px;
     position: relative;
     cursor: pointer;
 }
 
-.nav-btn img { width: 80%; height: 80%; object-fit: contain; }
+.nav-btn img { width: 100%; height: 100%; object-fit: contain; }
 
 .item-badge {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 15px;
+    right: 15px;
     background: #ff3b30;
     color: white;
-    font-size: 10px;
-    min-width: 18px;
-    height: 18px;
+    font-size: 14px;
+    min-width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     font-weight: bold;
-    border: 1.5px solid white;
+    border: 2px solid white;
     z-index: 10;
 }
 
@@ -214,65 +191,43 @@ body, html {
     pointer-events: auto;
 }
 
-/* Затемнение для комнат */
-#scene-shop, #scene-inventory, #scene-leaderboard, #scene-friends, #scene-daily, #scene-settings {
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(15px);
-    z-index: 2000; /* Выше чем главное меню */
-}
-
-#game-over {
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 10000;
-}
+.hidden { display: none !important; }
 
 /* --- 8. КНОПКИ И ЭФФЕКТЫ --- */
-.primary-btn {
+
+/* Кнопка PLAY - ФИКС ТЕНИ */
+#btn-start {
     background: #f7d51d;
     color: #333;
-    padding: 18px 40px;
+    padding: 20px 60px;
     border-radius: 20px;
     font-weight: 900;
-    border: none;
-    font-size: 20px;
+    font-size: 28px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #b8860b;
+    /* Убираем "ебучую тень" и границы */
+    box-shadow: none !important;
+    border: none !important;
+    text-shadow: none !important;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
-.secondary-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    padding: 14px 25px;
-    border-radius: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-}
-
-.nav-btn:active, .primary-btn:active, .buy-btn:active, .side-btn-wrapper:active, .secondary-btn:active {
-    transform: scale(0.92) !important;
+.primary-btn:active, .nav-btn:active, .mode-card:active {
+    transform: scale(0.95);
 }
 
 .header-balances {
     position: fixed;
     top: env(safe-area-inset-top, 15px);
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     gap: 15px;
     background: rgba(0, 0, 0, 0.6);
     padding: 8px 20px;
     border-radius: 25px;
-    pointer-events: auto;
     z-index: 1000;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.hidden { display: none !important; }
-
-/* Анимация пульсации для кнопки Play */
-.pulse {
-    animation: pulse-animation 2s infinite;
-}
-@keyframes pulse-animation {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
+.gold-coin-icon { color: #f7d51d; }

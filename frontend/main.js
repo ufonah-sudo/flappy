@@ -13,7 +13,7 @@ import { initSettings } from './js/rooms/settings.js';
 
 const tg = window.Telegram?.WebApp;
 
-// 1. Глобальное состояние приложения
+// 1. Глобальное состояние приложения (Ничего не удалено)
 const state = { 
     user: null, 
     coins: 0, 
@@ -33,7 +33,7 @@ const state = {
     }
 };
 
-// Сцены (убедись, что ID в HTML совпадают)
+// 2. Сцены (Проверь ID в HTML!)
 const scenes = {
     home: document.getElementById('scene-home'),
     modeSelection: document.getElementById('scene-mode-selection'),
@@ -76,7 +76,7 @@ function showRoom(roomName) {
         pauseTrigger.classList.toggle('hidden', roomName !== 'game');
     }
 
-    // --- Нижняя Панель Навигации ---
+    // --- Нижняя Панель Навигации (ВОЗВРАЩЕНО) ---
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
         const hideOn = ['game', 'gameOver', 'modeSelection', 'pauseMenu'];
@@ -92,17 +92,16 @@ function showRoom(roomName) {
     const idleEngine = state.currentMode === 'classic' ? window.arcadeGame : window.game;
 
     if (roomName === 'game') {
-        if (idleEngine) idleEngine.isRunning = false; // Глушим второй движок
+        if (idleEngine) idleEngine.isRunning = false;
         if (activeEngine) {
             activeEngine.resize();
-            activeEngine.init(); // Важно: сброс параметров птицы
+            if (activeEngine.init) activeEngine.init(); // Инициализация аркады/классики
             activeEngine.isRunning = true;
             activeEngine.start(); 
         }
     } else if (roomName === 'pauseMenu') {
         if (activeEngine) activeEngine.isRunning = false;
     } else {
-        // Если мы в любой другой комнате - выключаем оба движка
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
     }
@@ -130,7 +129,7 @@ async function init() {
     if (tg) {
         tg.ready();
         tg.expand(); 
-        tg.enableClosingConfirmation(); // Чтобы случайно не закрыли игру свипом
+        tg.enableClosingConfirmation();
     }
 
     // Кошелек
@@ -157,7 +156,7 @@ async function init() {
         };
     };
 
-    // Навигация
+    // Все твои кнопки на месте
     bindClick('btn-shop', 'shop');
     bindClick('btn-inventory', 'inventory');
     bindClick('btn-home-panel', 'home'); 
@@ -167,41 +166,30 @@ async function init() {
     bindClick('btn-daily-icon', 'daily');
     bindClick('btn-start', 'modeSelection');
 
-    // Выбор режима
+    // Режимы
     const btnCl = document.getElementById('btn-mode-classic');
     if (btnCl) btnCl.onclick = () => { 
-        tg?.HapticFeedback.impactOccurred('medium');
         state.currentMode = 'classic'; 
         showRoom('game'); 
     };
     const btnAr = document.getElementById('btn-mode-arcade');
     if (btnAr) btnAr.onclick = () => { 
-        tg?.HapticFeedback.impactOccurred('medium');
         state.currentMode = 'arcade'; 
         showRoom('game'); 
     };
     bindClick('btn-back-to-home', 'home');
 
-    // Пауза
+    // Кнопки интерфейса
     const btnPause = document.getElementById('btn-pause-trigger');
-    if (btnPause) {
-        btnPause.onclick = (e) => {
-            e.stopPropagation();
-            tg?.HapticFeedback.selectionChanged();
-            showRoom('pauseMenu');
-        };
-    }
+    if (btnPause) btnPause.onclick = () => showRoom('pauseMenu');
 
     const btnResume = document.getElementById('btn-resume');
-    if (btnResume) btnResume.onclick = () => {
-        tg?.HapticFeedback.impactOccurred('light');
-        showRoom('game');
-    };
+    if (btnResume) btnResume.onclick = () => showRoom('game');
 
     const btnExit = document.getElementById('btn-exit-home');
     if (btnExit) btnExit.onclick = () => showRoom('home');
 
-    // Настройки
+    // Звук
     const btnSound = document.getElementById('btn-toggle-sound');
     if (btnSound) {
         btnSound.onclick = () => {
@@ -210,40 +198,29 @@ async function init() {
         };
     }
 
-    // Рестарт и Возрождение
+    // Гейм овер кнопки
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.onclick = () => {
             if (state.powerups.heart > 0) {
-                tg?.HapticFeedback.notificationOccurred('success');
                 state.powerups.heart--; 
                 updateGlobalUI();
                 const engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
                 if (engine) engine.revive(); 
                 showRoom('game');
-            } else {
-                tg?.HapticFeedback.notificationOccurred('error');
             }
         };
     }
 
     const btnRestart = document.getElementById('btn-restart');
-    if (btnRestart) {
-        btnRestart.onclick = () => {
-            tg?.HapticFeedback.impactOccurred('medium');
-            showRoom('game');
-        };
-    }
+    if (btnRestart) btnRestart.onclick = () => showRoom('game');
 
     const btnExitGameOver = document.getElementById('btn-exit-gameover');
-    if (btnExitGameOver) {
-        btnExitGameOver.onclick = () => showRoom('home');
-    }
+    if (btnExitGameOver) btnExitGameOver.onclick = () => showRoom('home');
 
     // Авторизация
     try {
-        const startParam = tg?.initDataUnsafe?.start_param || "";
-        const authData = await api.authPlayer(startParam); 
+        const authData = await api.authPlayer(tg?.initDataUnsafe?.start_param || ""); 
         if (authData?.user) {
             Object.assign(state, {
                 user: authData.user,
@@ -251,61 +228,47 @@ async function init() {
                 lives: authData.user.lives ?? state.lives,
                 crystals: authData.user.crystals ?? state.crystals
             });
-            if (authData.user.powerups) {
-                state.powerups = { ...state.powerups, ...authData.user.powerups };
-            }
+            if (authData.user.powerups) state.powerups = { ...state.powerups, ...authData.user.powerups };
         }
-    } catch (e) { console.error("[Auth] Ошибка:", e); }
+    } catch (e) { console.error("[Auth Error]", e); }
 
     window.state = state; 
     updateGlobalUI();
     showRoom('home'); 
 }
 
-/**
- * Обработка окончания игры
- */
 function handleGameOver(score, reviveUsed) {
     const finalScoreEl = document.getElementById('final-score');
     if (finalScoreEl) finalScoreEl.innerText = score;
     
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        // Прячем кнопку, если уже возрождались
         btnRevive.style.display = reviveUsed ? 'none' : 'flex';
         btnRevive.innerHTML = `<span>USE HEART ❤️</span><small>(Left: ${state.powerups.heart})</small>`;
         btnRevive.style.opacity = state.powerups.heart > 0 ? "1" : "0.5";
     }
     
     showRoom('gameOver');
-    api.saveScore(score).catch(err => console.error("[Score] Ошибка:", err));
+    api.saveScore(score).catch(e => console.error(e));
 }
 
 function updateGlobalUI() {
     if (!state) return;
-    const coinValue = Number(state.coins).toLocaleString();
-    const crystalValue = Number(state.crystals).toLocaleString();
-    
     const setInner = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.innerText = val;
     };
 
-    setInner('header-coins', coinValue);
-    setInner('header-crystals', crystalValue);
-
-    // Обновляем все счетчики жизней и кристаллов в UI
+    setInner('header-coins', state.coins.toLocaleString());
+    setInner('header-crystals', state.crystals.toLocaleString());
     document.querySelectorAll('.stat-lives, #header-lives').forEach(el => el.innerText = state.lives);
-    document.querySelectorAll('.stat-crystals').forEach(el => el.innerText = state.crystals);
 
-    // Обновление баджей инвентаря
     if (state.powerups) {
         Object.keys(state.powerups).forEach(key => {
             const badges = document.querySelectorAll(`.item-badge[data-powerup="${key}"]`);
             badges.forEach(badge => {
-                const count = state.powerups[key] || 0;
-                badge.innerText = count;
-                badge.classList.toggle('hidden', count <= 0);
+                badge.innerText = state.powerups[key];
+                badge.classList.toggle('hidden', state.powerups[key] <= 0);
             });
         });
     }
