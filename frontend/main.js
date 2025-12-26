@@ -57,26 +57,23 @@ function showRoom(roomName) {
     // --- УПРАВЛЕНИЕ ОТОБРАЖЕНИЕМ БАЛАНСА (HEADER) ---
     const header = document.getElementById('header');
     if (header) {
-        // Показываем баланс везде, кроме самой игры
         header.style.display = (roomName === 'game') ? 'none' : 'flex';
     }
 
-    // Управление нижней панелью
-    // Управление нижней панелью
-const bottomPanel = document.querySelector('.menu-buttons-panel');
-if (bottomPanel) {
-    // Панель должна быть СКРЫТА, если мы в игре ИЛИ на экране Game Over
-    const isPlaying = (roomName === 'game' || roomName === 'gameOver');
-    
-    if (isPlaying) {
-        bottomPanel.style.display = 'none';
-        console.log("[UI] Панель скрыта для режима:", roomName);
-    } else {
-        bottomPanel.style.display = 'flex';
-        console.log("[UI] Панель показана для комнаты:", roomName);
+    // --- УПРАВЛЕНИЕ НИЖНЕЙ ПАНЕЛЬЮ (ИСПРАВЛЕНО) ---
+    const bottomPanel = document.querySelector('.menu-buttons-panel');
+    if (bottomPanel) {
+        // Прячем в игре и на экране проигрыша
+        const isGameMode = (roomName === 'game' || roomName === 'gameOver');
+        
+        if (isGameMode) {
+            bottomPanel.classList.add('hidden'); // Добавляем класс для CSS
+            bottomPanel.style.display = 'none';   // Дублируем для надежности
+        } else {
+            bottomPanel.classList.remove('hidden');
+            bottomPanel.style.display = 'flex';
+        }
     }
-}
-
 
     // Безопасная инициализация TON Connect
     if (window.wallet && window.wallet.tonConnectUI) {
@@ -113,7 +110,7 @@ if (bottomPanel) {
             case 'leaderboard': initLeaderboard(); break;
             case 'settings':  initSettings(); break;
         }
-        updateGlobalUI(); // Обновляем UI после входа в комнату
+        updateGlobalUI(); 
     } catch (err) {
         console.error(`[RoomInit] Ошибка в ${roomName}:`, err);
     }
@@ -168,7 +165,6 @@ async function init() {
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) btnRestart.onclick = () => showRoom('home');
 
-    // ЛОГИКА ВОЗРОЖДЕНИЯ (REVIVE)
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.onclick = async () => {
@@ -184,7 +180,7 @@ async function init() {
         };
     }
 
-    // Авторизация и загрузка данных игрока
+    // Авторизация
     try {
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 
@@ -213,7 +209,6 @@ function handleGameOver(score, reviveUsed) {
     
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        // Показываем кнопку возрождения только если есть жизни и оно еще не использовано в этом раунде
         btnRevive.style.display = (!reviveUsed && state.lives > 0) ? 'block' : 'none';
     }
     
@@ -225,7 +220,6 @@ function updateGlobalUI() {
     const coinValue = Number(state.coins).toLocaleString();
     const crystalValue = Number(state.crystals).toLocaleString();
     
-    // 1. Монеты
     const headerCoins = document.getElementById('header-coins');
     if (headerCoins) headerCoins.innerText = coinValue;
 
@@ -234,12 +228,10 @@ function updateGlobalUI() {
         coinEl.innerHTML = `<span class="gold-coin">💰</span> ${coinValue}`;
     }
 
-    // 2. Жизни
     document.querySelectorAll('.stat-lives, #header-lives, #revive-lives-count').forEach(el => {
         el.innerText = state.lives;
     });
 
-    // 3. Кристаллы
     const headerCrystals = document.getElementById('header-crystals');
     if (headerCrystals) headerCrystals.innerText = crystalValue;
 
@@ -247,7 +239,6 @@ function updateGlobalUI() {
         el.innerText = state.crystals;
     });
 
-    // 4. Способности
     if (state.powerups) {
         Object.keys(state.powerups).forEach(key => {
             const badge = document.querySelector(`.item-badge[data-powerup="${key}"]`);
@@ -256,12 +247,11 @@ function updateGlobalUI() {
     }
 }
 
-// Запуск приложения
+// Запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     init();
 }
 
-// Экспортируем для доступа из других модулей (shop.js, friends.js и т.д.)
 export { showRoom, state, updateGlobalUI };

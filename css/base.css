@@ -85,7 +85,10 @@ body, html {
     backdrop-filter: none !important;
     border: none !important;
     box-shadow: none !important;
-    display: flex; /* УБРАЛИ !important */
+    
+    /* Важно: ставим flex по умолчанию, но без !important */
+    display: flex; 
+    
     justify-content: space-around;
     align-items: center;
     z-index: 9999 !important;
@@ -107,7 +110,9 @@ body, html {
     /* Плавная анимация возврата (эффект пружины) */
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.1s ease !important;
 }
-
+.menu-buttons-panel.hidden {
+    display: none !important;
+}
 /* Настройка картинки внутри кнопки */
 .nav-btn img {
     width: 100% !important;
