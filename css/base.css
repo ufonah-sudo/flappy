@@ -73,7 +73,10 @@ body, html {
 }
 
 /* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
+/* --- СТИЛИ ДЛЯ КНОПОК С КАРТИНКАМИ ВНУТРИ (HTML ВАРИАНТ) --- */
+
 .menu-buttons-panel {
+    /* (Оставляем как было, тут все ок) */
     position: fixed;
     bottom: env(safe-area-inset-bottom, 20px);
     left: 50%;
@@ -81,40 +84,52 @@ body, html {
     width: 95%;
     max-width: 450px;
     height: 85px; 
-    
-    background: rgba(0, 0, 0, 0.7) !important;
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(15px);
     border-radius: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-    
-    display: flex !important; /* Гарантия видимости панели */
+    display: flex;
     justify-content: space-around;
     align-items: center;
     z-index: 9999;
-    pointer-events: auto !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    pointer-events: auto;
 }
 
-/* --- 4. КНОПКИ НАВИГАЦИИ (НАСТРОЙКИ) --- */
 .nav-btn {
-    display: block !important;       /* Обязательно block для отображения фона */
-    width: 55px !important;          /* Жесткая ширина */
-    height: 55px !important;         /* Жесткая высота */
-    
-    background-color: transparent;
-    background-size: contain !important; /* Вписывает картинку целиком */
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    
+    background: transparent; /* Убираем фон, так как теперь есть картинка <img> */
     border: none;
     cursor: pointer;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 55px;  /* Размер кнопки */
+    height: 55px;
     transition: transform 0.1s ease;
 }
 
-/* Эффект нажатия */
+/* Стиль для самой картинки внутри кнопки */
+.nav-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Картинка не сплющится */
+    pointer-events: none; /* Чтобы клик проходил сквозь картинку на кнопку */
+}
+
+/* Особый стиль для кнопки Домой */
+.home-btn {
+    width: 75px !important;
+    height: 75px !important;
+    transform: translateY(-5px);
+}
+
 .nav-btn:active {
     transform: scale(0.9);
-    filter: brightness(0.8);
+}
+
+.home-btn:active {
+    transform: translateY(-5px) scale(0.9);
 }
 
 /* --- 5. КАРТИНКИ КНОПОК (АБСОЛЮТНЫЕ ПУТИ ОТ КОРНЯ) --- */
