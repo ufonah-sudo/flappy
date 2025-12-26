@@ -73,6 +73,7 @@ body, html {
 }
 
 /* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
+/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (ПОЛНОСТЬЮ ПРОЗРАЧНАЯ) --- */
 .menu-buttons-panel {
     position: fixed;
     bottom: env(safe-area-inset-bottom, 20px);
@@ -81,37 +82,27 @@ body, html {
     width: 95%;
     max-width: 450px;
     height: 85px; 
-    background: rgba(0, 0, 0, 0.8) !important; /* Сделал чуть темнее для видимости */
-    backdrop-filter: blur(15px);
-    border-radius: 25px;
+    
+    /* УДАЛЕНО: фон, блюр, рамки и тени */
+    background: transparent !important; 
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    
     display: flex !important;
     justify-content: space-around;
     align-items: center;
     z-index: 9999 !important;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 -5px 25px rgba(0,0,0,0.6);
     pointer-events: auto !important;
 }
 
-/* --- 4. КНОПКИ НАВИГАЦИИ --- */
+/* На всякий случай убедимся, что у кнопок тоже нет лишних фонов */
 .nav-btn {
     background-color: transparent !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-    width: 55px;
-    height: 55px;
-    min-width: 55px;
-    transition: transform 0.1s ease;
-    z-index: 10000;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
-
 /* Стиль для картинок внутри (если используешь <img> в HTML) */
 .nav-btn img {
     width: 100% !important;
