@@ -98,6 +98,12 @@
     filter: drop-shadow(0 8px 15px rgba(0,0,0,0.3));
     transition: transform 0.1s;
     z-index: 11;
+    color: transparent;      /* Делает любой текст невидимым */
+    font-size: 0;            /* Убирает размер шрифта */
+    line-height: 0;          /* Убирает высоту строки */
+    text-indent: -9999px;    /* Уводит текст далеко за пределы экрана */
+    overflow: hidden;        /* Обрезает всё лишнее */
+    
 }
 
 #btn-start:active { 
