@@ -19,7 +19,11 @@ const state = {
     coins: 0, 
     lives: 5, 
     crystals: 1,
-    currentMode: 'classic', // Отслеживаем режим: classic или arcade
+    currentMode: 'classic',
+    settings: {
+        sound: true,
+        music: true
+    },
     powerups: {
         shield: 0,
         gap: 0,
@@ -28,10 +32,10 @@ const state = {
     }
 };
 
-// Ссылки на экраны (Добавлена modeSelection)
+// Ссылки на экраны
 const scenes = {
     home: document.getElementById('scene-home'),
-    modeSelection: document.getElementById('scene-mode-selection'), // Новый экран
+    modeSelection: document.getElementById('scene-mode-selection'),
     game: document.getElementById('game-container'),
     shop: document.getElementById('scene-shop'),
     leaderboard: document.getElementById('scene-leaderboard'),
@@ -39,7 +43,8 @@ const scenes = {
     inventory: document.getElementById('scene-inventory'),
     daily: document.getElementById('scene-daily'),
     settings: document.getElementById('scene-settings'),
-    gameOver: document.getElementById('game-over')
+    gameOver: document.getElementById('game-over'),
+    pauseMenu: document.getElementById('pause-menu') // Добавлено
 };
 
 /**
@@ -48,7 +53,6 @@ const scenes = {
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
-    // Скрываем все экраны
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
@@ -57,18 +61,23 @@ function showRoom(roomName) {
     if (!target) return;
     target.classList.remove('hidden');
 
-    // --- УПРАВЛЕНИЕ HEADER (БАЛАНСЫ) ---
+    // --- Управление Header (Балансы) ---
     const header = document.getElementById('header');
     if (header) {
-        // Прячем баланс только в самой игре
-        header.style.display = (roomName === 'game') ? 'none' : 'flex';
+        header.style.display = (roomName === 'game' || roomName === 'pauseMenu') ? 'none' : 'flex';
     }
 
-    // --- УПРАВЛЕНИЕ НИЖНЕЙ ПАНЕЛЬЮ ---
+    // --- Кнопка вызова паузы (Триггер) ---
+    const pauseTrigger = document.getElementById('btn-pause-trigger');
+    if (pauseTrigger) {
+        // Показываем кнопку паузы ТОЛЬКО во время активной игры
+        pauseTrigger.classList.toggle('hidden', roomName !== 'game');
+    }
+
+    // --- Управление Нижней Панелью ---
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
-        // Прячем панель в игре, на экране смерти И при выборе режима
-        const hideOn = ['game', 'gameOver', 'modeSelection'];
+        const hideOn = ['game', 'gameOver', 'modeSelection', 'pauseMenu'];
         if (hideOn.includes(roomName)) {
             bottomPanel.classList.add('hidden');
             bottomPanel.style.display = 'none';
@@ -87,28 +96,24 @@ function showRoom(roomName) {
         if (walletContainerSelector && document.querySelector(walletContainerSelector)) {
             try {
                 window.wallet.tonConnectUI.setConnectButtonRoot(walletContainerSelector);
-            } catch (e) {
-                console.warn("[TON] Ошибка смены корня кнопки:", e);
-            }
+            } catch (e) { console.warn("[TON] Ошибка кнопки:", e); }
         }
     }
 
     // Управление игровыми движками
     if (roomName === 'game') {
-        if (state.currentMode === 'classic' && window.game) {
-            window.game.resize();
-            window.game.start();
-        } else if (state.currentMode === 'arcade' && window.arcadeGame) {
-            window.arcadeGame.resize();
-            window.arcadeGame.start();
+        const activeEngine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
+        if (activeEngine) {
+            activeEngine.resize();
+            activeEngine.isRunning = true; // Важно для выхода из паузы
+            activeEngine.start(); 
         }
-    } else {
-        // Останавливаем оба движка, если мы не в игре
+    } else if (roomName !== 'pauseMenu') {
+        // Останавливаем всё, если мы не в игре и не в меню паузы
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
     }
 
-    // Инициализация специфической логики комнаты
     try {
         switch(roomName) {
             case 'shop':      initShop(); break;
@@ -119,9 +124,7 @@ function showRoom(roomName) {
             case 'settings':  initSettings(); break;
         }
         updateGlobalUI(); 
-    } catch (err) {
-        console.error(`[RoomInit] Ошибка в ${roomName}:`, err);
-    }
+    } catch (err) { console.error(`[RoomInit] Ошибка:`, err); }
 }
 
 window.showRoom = showRoom;
@@ -135,29 +138,24 @@ async function init() {
         tg.expand(); 
     }
 
-    // Инициализация кошелька
     try {
         window.wallet = new WalletManager((isConnected) => {
             console.log("[TON] Статус:", isConnected ? "Connected" : "Disconnected");
         });
-    } catch (e) { console.error("[TON] Ошибка:", e); }
+    } catch (e) { console.error("[TON] Ошибка кошелька:", e); }
     
-    // Инициализация холстов (Canvas)
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, handleGameOver);
-        window.arcadeGame = new ArcadeGame(canvas, handleGameOver); // Инициализируем Аркаду
+        window.arcadeGame = new ArcadeGame(canvas, handleGameOver);
     }
 
     const bindClick = (id, room) => {
         const el = document.getElementById(id);
-        if (el) el.onclick = (e) => { 
-            e.preventDefault(); 
-            showRoom(room); 
-        };
+        if (el) el.onclick = (e) => { e.preventDefault(); showRoom(room); };
     };
 
-    // Привязка кнопок меню
+    // Привязка кнопок
     bindClick('btn-shop', 'shop');
     bindClick('btn-inventory', 'inventory');
     bindClick('btn-home-panel', 'home'); 
@@ -165,27 +163,50 @@ async function init() {
     bindClick('btn-settings', 'settings');
     bindClick('btn-top-icon', 'leaderboard');
     bindClick('btn-daily-icon', 'daily');
-
-    // Кнопка PLAY на главном экране теперь ведет в ВЫБОР РЕЖИМА
     bindClick('btn-start', 'modeSelection');
 
-    // Кнопки ВЫБОРА РЕЖИМА
-    const btnClassic = document.getElementById('btn-mode-classic');
-    if (btnClassic) btnClassic.onclick = () => {
-        state.currentMode = 'classic';
-        showRoom('game');
-    };
+    // Кнопки режимов
+    const setMode = (mode) => { state.currentMode = mode; showRoom('game'); };
+    const btnCl = document.getElementById('btn-mode-classic');
+    if (btnCl) btnCl.onclick = () => setMode('classic');
+    const btnAr = document.getElementById('btn-mode-arcade');
+    if (btnAr) btnAr.onclick = () => setMode('arcade');
+    bindClick('btn-back-to-home', 'home');
 
-    const btnArcade = document.getElementById('btn-mode-arcade');
-    if (btnArcade) btnArcade.onclick = () => {
-        state.currentMode = 'arcade';
-        showRoom('game');
-    };
+    // Кнопки ПАУЗЫ
+    const btnPause = document.getElementById('btn-pause-trigger');
+    if (btnPause) {
+        btnPause.onclick = () => {
+            if (window.game) window.game.isRunning = false;
+            if (window.arcadeGame) window.arcadeGame.isRunning = false;
+            showRoom('pauseMenu');
+        };
+    }
 
-    const btnBack = document.getElementById('btn-back-to-home');
-    if (btnBack) btnBack.onclick = () => showRoom('home');
+    const btnResume = document.getElementById('btn-resume');
+    if (btnResume) {
+        btnResume.onclick = () => {
+            // Просто возвращаемся в комнату 'game', движки активируются в showRoom
+            showRoom('game');
+        };
+    }
 
-    // Остальные кнопки
+    const btnExit = document.getElementById('btn-exit-home');
+    if (btnExit) btnExit.onclick = () => showRoom('home');
+
+    const btnRestartPause = document.getElementById('btn-restart-pause');
+    if (btnRestartPause) btnRestartPause.onclick = () => showRoom('game');
+
+    // Переключатели звука в паузе
+    const btnSound = document.getElementById('btn-toggle-sound');
+    if (btnSound) {
+        btnSound.onclick = () => {
+            state.settings.sound = !state.settings.sound;
+            btnSound.innerText = state.settings.sound ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+        };
+    }
+
+    // Реввайв и рестарт
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) btnRestart.onclick = () => showRoom('home');
 
@@ -196,7 +217,6 @@ async function init() {
                 state.lives--;
                 updateGlobalUI();
                 showRoom('game');
-                // Оживляем тот движок, который сейчас активен
                 if (state.currentMode === 'classic') window.game?.revive();
                 else window.arcadeGame?.revive();
             } else {
@@ -205,20 +225,20 @@ async function init() {
         };
     }
 
-    // Загрузка данных
+    // Авторизация (API)
     try {
         const startParam = tg?.initDataUnsafe?.start_param || "";
         const authData = await api.authPlayer(startParam); 
         if (authData?.user) {
-            state.user = authData.user;
-            state.coins = authData.user.coins ?? state.coins;
-            state.lives = authData.user.lives ?? state.lives;
-            state.crystals = authData.user.crystals ?? state.crystals;
-            if (authData.user.powerups) {
-                state.powerups = { ...state.powerups, ...authData.user.powerups };
-            }
+            Object.assign(state, {
+                user: authData.user,
+                coins: authData.user.coins ?? state.coins,
+                lives: authData.user.lives ?? state.lives,
+                crystals: authData.user.crystals ?? state.crystals
+            });
+            if (authData.user.powerups) state.powerups = { ...state.powerups, ...authData.user.powerups };
         }
-    } catch (e) { console.error("[Auth] Ошибка API:", e); }
+    } catch (e) { console.error("[Auth] Ошибка:", e); }
 
     window.state = state; 
     updateGlobalUI();
@@ -229,7 +249,6 @@ function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
     const finalScoreEl = document.getElementById('final-score');
     if (finalScoreEl) finalScoreEl.innerText = score;
-    
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.style.display = (!reviveUsed && state.lives > 0) ? 'block' : 'none';

@@ -21,11 +21,8 @@ body, html {
     position: fixed; 
     top: 0;
     left: 0;
-    
-    /* ФОН САЙТА */
     background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
     background-size: cover;
-    
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
     color: white;
     touch-action: none;
@@ -80,133 +77,73 @@ body, html {
     transform: translateX(-50%);
     width: 95%;
     max-width: 450px;
-    height: 85px; 
-    
-    background: transparent !important; 
-    backdrop-filter: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    
-    display: flex; /* Без !important для управления из main.js */
+    height: 80px;
+    display: flex; /* Убрал !important, чтобы JS мог управлять через класс .hidden */
     justify-content: space-around;
     align-items: center;
-    z-index: 9999 !important;
-    pointer-events: auto !important;
+    background: rgba(0, 0, 0, 0.3); /* Легкий фон для видимости */
+    border-radius: 25px;
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    pointer-events: auto;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .menu-buttons-panel.hidden {
     display: none !important;
 }
 
-/* --- 4. КНОПКИ НАВИГАЦИИ --- */
+/* --- 4. КНОПКИ --- */
 .nav-btn {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
+    background: transparent;
+    border: none;
     padding: 0;
-    display: flex !important;
+    display: flex;
     justify-content: center;
     align-items: center;
-    width: 60px;  
-    height: 60px;
+    width: 55px;
+    height: 55px;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.1s ease !important;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
 }
 
 .nav-btn img {
-    width: 100% !important;
-    height: 100% !important;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     pointer-events: none;
 }
 
-#btn-home-panel {
-    width: 80px !important;
-    height: 80px !important;
-    transform: translateY(-8px);
+/* Баджи для инвентаря (количество предметов) */
+.item-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff3b30;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+    border: 1px solid white;
 }
 
-/* Эффекты нажатия */
+#btn-home-panel {
+    width: 75px;
+    height: 75px;
+    transform: translateY(-10px);
+}
+
 .nav-btn:active {
-    transform: scale(0.85) !important;
-    opacity: 0.7 !important;
+    transform: scale(0.85);
 }
 
 #btn-home-panel:active {
-    transform: translateY(-8px) scale(0.85) !important;
-    opacity: 0.7 !important;
+    transform: translateY(-10px) scale(0.85);
 }
 
-/* --- 5. ЭКРАН ВЫБОРА РЕЖИМА (НОВОЕ) --- */
-#scene-mode-selection {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(5px);
-}
-
-.mode-selection-container {
-    width: 85%;
-    max-width: 350px;
-    text-align: center;
-}
-
-.mode-title {
-    font-size: 28px;
-    margin-bottom: 30px;
-    text-shadow: 2px 2px 0px #000;
-}
-
-.mode-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 30px;
-}
-
-.mode-card {
-    background: rgba(255, 255, 255, 0.15);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 15px;
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-    width: 100%;
-}
-
-.mode-card:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.25);
-}
-
-.mode-icon {
-    font-size: 30px;
-}
-
-.mode-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.mode-name {
-    font-weight: 800;
-    font-size: 18px;
-    color: #f7d51d;
-}
-
-.mode-desc {
-    font-size: 12px;
-    opacity: 0.8;
-}
-
-/* --- 6. ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ --- */
+/* --- 5. ЭКРАНЫ И ПАУЗА --- */
 .screen {
     position: absolute;
     top: 0;
@@ -220,26 +157,75 @@ body, html {
     z-index: 10;
 }
 
-.hidden {
-    display: none !important;
+#pause-menu {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 11000;
 }
 
-/* Кнопки на главном экране */
-#btn-top-icon { content: url('/frontend/assets/top.png'); width: 50px; height: 50px; }
-#btn-daily-icon { content: url('/frontend/assets/daily.png'); width: 50px; height: 50px; }
-
-/* Общие стили кнопок */
-.primary-btn, .secondary-btn {
-    padding: 12px 25px;
+.pause-content {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
     border-radius: 20px;
-    border: none;
-    font-weight: 800;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 80%;
+    max-width: 300px;
+}
+
+#btn-pause-trigger {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 5000;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    color: white;
+    font-size: 20px;
     cursor: pointer;
-    text-transform: uppercase;
+    backdrop-filter: blur(5px);
+}
+
+/* --- 6. МОДЫ И КНОПКИ --- */
+.mode-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.mode-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.2); }
+
+.primary-btn {
+    background: #f7d51d;
+    color: #333;
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-weight: 800;
+    border: none;
+    box-shadow: 0 4px 0 #b8860b;
 }
 
 .secondary-btn {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 12px 25px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+.hidden { display: none !important; }
+
+/* Иконки */
+#btn-top-icon { content: url('/frontend/assets/top.png'); width: 50px; height: 50px; }
+#btn-daily-icon { content: url('/frontend/assets/daily.png'); width: 50px; height: 50px; }
