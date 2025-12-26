@@ -87,32 +87,32 @@ body, html {
     pointer-events: auto !important;
 }
 
+/* Базовый стиль для всех кнопок навигации */
 .nav-btn {
-    width: 55px; 
-    height: 55px;
+    display: block !important;
+    width: 55px !important;
+    height: 55px !important;
     background-color: transparent;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
     border: none;
     cursor: pointer;
     transition: transform 0.1s ease;
-    display: block !important;
 }
 
-/* Центральная кнопка Home */
-#btn-home-panel { 
-    width: 75px; 
-    height: 75px; 
-    transform: translateY(-5px); 
-}
-
-/* --- ПУТИ К КАРТИНКАМ (Выход из css/ -> frontend/assets/) --- */
+/* Применяем рабочий путь ко всем иконкам */
 #btn-shop { background-image: url('../frontend/assets/shop.png') !important; }
 #btn-inventory { background-image: url('../frontend/assets/invent.png') !important; }
-#btn-home-panel { background-image: url('../frontend/assets/home.png') !important; }
+#btn-home-panel { 
+    background-image: url('../frontend/assets/home.png') !important;
+    width: 75px !important; /* Главная кнопка чуть больше остальных */
+    height: 75px !important;
+}
 #btn-friends { background-image: url('../frontend/assets/friends.png') !important; }
 #btn-settings { background-image: url('../frontend/assets/settings.png') !important; }
+
+
 
 /* Кнопки главного экрана */
 #btn-daily-icon { content: url('../frontend/assets/daily.png'); }
