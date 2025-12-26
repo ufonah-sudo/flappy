@@ -17,23 +17,23 @@ const tg = window.Telegram?.WebApp;
 const state = { 
     user: null, 
     coins: 0, 
-    lives: 5, 
+    lives: 3, 
     crystals: 1,
     currentMode: 'classic',
     settings: {
         sound: true,
         music: true
     },
+    // Выдаем по 3 способности при старте
     powerups: {
-        heart: 0, // Добавлено для логики возрождения
-        shield: 0,
-        gap: 0,
-        magnet: 0,
-        ghost: 0
+        heart: 3,
+        shield: 3,
+        gap: 3,
+        magnet: 3,
+        ghost: 3
     }
 };
 
-// Ссылки на экраны
 const scenes = {
     home: document.getElementById('scene-home'),
     modeSelection: document.getElementById('scene-mode-selection'),
@@ -74,16 +74,14 @@ function showRoom(roomName) {
         pauseTrigger.classList.toggle('hidden', roomName !== 'game');
     }
 
-    // --- Управление Нижней Панелью (ФИКС ВИДИМОСТИ) ---
+    // --- Управление Нижней Панелью ---
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
         const hideOn = ['game', 'gameOver', 'modeSelection', 'pauseMenu'];
         if (hideOn.includes(roomName)) {
             bottomPanel.style.setProperty('display', 'none', 'important');
         } else {
-            // Принудительно включаем видимость для главного меню и других комнат
             bottomPanel.style.setProperty('display', 'flex', 'important');
-            bottomPanel.style.zIndex = "10001";
         }
     }
 
@@ -138,7 +136,11 @@ async function init() {
 
     const bindClick = (id, room) => {
         const el = document.getElementById(id);
-        if (el) el.onclick = (e) => { e.preventDefault(); showRoom(room); };
+        if (el) el.onclick = (e) => { 
+            e.preventDefault();
+            tg?.HapticFeedback.impactOccurred('light');
+            showRoom(room); 
+        };
     };
 
     // Навигация
@@ -153,15 +155,24 @@ async function init() {
 
     // Режимы
     const btnCl = document.getElementById('btn-mode-classic');
-    if (btnCl) btnCl.onclick = () => { state.currentMode = 'classic'; showRoom('game'); };
+    if (btnCl) btnCl.onclick = () => { 
+        tg?.HapticFeedback.impactOccurred('medium');
+        state.currentMode = 'classic'; 
+        showRoom('game'); 
+    };
     const btnAr = document.getElementById('btn-mode-arcade');
-    if (btnAr) btnAr.onclick = () => { state.currentMode = 'arcade'; showRoom('game'); };
+    if (btnAr) btnAr.onclick = () => { 
+        tg?.HapticFeedback.impactOccurred('medium');
+        state.currentMode = 'arcade'; 
+        showRoom('game'); 
+    };
     bindClick('btn-back-to-home', 'home');
 
     // Пауза
     const btnPause = document.getElementById('btn-pause-trigger');
     if (btnPause) {
         btnPause.onclick = () => {
+            tg?.HapticFeedback.selectionChanged();
             if (window.game) window.game.isRunning = false;
             if (window.arcadeGame) window.arcadeGame.isRunning = false;
             showRoom('pauseMenu');
@@ -169,7 +180,10 @@ async function init() {
     }
 
     const btnResume = document.getElementById('btn-resume');
-    if (btnResume) btnResume.onclick = () => showRoom('game');
+    if (btnResume) btnResume.onclick = () => {
+        tg?.HapticFeedback.impactOccurred('light');
+        showRoom('game');
+    }
 
     const btnExit = document.getElementById('btn-exit-home');
     if (btnExit) btnExit.onclick = () => showRoom('home');
@@ -185,27 +199,30 @@ async function init() {
 
     // --- ЭКРАН СМЕРТИ (GAME OVER) ---
     
-    // 1. Кнопка возрождения (тратит СЕРДЕЧКО из инвентаря)
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
         btnRevive.onclick = () => {
             if (state.powerups.heart > 0) {
+                tg?.HapticFeedback.notificationOccurred('success');
                 state.powerups.heart--; 
                 updateGlobalUI();
                 showRoom('game');
                 const engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
                 if (engine) engine.revive(); 
+            } else {
+                tg?.HapticFeedback.notificationOccurred('error');
             }
         };
     }
 
-    // 2. Кнопка PLAY AGAIN (Заново)
     const btnRestart = document.getElementById('btn-restart');
     if (btnRestart) {
-        btnRestart.onclick = () => showRoom('game');
+        btnRestart.onclick = () => {
+            tg?.HapticFeedback.impactOccurred('medium');
+            showRoom('game');
+        }
     }
 
-    // 3. Кнопка EXIT (В главное меню)
     const btnExitGameOver = document.getElementById('btn-exit-gameover');
     if (btnExitGameOver) {
         btnExitGameOver.onclick = () => showRoom('home');
@@ -241,10 +258,12 @@ function handleGameOver(score, reviveUsed) {
     
     const btnRevive = document.getElementById('btn-revive');
     if (btnRevive) {
-        // Показываем кнопку только если еще не возрождались И есть сердечки
-        const hasHeart = state.powerups.heart > 0;
-        btnRevive.style.display = (!reviveUsed && hasHeart) ? 'block' : 'none';
-        btnRevive.innerText = `USE HEART ❤️ (Left: ${state.powerups.heart})`;
+        // Кнопка видна всегда, если еще не возрождались в этом раунде
+        btnRevive.style.display = reviveUsed ? 'none' : 'block';
+        btnRevive.innerHTML = `USE HEART ❤️ <br><small>(Left: ${state.powerups.heart})</small>`;
+        
+        // Визуально блокируем, если 0 сердец
+        btnRevive.style.opacity = state.powerups.heart > 0 ? "1" : "0.5";
     }
     
     api.saveScore(score).catch(err => console.error("[Score] Ошибка:", err));
@@ -263,8 +282,9 @@ function updateGlobalUI() {
     setInner('header-coins', coinValue);
     setInner('header-crystals', crystalValue);
 
+    // Золотая иконка монеты
     const coinEl = document.getElementById('coin-balance');
-    if (coinEl) coinEl.innerHTML = `<span class="gold-coin">💰</span> ${coinValue}`;
+    if (coinEl) coinEl.innerHTML = `<span class="gold-coin-icon">🟡</span> ${coinValue}`;
 
     document.querySelectorAll('.stat-lives, #header-lives, #revive-lives-count').forEach(el => {
         el.innerText = state.lives;
@@ -276,8 +296,14 @@ function updateGlobalUI() {
 
     if (state.powerups) {
         Object.keys(state.powerups).forEach(key => {
-            const badge = document.querySelector(`.item-badge[data-powerup="${key}"]`);
-            if (badge) badge.innerText = `x${state.powerups[key]}`;
+            // Ищем баджи в инвентаре на нижней панели и в самой комнате инвентаря
+            const badges = document.querySelectorAll(`.item-badge[data-powerup="${key}"]`);
+            badges.forEach(badge => {
+                badge.innerText = state.powerups[key];
+                // Скрываем бадж на нижней панели, если предметов 0
+                if (state.powerups[key] <= 0) badge.classList.add('hidden');
+                else badge.classList.remove('hidden');
+            });
         });
     }
 }

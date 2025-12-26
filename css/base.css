@@ -5,7 +5,9 @@
 /* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ И ФИКСЫ МОБИЛОК --- */
 * {
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
+    /* Убираем серое выделение при нажатии на iOS */
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none;
     user-select: none;
     outline: none;
     max-width: 100vw;
@@ -21,7 +23,6 @@ body, html {
     position: fixed; 
     top: 0;
     left: 0;
-    /* Фон зафиксирован, чтобы не дергался при открытии клавиатуры или скролле */
     background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
@@ -36,7 +37,7 @@ body, html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Все события кликов проходят сквозь главный контейнер к кнопкам */
+    /* События проходят сквозь, если не пойманы элементами */
     pointer-events: none; 
 }
 
@@ -58,7 +59,7 @@ body, html {
     border-radius: 25px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    pointer-events: auto; /* Разрешаем клики по балансам */
+    pointer-events: auto;
 }
 
 .balance-item {
@@ -71,31 +72,29 @@ body, html {
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* --- 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (ФИКС ВИДИМОСТИ) --- */
+.gold-coin-icon {
+    color: #FFD700;
+    font-size: 20px;
+}
+
+/* --- 3. НИЖНЯЯ ПАНЕЛЬ (ПРОЗРАЧНАЯ ПО ТВОЕЙ ПРОСЬБЕ) --- */
 .menu-buttons-panel {
     position: fixed !important;
     bottom: env(safe-area-inset-bottom, 20px) !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: 95% !important;
-    max-width: 450px !important;
+    width: 100% !important;
+    max-width: 500px !important;
     height: 80px !important;
     display: flex; 
     justify-content: space-around;
     align-items: center;
-    background: rgba(0, 0, 0, 0.4) !important;
-    border-radius: 25px;
-    backdrop-filter: blur(10px);
-    z-index: 10001 !important; /* Самый высокий приоритет в меню */
+    background: transparent !important; /* Серый фон удален */
+    z-index: 10001 !important;
     pointer-events: auto !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.menu-buttons-panel.hidden {
-    display: none !important;
-}
-
-/* --- 4. КНОПКИ НАВИГАЦИИ --- */
+/* --- 4. КНОПКИ НАВИГАЦИИ И ОТДАЧА --- */
 .nav-btn {
     background: transparent;
     border: none;
@@ -106,9 +105,8 @@ body, html {
     width: 60px;
     height: 60px;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.1s ease; /* Быстрая отдача */
     position: relative;
-    pointer-events: auto;
 }
 
 .nav-btn img {
@@ -124,12 +122,16 @@ body, html {
     transform: translateY(-12px);
 }
 
-#btn-home-panel img { width: 100%; height: 100%; }
+/* Эффект нажатия (отдача для iPhone) */
+.nav-btn:active, .primary-btn:active, .secondary-btn:active, .side-btn-wrapper:active {
+    transform: scale(0.92) !important;
+}
 
-.nav-btn:active { transform: scale(0.8); }
-#btn-home-panel:active { transform: translateY(-12px) scale(0.8); }
+#btn-home-panel:active {
+    transform: translateY(-12px) scale(0.92) !important;
+}
 
-/* Баджи (количество предметов) */
+/* Баджи (авто-скрытие через JS) */
 .item-badge {
     position: absolute;
     top: 5px;
@@ -141,9 +143,31 @@ body, html {
     border-radius: 10px;
     font-weight: bold;
     border: 1px solid white;
+    z-index: 10;
 }
 
-/* --- 5. ЭКРАНЫ И ИХ СЛОИ --- */
+/* --- 5. ТОП И ДЕЙЛИ (ПО БОКАМ) --- */
+.side-buttons {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 15px) + 80px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between; /* Разносит влево и вправо */
+    padding: 0 20px;
+    pointer-events: none;
+    z-index: 1001;
+}
+
+.side-btn-wrapper {
+    pointer-events: auto;
+    width: 55px;
+    height: 55px;
+    transition: transform 0.1s ease;
+}
+
+/* --- 6. ЭКРАНЫ И МОДАЛКИ --- */
 .screen {
     position: absolute;
     top: 0;
@@ -155,38 +179,15 @@ body, html {
     align-items: center;
     justify-content: center;
     z-index: 100;
-    pointer-events: auto; /* Экраны должны ловить клики */
+    pointer-events: auto;
 }
 
-/* Специальные фоны для экранов */
-#scene-home { background: transparent; }
 #scene-shop, #scene-inventory, #scene-leaderboard, #scene-friends, #scene-daily, #scene-settings {
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(10px);
 }
 
-#pause-menu {
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    z-index: 11000;
-}
-
-/* --- 6. ЭКРАН СМЕРТИ (НОВОЕ) --- */
-#game-over {
-    background: rgba(0,0,0,0.9);
-    z-index: 10500;
-}
-
-.game-over-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 80%;
-    max-width: 250px;
-    margin-top: 20px;
-}
-
-/* --- 7. КНОПКИ И МОДЫ --- */
+/* --- 7. КНОПКИ (БЕЗ ТЕНЕЙ) --- */
 .primary-btn {
     background: #f7d51d;
     color: #333;
@@ -194,15 +195,11 @@ body, html {
     border-radius: 20px;
     font-weight: 900;
     border: none;
-    box-shadow: 0 5px 0 #b8860b;
     width: 100%;
     cursor: pointer;
     text-transform: uppercase;
-}
-
-.primary-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 3px 0 #b8860b;
+    box-shadow: none !important; /* Убрана лишняя тень */
+    transition: transform 0.1s ease;
 }
 
 .secondary-btn {
@@ -213,40 +210,23 @@ body, html {
     border: 1px solid rgba(255, 255, 255, 0.3);
     width: 100%;
     cursor: pointer;
+    transition: transform 0.1s ease;
 }
 
-/* Кнопка триггера паузы */
-#btn-pause-trigger {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 5000;
-    background: rgba(0, 0, 0, 0.5);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    width: 50px;
-    height: 50px;
-    border-radius: 15px;
-    color: white;
-    font-size: 24px;
+/* --- 8. ВЫБОР РЕЖИМА (СТИЛЬ КАРТОЧЕК) --- */
+.mode-card {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    pointer-events: auto;
+    gap: 20px;
+    width: 100%;
+    color: white;
+    cursor: pointer;
 }
 
 /* Утилиты */
 .hidden { display: none !important; }
-
-/* Ассеты иконок */
-#btn-top-icon { content: url('/frontend/assets/top.png'); width: 50px; height: 50px; cursor: pointer; pointer-events: auto; }
-#btn-daily-icon { content: url('/frontend/assets/daily.png'); width: 50px; height: 50px; cursor: pointer; pointer-events: auto; }
-
-.side-buttons {
-    position: absolute;
-    top: 100px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    z-index: 1001;
-}
