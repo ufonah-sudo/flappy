@@ -81,19 +81,16 @@ body, html {
     width: 95%;
     max-width: 450px;
     height: 85px; 
-    
     background: transparent !important; 
     backdrop-filter: none !important;
     border: none !important;
     box-shadow: none !important;
-    
-    display: flex !important;
+    display: flex; /* УБРАЛИ !important */
     justify-content: space-around;
     align-items: center;
     z-index: 9999 !important;
     pointer-events: auto !important;
 }
-
 /* --- 4. КНОПКИ --- */
 .nav-btn {
     background: transparent !important;
