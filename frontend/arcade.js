@@ -1,46 +1,70 @@
+/* ==========================================================================
+   КЛАСС ARCADEGAME - РАСШИРЕННЫЙ РЕЖИМ ИГРЫ
+   Наследует базовую логику Game и добавляет монеты, бонусы и способности
+   ========================================================================== */
+
 import { Game } from './game.js';
 
 export class ArcadeGame extends Game {
     constructor(canvas, onGameOver) {
+        // Вызываем конструктор родителя (Game)
         super(canvas, onGameOver);
         
+        // Настройки аркадного режима
         this.arcadeConfig = {
-            coinChance: 1.0,        // 100% шанс монеты в трубе
-            itemChance: 0.3,        // Шанс бонуса
-            magnetRadius: 200,
-            activeDuration: 400,    // ~7-8 сек
-            ghostOpacity: 0.5
+            coinChance: 1.0,         // Всегда спавним монету в трубе
+            itemChance: 0.3,         // 30% шанс появления случайного бонуса
+            magnetRadius: 200,       // Радиус притяжения монет магнитом
+            activeDuration: 400,     // Длительность действия бонуса (в кадрах, ~7 сек при 60fps)
+            ghostOpacity: 0.5        // Прозрачность птицы в режиме призрака
         };
+
         this.itemTimer = 0;
         this.resetArcadeState();
     }
 
+    /**
+     * Сброс специфических для аркады параметров
+     */
     resetArcadeState() {
         this.coins = [];
         this.items = [];
+        // Таймеры активных способностей
         this.activePowerups = {
             shield: 0,
             magnet: 0,
             ghost: 0,
             gap: 0
         };
+        // Базовый зазор между трубами для аркады
         this.gap = window.innerHeight * 0.28; 
     }
 
+    /**
+     * Старт игры (переопределение)
+     */
     start() {
         this.resetArcadeState();
-        super.start(); 
+        super.start(); // Запускаем базовый цикл из Game.js
     }
 
-    // ИСПРАВЛЕНО: Чистый метод спавна труб без каши внутри
+    /**
+     * Генерация труб с интеграцией монет
+     * Переопределяет метод из Game.js
+     */
     spawnPipe() {
-        // Увеличиваем проход, если активен бонус GAP
-        const currentGap = this.activePowerups.gap > 0 ? window.innerHeight * 0.45 : window.innerHeight * 0.28;
-        const h = Math.floor(Math.random() * (window.innerHeight - currentGap - 200)) + 100;
+        // 1. Рассчитываем размер прохода (увеличиваем, если активен бонус GAP)
+        const currentGap = this.activePowerups.gap > 0 
+            ? window.innerHeight * 0.45 
+            : window.innerHeight * 0.28;
+
+        const minH = 100;
+        const maxH = window.innerHeight - currentGap - 100;
+        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
 
         const newPipe = {
             x: window.innerWidth,
-            width: 70, 
+            width: 75, 
             top: h,
             bottom: h + currentGap,
             passed: false
@@ -48,81 +72,89 @@ export class ArcadeGame extends Game {
 
         this.pipes.push(newPipe);
 
-        // Всегда ставим монету в центре прохода трубы
+        // 2. Добавляем монету строго по центру прохода трубы
         this.coins.push({
             x: newPipe.x + newPipe.width / 2,
             y: newPipe.top + (currentGap / 2),
             collected: false,
-            angle: 0
+            angle: 0 // Для анимации вращения
         });
     }
 
+    /**
+     * Главный цикл обновления данных
+     */
     update() {
-        // 1. Сначала вызываем базовое обновление (физика птицы, движение труб)
+        // Сообщаем родителю об активных бонусах (для корректной обработки коллизий в game.js)
+        super.activePowerups = this.activePowerups;
+        
+        // Вызываем физику птицы и движение труб из базового класса
         super.update();
         
         if (!this.isRunning || this.isPaused) return;
 
-        // 2. Логика спавна предметов (вне труб по таймеру)
+        // 1. Таймер появления случайных бонусов в небе
         this.itemTimer++;
-        if (this.itemTimer > 250) { // Примерно каждые 4-5 секунд
+        if (this.itemTimer > 300) { // Каждые ~5 секунд
             const types = ['shield', 'magnet', 'ghost', 'gap'];
             this.items.push({
                 x: window.innerWidth + 50,
                 y: Math.random() * (window.innerHeight - 300) + 150,
                 type: types[Math.floor(Math.random() * types.length)],
-                oscillation: 0
+                oscillation: 0 // Для плавного плавания вверх-вниз
             });
             this.itemTimer = 0;
         }
 
-        // 3. Уменьшаем таймеры активных способностей
+        // 2. Обратный отсчет действия способностей
         Object.keys(this.activePowerups).forEach(key => {
             if (this.activePowerups[key] > 0) {
                 this.activePowerups[key]--;
             }
         });
 
-        // 4. Обновляем монеты и предметы
+        // 3. Обновление позиций монет и предметов
         this.updateArcadeElements();
         
-        // 5. Проверяем сборы
+        // 4. Проверка сбора (столкновения птицы с бонусами)
         this.checkArcadeCollisions();
-
-        // 6. ХАК для GHOST мода: если призрак активен, птица не умирает
-        // Мы "воскрешаем" её каждый кадр, если она столкнулась
-        if (this.activePowerups.ghost > 0) {
-            this.isRunning = true; // Отменяем gameOver от труб
-        }
     }
 
+    /**
+     * Движение и анимация монет/предметов
+     */
     updateArcadeElements() {
-        // Монеты + Магнит
+        // Обработка монет
         this.coins.forEach(coin => {
-            coin.x -= this.pipeSpeed;
-            coin.angle += 0.1;
+            coin.x -= this.pipeSpeed; // Двигаются со скоростью труб
+            coin.angle += 0.1;        // Вращение
 
+            // Эффект МАГНИТА
             if (this.activePowerups.magnet > 0) {
                 const dist = Math.hypot(this.bird.x - coin.x, this.bird.y - coin.y);
                 if (dist < this.arcadeConfig.magnetRadius) {
-                    coin.x += (this.bird.x - coin.x) * 0.2;
-                    coin.y += (this.bird.y - coin.y) * 0.2;
+                    // Плавное притяжение к птице
+                    coin.x += (this.bird.x - coin.x) * 0.15;
+                    coin.y += (this.bird.y - coin.y) * 0.15;
                 }
             }
         });
 
-        // Предметы (плавное движение вверх-вниз)
+        // Обработка летящих бонусов
         this.items.forEach(item => {
             item.x -= this.pipeSpeed;
             item.oscillation += 0.05;
-            item.y += Math.sin(item.oscillation) * 2;
+            item.y += Math.sin(item.oscillation) * 2; // Эффект левитации
         });
 
-        // Чистка (оптимизация)
+        // Удаление объектов, вышедших за экран
         this.coins = this.coins.filter(c => c.x > -50 && !c.collected);
         this.items = this.items.filter(i => i.x > -50);
     }
 
+    /**
+     * Проверка сбора игровых объектов
+     */
     checkArcadeCollisions() {
         const birdCenterX = this.bird.x + this.bird.size / 2;
         const birdCenterY = this.bird.y + this.bird.size / 2;
@@ -131,6 +163,7 @@ export class ArcadeGame extends Game {
         this.coins.forEach(coin => {
             if (!coin.collected && Math.hypot(birdCenterX - coin.x, birdCenterY - coin.y) < 40) {
                 coin.collected = true;
+                // Начисляем в глобальное состояние (window.state из main.js)
                 if (window.state) {
                     window.state.coins++;
                     if (window.updateGlobalUI) window.updateGlobalUI();
@@ -139,21 +172,27 @@ export class ArcadeGame extends Game {
             }
         });
 
-        // Сбор предметов
+        // Сбор бонусов
         this.items.forEach((item, index) => {
             if (Math.hypot(birdCenterX - item.x, birdCenterY - item.y) < 45) {
+                // Активируем таймер способности
                 this.activePowerups[item.type] = this.arcadeConfig.activeDuration;
+                // Удаляем предмет с экрана
                 this.items.splice(index, 1);
+                // Уведомление в Telegram
                 window.Telegram?.WebApp.HapticFeedback.notificationOccurred('success');
             }
         });
     }
 
+    /**
+     * Отрисовка всех элементов (переопределяет Game.draw)
+     */
     draw() {
-        // Мы переопределяем draw полностью для контроля слоев
+        // Чистим экран
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 1. Трубы
+        // 1. Отрисовка труб (вызываем вспомогательный метод родителя)
         this.pipes.forEach(p => {
             this.ctx.fillStyle = '#73bf2e';
             this.ctx.strokeStyle = '#2d4c12';
@@ -162,48 +201,66 @@ export class ArcadeGame extends Game {
             this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false);
         });
 
-        // 2. Монеты
+        // 2. Отрисовка монет
         this.coins.forEach(coin => {
             this.ctx.save();
             this.ctx.translate(coin.x, coin.y);
+            // Визуальный эффект вращения через scaleX
             this.ctx.scale(Math.cos(coin.angle), 1);
-            this.ctx.fillStyle = "#FFD700";
+            
+            this.ctx.fillStyle = "#FFD700"; // Gold
             this.ctx.beginPath();
-            this.ctx.arc(0, 0, 12, 0, Math.PI * 2);
+            this.ctx.arc(0, 0, 14, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.strokeStyle = "#B8860B";
+            this.ctx.lineWidth = 2;
             this.ctx.stroke();
+            
+            // Символическая буква C в центре монеты
+            this.ctx.fillStyle = "#B8860B";
+            this.ctx.font = "bold 14px Arial";
+            this.ctx.textAlign = "center";
+            this.ctx.fillText("C", 0, 5);
+            
             this.ctx.restore();
         });
 
-        // 3. Предметы (Эмодзи)
-        this.ctx.font = "30px Arial";
+        // 3. Отрисовка летящих предметов (Эмодзи)
+        this.ctx.font = "34px Arial";
         this.ctx.textAlign = "center";
         this.items.forEach(item => {
             const icons = { shield: '🛡️', magnet: '🧲', ghost: '👻', gap: '↔️' };
-            this.ctx.fillText(icons[item.type] || '🎁', item.x, item.y + 10);
+            // Добавляем свечение вокруг бонуса
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = "white";
+            this.ctx.fillText(icons[item.type] || '🎁', item.x, item.y + 12);
+            this.ctx.shadowBlur = 0;
         });
 
-        // 4. Птица
+        // 4. Отрисовка птицы
         this.ctx.save();
         
-        // Эффект призрака (прозрачность)
+        // Применяем прозрачность Призрака
         if (this.activePowerups.ghost > 0) {
-            this.ctx.globalAlpha = 0.5;
+            this.ctx.globalAlpha = this.arcadeConfig.ghostOpacity;
         }
         
         this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
         this.ctx.rotate(this.bird.rotation);
 
-        // Рисуем щит (если активен бонус ИЛИ предмет из инвентаря)
+        // Отрисовка ЩИТА (если бонус активен)
         if (this.activePowerups.shield > 0 || this.shieldActive) {
             this.ctx.beginPath();
-            this.ctx.arc(0, 0, this.bird.size * 0.8, 0, Math.PI * 2);
+            this.ctx.arc(0, 0, this.bird.size * 0.9, 0, Math.PI * 2);
             this.ctx.strokeStyle = "#00fbff";
-            this.ctx.lineWidth = 3;
+            this.ctx.lineWidth = 4;
             this.ctx.stroke();
+            // Пульсирующий эффект щита
+            this.ctx.fillStyle = `rgba(0, 251, 255, ${0.1 + Math.sin(Date.now()/200) * 0.05})`;
+            this.ctx.fill();
         }
 
+        // Сама птица (спрайты загружены в родителе)
         const img = this.birdSprites[this.frameIndex];
         if (img && img.complete) {
             this.ctx.drawImage(img, -this.bird.size / 2, -this.bird.size / 2, this.bird.size, this.bird.size);
