@@ -5,9 +5,7 @@
 /* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ И МОБИЛЬНАЯ ОПТИМИЗАЦИЯ --- */
 * {
     box-sizing: border-box;
-    /* Убираем синее выделение при нажатии на мобилках */
     -webkit-tap-highlight-color: transparent !important;
-    /* Запрещаем вызов системного меню при долгом нажатии */
     -webkit-touch-callout: none;
     user-select: none;
     outline: none;
@@ -18,45 +16,55 @@ body, html {
     padding: 0;
     width: 100%;
     height: 100vh;
-    /* Фикс для высоты браузеров (Chrome/Safari) */
     height: -webkit-fill-available;
     overflow: hidden;
     position: fixed; 
     top: 0;
     left: 0;
-    /* Фоновый цвет + картинка (если ассет не прогрузится) */
+    /* Основной фон (статичный слой 0) */
     background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
     background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: white;
-    /* Запрещаем стандартные жесты браузера (скролл, зум) */
     touch-action: none;
 }
 
-/* Основной холст игры (Canvas) */
+/* --- 2. СЛОИ И КАНВАС --- */
+/* Облака (Слой 1) */
+.sky-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; 
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Игровой холст (Слой 2) */
 canvas {
     position: absolute;
     top: 0;
     left: 0;
     display: block;
-    z-index: 5; /* Выше облаков, но ниже интерфейса */
+    z-index: 2; 
 }
 
-/* --- 2. ГЛАВНЫЙ КОНТЕЙНЕР ПРИЛОЖЕНИЯ --- */
+/* Контейнер UI (Слой 3) */
 #app {
     position: relative;
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
-    z-index: 10;
-    pointer-events: none; /* Пропускает клики на Canvas, если нет активных экранов */
+    z-index: 3;
+    pointer-events: none; /* Клики проходят сквозь контейнер на Canvas */
 }
 
 /* --- 3. ВЕРХНЯЯ ПАНЕЛЬ (БАЛАНСЫ) --- */
 #header {
     position: fixed;
-    /* Учет "челки" iPhone */
     top: env(safe-area-inset-top, 15px);
     width: 100%;
     display: flex;
@@ -73,7 +81,7 @@ canvas {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1.5px solid rgba(255, 255, 255, 0.15);
-    pointer-events: auto; /* Баланс можно нажать (например, для пополнения) */
+    pointer-events: auto;
     box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
@@ -96,7 +104,6 @@ canvas {
 .menu-buttons-panel {
     position: fixed !important;
     bottom: 0 !important;
-    /* Учет системной полоски внизу iPhone */
     padding-bottom: env(safe-area-inset-bottom, 15px) !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
@@ -111,7 +118,6 @@ canvas {
     pointer-events: auto !important;
 }
 
-/* Кнопки в нижнем меню */
 .nav-btn {
     background: transparent;
     border: none;
@@ -127,14 +133,13 @@ canvas {
     object-fit: contain;
 }
 
-/* Центральная кнопка (Домой/Играть) выделяется */
 #btn-home-panel {
     width: 90px;
     height: 90px;
     transform: translateY(-15px);
 }
 
-/* --- 5. ЭКРАНЫ ВЫБОРА РЕЖИМА (ТВОИ НОВЫЕ КАРТИНКИ) --- */
+/* --- 5. ВЫБОР РЕЖИМА (КНОПКИ-КАРТИНКИ) --- */
 .modes-container {
     display: flex;
     flex-direction: column;
@@ -144,15 +149,19 @@ canvas {
 }
 
 .mode-card {
-    width: 300px; /* 600px / 2 */
-    height: 90px;  /* 180px / 2 */
+    width: 300px;
+    height: 90px;
     border-radius: 18px;
     border: 3.5px solid white;
-    background-size: cover;
+    background-size: 100% 100%;
     background-position: center;
+    background-repeat: no-repeat;
     cursor: pointer;
     box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     transition: all 0.2s ease;
+    /* Убираем любой текст, который может быть внутри тега в HTML */
+    text-indent: -9999px;
+    overflow: hidden;
 }
 
 #btn-mode-classic { background-image: url('/frontend/assets/classic.png'); }
@@ -160,18 +169,7 @@ canvas {
 
 .mode-card:active { transform: scale(0.94); filter: brightness(0.85); }
 
-/* --- 6. ОБЛАКА (ДЕКОРАЦИЯ) --- */
-.sky-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1; /* Самый нижний слой за Canvas */
-    pointer-events: none;
-    overflow: hidden;
-}
-
+/* --- 6. ОБЛАКА --- */
 .cloud {
     position: absolute;
     opacity: 0.5;
@@ -184,7 +182,7 @@ canvas {
     to { transform: translateX(115vw); }
 }
 
-/* --- 7. ЭКРАНЫ И МОДАЛЬНЫЕ ОКНА --- */
+/* --- 7. ЭКРАНЫ И МОДАЛКИ --- */
 .screen {
     position: absolute;
     top: 0;
@@ -200,14 +198,13 @@ canvas {
     pointer-events: auto; /* Экраны блокируют клики по игре */
 }
 
-/* Затемнение фона для магазинов/настроек */
 .modal-bg {
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
 
-/* Внутриигровой инвентарь (Щит) */
+/* ВНУТРИИГРОВОЙ ИНВЕНТАРЯ (АРКАДА) */
 #ingame-inventory {
     position: absolute;
     bottom: calc(110px + env(safe-area-inset-bottom));
@@ -218,6 +215,7 @@ canvas {
 }
 
 .powerup-slot {
+    position: relative;
     width: 60px;
     height: 60px;
     background: rgba(0, 0, 0, 0.7);
@@ -231,7 +229,7 @@ canvas {
 
 .powerup-slot img { width: 35px; height: 35px; }
 
-/* Счетчик предметов */
+/* Счетчик предметов (Бейдж) */
 .badge {
     position: absolute;
     top: -7px;
@@ -243,6 +241,7 @@ canvas {
     padding: 3px 6px;
     border-radius: 10px;
     border: 1px solid #000;
+    z-index: 10;
 }
 
 /* --- 8. КНОПКИ И ТИПОГРАФИКА --- */
@@ -258,12 +257,12 @@ canvas {
     max-width: 280px;
     cursor: pointer;
     text-transform: uppercase;
-    box-shadow: 0 6px 0 #b39a15; /* Псевдо-3D эффект */
+    /* Убрал тень по твоей просьбе в прошлом сообщении */
+    box-shadow: none !important;
 }
 
 .primary-btn:active {
-    transform: translateY(3px);
-    box-shadow: 0 3px 0 #b39a15;
+    transform: translateY(2px) scale(0.98);
 }
 
 .secondary-btn {
@@ -275,10 +274,8 @@ canvas {
     cursor: pointer;
 }
 
-/* Универсальный класс для скрытия */
 .hidden { display: none !important; }
 
-/* Утилита для размытия задника */
 .blur-overlay {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
