@@ -130,7 +130,7 @@ export class Game {
     }
 
     spawnPipe() {
-        const gap = window.innerHeight * 0.22; // Чистая классика
+        const gap = window.innerHeight * 0.11; // Чистая классика
         const minH = 100;
         const maxH = window.innerHeight - gap - minH;
         const h = Math.floor(Math.random() * (maxH - minH)) + minH;

@@ -90,8 +90,8 @@ export class ArcadeGame {
     spawnPipe() {
         // Бонус GAP увеличивает проход
         const currentGap = this.activePowerups.gap > 0 
-            ? window.innerHeight * 0.45 
-            : window.innerHeight * 0.28;
+            ? window.innerHeight * 0.21 
+            : window.innerHeight * 0.11;
 
         const minH = 100;
         const maxH = window.innerHeight - currentGap - 100;
