@@ -14,15 +14,30 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
 <body>
-    <div class="sky-container">
-        <img src="/frontend/assets/cloud1.png" class="cloud c1" alt="">
-        <img src="/frontend/assets/cloud2.png" class="cloud c2" alt="">
-        <img src="/frontend/assets/cloud3.png" class="cloud c3" alt="">
-        <img src="/frontend/assets/cloud4.png" class="cloud c4" alt="">
+
+    <div id="clouds-container" class="sky-container">
+        <img src="/frontend/assets/cloud1.png" class="cloud cloud1" alt="">
+        <img src="/frontend/assets/cloud2.png" class="cloud cloud2" alt="">
+        <img src="/frontend/assets/cloud3.png" class="cloud cloud3" alt="">
+        <img src="/frontend/assets/cloud4.png" class="cloud cloud4" alt="">
+        <img src="/frontend/assets/cloud5.png" class="cloud cloud5" alt="">
+        <img src="/frontend/assets/cloud6.png" class="cloud cloud6" alt="">
     </div>
 
     <div id="app">
         
+        <button id="top-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/top.png" alt="Top" style="width: 100%;">
+        </button>
+
+        <button id="daily-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/daily.png" alt="Daily" style="width: 100%;">
+        </button>
+
+        <button id="pause-btn" class="ui-corner-btn">
+            <span style="font-size: 30px;">⏸️</span>
+        </button>
+
         <div id="header"> 
             <div class="header-balances">
                 <div class="balance-item">
@@ -37,66 +52,43 @@
         </div>
 
         <div id="scene-home" class="screen">
-    <div class="side-buttons-container">
-        <button id="btn-top" class="ui-btn-action">
-            <img src="/frontend/assets/top.png" alt="Top">
-        </button>
-        <button id="btn-daily" class="ui-btn-action">
-            <img src="/frontend/assets/daily.png" alt="Daily">
-        </button>
-    </div>
-
             <div class="game-logo-container">
                 <img src="/frontend/assets/flappyname.png" class="main-logo-img" alt="FLAPPY TON">
             </div>
-
-            <button id="btn-start" class="primary-btn pulse"></button>
+            <button id="btn-start" class="primary-btn pulse">START GAME</button>
         </div>
 
-       <div id="scene-mode-selection" class="screen hidden">
-    <div class="mode-menu-layout">
-        <h2 class="menu-title">SELECT MODE</h2>
-        
-        <div class="modes-container">
-            <div id="btn-mode-classic" class="mode-card">
-                <div class="mode-label">CLASSIC</div>
+        <div id="scene-mode-selection" class="screen hidden">
+            <h2 class="menu-title">SELECT MODE</h2>
+            <div class="modes-container">
+                <div id="btn-mode-classic" class="mode-card">CLASSIC</div>
+                <div id="btn-mode-arcade" class="mode-card">ARCADE</div>
             </div>
-
-            <div id="btn-mode-arcade" class="mode-card">
-                <div class="mode-label">ARCADE</div>
-            </div>
+            <button id="btn-back-to-home" class="secondary-btn">BACK</button>
         </div>
-
-        <button id="btn-back-to-home" class="ui-btn-secondary">BACK</button>
-    </div>
-</div>
 
         <div id="game-container" class="screen hidden">
             <canvas id="game-canvas"></canvas>
 
             <div id="ingame-inventory">
-        <button id="use-shield-btn" class="powerup-slot">
-    <span style="font-size: 30px;">🛡️</span>
-    <span id="shield-count">0</span>
-</button>
+                <button id="use-shield-btn" class="powerup-slot">
+                    <span style="font-size: 30px;">🛡️</span>
+                    <span id="shield-count" class="badge">0</span>
+                </button>
+            </div>
+
+            <div id="score-overlay" style="position: absolute; top: 80px; font-size: 40px; font-weight: 900;">0</div>
         </div>
 
-            <div id="score-overlay">0</div>
-            <button id="btn-pause-trigger" class="hidden">⏸️</button>
-        </div>
-
-        <div id="pause-menu" class="screen hidden">
+        <div id="pause-menu" class="screen hidden modal-bg blur-overlay">
             <div class="pause-content">
                 <h2>PAUSE</h2>
                 <button id="btn-resume" class="primary-btn">RESUME</button>
                 <button id="btn-exit-home" class="secondary-btn">EXIT TO MENU</button>
-                <div class="settings-row">
-                    <button id="btn-toggle-sound" class="icon-btn">🔊 Sound</button>
-                </div>
             </div>
         </div>
 
-        <div id="game-over" class="screen hidden">
+        <div id="game-over" class="screen hidden modal-bg">
             <h2 class="status-title">GAME OVER</h2>
             <div class="result-box">
                 <p>Score</p>
@@ -163,8 +155,6 @@
             </button>
         </div>
 
-    </div>
-
-    <script type="module" src="/main.js"></script>
+    </div> <script type="module" src="/main.js"></script>
 </body>
 </html>
