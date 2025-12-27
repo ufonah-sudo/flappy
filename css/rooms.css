@@ -1,24 +1,34 @@
+/* =========================================
+   rooms.css - ЭКРАНЫ (МАГАЗИН, ТОП, ИНВЕНТАРЬ)
+   ========================================= */
+
 /* Базовый экран комнаты */
 .screen {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    display: flex; flex-direction: column; align-items: center;
-    /* Уменьшаем z-index, чтобы нижняя панель (z-index: 2000) была ВСЕГДА сверху */
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
     z-index: 50; 
     text-align: center;
-    /* Увеличиваем нижний padding до 120px, чтобы контент не перекрывался кнопками */
-    padding: 80px 20px 120px 20px; 
+    /* Учитываем header и footer safe areas */
+    padding: calc(env(safe-area-inset-top, 20px) + 60px) 20px 140px 20px; 
     overflow-y: auto; 
     -webkit-overflow-scrolling: touch;
+    
     opacity: 0; 
     pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    transform: scale(0.95);
-    background: rgba(26, 33, 46, 0.95);
-    backdrop-filter: blur(10px);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(1.05); /* Вылетает "в лицо" для эффекта глубины */
+    background: rgba(15, 20, 28, 0.96);
+    backdrop-filter: blur(15px);
 }
 
-/* Когда экран активен (удаляем .hidden) */
+/* Когда экран активен */
 .screen:not(.hidden) {
     opacity: 1; 
     pointer-events: auto;
@@ -26,31 +36,15 @@
     z-index: 100;
 }
 
-/* Кнопка "Назад" (если используешь её внутри комнат) */
-.btn-home {
-    position: absolute; 
-    top: 20px; 
-    left: 20px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white; 
-    padding: 8px 16px; 
-    border-radius: 12px;
-    font-size: 13px; 
-    font-weight: 700; 
-    cursor: pointer;
-    z-index: 1100; 
-    backdrop-filter: blur(5px);
-}
-
 /* Заголовки комнат */
 .screen h3 {
     color: #f7d51d; 
-    font-size: 28px; 
-    margin: 0 0 25px 0;
+    font-size: 32px; 
+    margin: 0 0 30px 0;
     text-transform: uppercase; 
-    letter-spacing: 2px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
 /* --- МАГАЗИН (SHOP) --- */
@@ -59,86 +53,126 @@
     grid-template-columns: 1fr 1fr; 
     gap: 15px; 
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
 }
 
-.shop-card.coin-pack {
-    background: rgba(255, 255, 255, 0.08); 
-    border-radius: 16px;
+.shop-card {
+    background: rgba(255, 255, 255, 0.05); 
+    border-radius: 20px;
     padding: 20px; 
     display: flex; 
     flex-direction: column;
     align-items: center; 
     border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.2s, transform 0.1s;
+}
+
+.shop-card:active {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(0.96);
+}
+
+.shop-card .price {
+    margin-top: 10px;
+    background: #f7d51d;
+    color: #000;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 14px;
 }
 
 /* --- СПИСКИ (Лидерборд, Друзья, Инвентарь) --- */
-#leaderboard-list, .friends-list, .inventory-items { 
+.list-container {
     width: 100%; 
-    max-width: 400px; 
+    max-width: 420px; 
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .leader-item, .friend-card, .inventory-card {
     display: flex; 
     align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    margin-bottom: 10px; 
-    padding: 15px; 
-    border-radius: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 12px 18px; 
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* --- ИНВЕНТАРЬ (Особые стили) --- */
-.inventory-card {
-    transition: transform 0.1s, background 0.2s;
+.item-icon {
+    width: 45px;
+    height: 45px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
 }
 
-.inventory-card:active {
-    transform: scale(0.98);
-    background: rgba(255, 255, 255, 0.12);
+.item-info {
+    text-align: left;
+    flex-grow: 1;
 }
 
+.item-name { font-weight: 700; color: #fff; display: block; }
+.item-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+/* --- ИНВЕНТАРЬ --- */
 .item-badge {
     background: #f7d51d;
     color: #000;
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 4px 10px;
+    border-radius: 12px;
     font-weight: 900;
-    font-size: 12px;
-    margin-left: auto;
+    font-size: 13px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 /* --- ДЕЙЛИ (DAILY) --- */
 .daily-grid { 
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
-    gap: 10px; 
+    gap: 12px; 
     width: 100%; 
-    max-width: 400px; 
 }
 
 .daily-card {
-    background: rgba(255, 255, 255, 0.1); 
-    border-radius: 12px;
-    padding: 10px; 
+    background: rgba(255, 255, 255, 0.07); 
+    border-radius: 16px;
+    padding: 15px 5px; 
     display: flex; 
     flex-direction: column; 
     align-items: center; 
     justify-content: center;
-    height: 110px;
+    height: 120px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.daily-card.collected {
+    opacity: 0.5;
+    filter: grayscale(1);
 }
 
 .daily-card.current { 
     border: 2px solid #f7d51d; 
-    background: rgba(247, 213, 29, 0.2); 
-    box-shadow: 0 0 15px rgba(247, 213, 29, 0.3);
+    background: rgba(247, 213, 29, 0.15); 
+    box-shadow: 0 0 20px rgba(247, 213, 29, 0.2);
+    animation: pulseBorder 2s infinite;
 }
 
-/* Скроллбар для аккуратности */
+@keyframes pulseBorder {
+    0%, 100% { border-color: #f7d51d; }
+    50% { border-color: #ffffff; }
+}
+
+/* Скроллбар */
 .screen::-webkit-scrollbar {
     width: 4px;
 }
 .screen::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
+    border-radius: 10px;
 }

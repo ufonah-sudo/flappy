@@ -13,7 +13,7 @@
     display: flex;
     justify-content: center; 
     overflow: hidden;
-    z-index: 10; /* Под основным интерфейсом меню */
+    z-index: 10;
 }
 
 /* Холст отрисовки */
@@ -25,112 +25,165 @@
     touch-action: none; 
 }
 
-/* Текущий счет во время полета */
+/* ТЕКУЩИЙ СЧЕТ (Стиль оригинала) */
 #score-overlay {
     position: absolute; 
-    top: 15%; /* Чуть ниже, чтобы не сливаться с балансом */
+    top: 12%; 
     width: 100%; 
     text-align: center;
-    font-size: 80px; 
+    font-size: 85px; 
     font-weight: 900; 
     color: white;
-    text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; 
+    /* Двойной контур для максимальной читаемости */
+    text-shadow: 
+        4px 4px 0 #000, 
+        -4px -4px 0 #000, 
+        4px -4px 0 #000, 
+        -4px 4px 0 #000,
+        0 6px 10px rgba(0,0,0,0.5);
     z-index: 20; 
     pointer-events: none;
     user-select: none;
+    letter-spacing: 2px;
 }
 
-/* Экран проигрыша (GAME OVER) */
+/* --- ИНТЕРФЕЙС ИНВЕНТАРЯ В ИГРЕ --- */
+.ingame-ui-left {
+    position: absolute;
+    bottom: 110px; /* Над нижней панелью меню */
+    left: 20px;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: none;
+}
+
+.powerup-btn {
+    pointer-events: auto;
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 3px solid #fff;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s, border-color 0.3s;
+}
+
+.powerup-btn.active {
+    border-color: #00fbff;
+    box-shadow: 0 0 15px #00fbff;
+    background: rgba(0, 251, 255, 0.2);
+}
+
+.powerup-btn .count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #f7d51d;
+    color: #000;
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #000;
+}
+
+/* --- ЭКРАН ПРОИГРЫША --- */
 #game-over { 
-    background: rgba(0, 0, 0, 0.85); 
-    backdrop-filter: blur(8px); 
+    background: rgba(0, 0, 0, 0.8); 
+    backdrop-filter: blur(10px); 
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    z-index: 1000; /* Поверх всего во время проигрыша */
+    z-index: 2000;
+    animation: fadeInGameOver 0.4s ease-out;
+}
+
+@keyframes fadeInGameOver {
+    from { opacity: 0; transform: scale(1.1); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .status-title { 
-    font-size: 48px; 
+    font-size: 52px; 
     color: #f7941d; 
     text-shadow: 4px 4px 0 #000; 
-    margin-bottom: 20px; 
+    margin-bottom: 25px; 
     text-transform: uppercase;
+    font-weight: 900;
 }
 
 /* Табличка с результатом */
 .result-box {
     background: #ded895; 
     border: 4px solid #543847;
-    border-radius: 12px; 
-    padding: 20px 40px; 
-    margin-bottom: 25px; 
+    border-radius: 15px; 
+    padding: 25px 45px; 
+    margin-bottom: 30px; 
     color: #e67e22;
     text-align: center;
-    box-shadow: 0 8px 0 rgba(0,0,0,0.3);
+    box-shadow: 0 10px 0 rgba(0,0,0,0.2);
 }
 
 .result-box p {
     margin: 0;
-    font-size: 16px;
+    font-size: 18px;
     text-transform: uppercase;
     color: #543847;
-    font-weight: bold;
+    font-weight: 800;
 }
 
 #final-score {
-    font-size: 60px;
+    font-size: 70px;
     font-weight: 900;
     display: block;
     color: white;
-    text-shadow: 3px 3px 0 #543847;
-    margin: 5px 0;
+    text-shadow: 4px 4px 0 #543847;
+    margin: 10px 0;
 }
 
-/* Кнопки в Game Over (специфичные для этого экрана) */
+/* Кнопки */
 .game-over-buttons {
     width: 100%;
     max-width: 280px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 15px;
 }
 
 #game-over .primary-btn {
     background: #f7941d;
     color: white;
     box-shadow: 0 6px 0 #b36b15 !important; 
-    border: 2px solid #000;
-    border-radius: 12px;
+    border: 3px solid #000;
+    border-radius: 14px;
+    font-size: 20px;
 }
 
 #game-over .secondary-btn {
     background: #ffffff; 
     color: #543847; 
     box-shadow: 0 6px 0 #999 !important; 
-    border: 2px solid #000;
-    border-radius: 12px;
+    border: 3px solid #000;
+    border-radius: 14px;
+    font-size: 18px;
 }
 
-/* Эффект нажатия (переопределяем для игровых кнопок с тенями) */
-#game-over .primary-btn:active, 
-#game-over .secondary-btn:active { 
-    transform: translateY(4px) scale(0.98); 
-    box-shadow: 0 2px 0 #000 !important; 
-}
-
-/* Режим Аркада: пульсация при выборе */
+/* Режим Аркада */
 .mode-card.active {
-    border: 2px solid #f7d51d !important;
-    background: rgba(247, 213, 29, 0.2) !important;
-    box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
-}
-
-/* TON Connect */
-#shop-ton-wallet, #settings-ton-wallet { 
-    margin: 15px 0;
-    display: flex;
-    justify-content: center;
+    border: 3px solid #f7d51d !important;
+    background: rgba(247, 213, 29, 0.25) !important;
+    box-shadow: 0 0 20px rgba(247, 213, 29, 0.5);
+    transform: scale(1.05);
 }
