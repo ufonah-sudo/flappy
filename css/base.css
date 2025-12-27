@@ -37,7 +37,7 @@ body, html {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1; 
+    z-index: 1; /* Глубоко под игрой */
     pointer-events: none;
     overflow: hidden;
 }
@@ -148,18 +148,20 @@ canvas {
     align-items: center;
 }
 
+/* --- КНОПКИ РЕЖИМОВ (Убираем контур и тени) --- */
 .mode-card {
     width: 300px;
     height: 90px;
-    border-radius: 18px;
-    border: 3.5px solid white;
     background-size: 100% 100%;
     background-position: center;
     background-repeat: no-repeat;
     cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    transition: all 0.2s ease;
-    /* Убираем любой текст, который может быть внутри тега в HTML */
+    /* ПОЛНОСТЬЮ УБИРАЕМ ЛИШНЕЕ */
+    border: none !important; 
+    box-shadow: none !important;
+    outline: none !important;
+    background-color: transparent !important;
+    /* Убираем текст */
     text-indent: -9999px;
     overflow: hidden;
 }
@@ -172,14 +174,20 @@ canvas {
 /* --- 6. ОБЛАКА --- */
 .cloud {
     position: absolute;
-    opacity: 0.5;
-    animation: floatClouds linear infinite;
+    opacity: 0.6;
     will-change: transform;
+    /* Убираем начальное наложение */
+    left: -250px; 
 }
 
+/* Облака должны иметь разную скорость (задается в JS или через nth-child) */
+.cloud:nth-child(1) { top: 10%; animation: floatClouds 25s linear infinite; }
+.cloud:nth-child(2) { top: 25%; animation: floatClouds 35s linear infinite; animation-delay: 2s; }
+.cloud:nth-child(3) { top: 40%; animation: floatClouds 30s linear infinite; animation-delay: 5s; }
+
 @keyframes floatClouds {
-    from { transform: translateX(-200px); }
-    to { transform: translateX(115vw); }
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(100vw + 300px)); }
 }
 
 /* --- 7. ЭКРАНЫ И МОДАЛКИ --- */
