@@ -53,31 +53,23 @@
             <button id="btn-start" class="primary-btn pulse"></button>
         </div>
 
-        <div id="scene-mode-selection" class="screen hidden">
-            <div class="mode-selection-container">
-                <h2 class="mode-title">SELECT MODE</h2>
-                
-                <div class="mode-cards">
-                    <div id="btn-mode-classic" class="mode-card clickable-effect">
-                        <div class="mode-icon">🐦</div>
-                        <div class="mode-info">
-                            <span class="mode-name">CLASSIC</span>
-                            <span class="mode-desc">Standard Flappy</span>
-                        </div>
-                    </div>
+       <div id="scene-mode-selection" class="screen hidden">
+    <div class="mode-menu-layout">
+        <h2 class="menu-title">SELECT MODE</h2>
+        
+        <div class="modes-container">
+            <div id="btn-mode-classic" class="mode-card">
+                <div class="mode-label">CLASSIC</div>
+            </div>
 
-                    <div id="btn-mode-arcade" class="mode-card clickable-effect">
-                        <div class="mode-icon">🚀</div>
-                        <div class="mode-info">
-                            <span class="mode-name">ARCADE</span>
-                            <span class="mode-desc">Abilities & Speed</span>
-                        </div>
-                    </div>
-                </div>
-
-                <button id="btn-back-to-home" class="secondary-btn">BACK</button>
+            <div id="btn-mode-arcade" class="mode-card">
+                <div class="mode-label">ARCADE</div>
             </div>
         </div>
+
+        <button id="btn-back-to-home" class="ui-btn-secondary">BACK</button>
+    </div>
+</div>
 
         <div id="game-container" class="screen hidden">
             <canvas id="game-canvas"></canvas>
