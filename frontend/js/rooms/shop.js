@@ -1,13 +1,25 @@
+/**
+ * js/rooms/shop.js - Модуль управления внутриигровым магазином
+ */
+
+// Импортируем методы API для связи с сервером
 import * as api from '../../api.js';
 
+/**
+ * Инициализация магазина: отрисовка контента и навешивание обработчиков событий
+ */
 export function initShop() {
+    // Получаем доступ к глобальному состоянию игры из объекта window
     const state = window.state;
+    // Получаем доступ к SDK Telegram WebApp для обратной связи (вибрация, уведомления)
     const tg = window.Telegram?.WebApp;
 
+    // Находим контейнер, куда будет вставлена верстка магазина
     const container = document.querySelector('#scene-shop #shop-content');
+    // Если контейнер не найден на странице, прекращаем выполнение функции
     if (!container) return;
 
-    // Конфигурация предметов (цены из твоего запроса)
+    // Конфигурация способностей (названия, цены, иконки и описания)
     const powerups = [
         { id: 'heart',  name: 'Сердечко', price: 50, icon: '❤️', desc: 'Вторая жизнь' },
         { id: 'shield', name: 'Щит',     price: 20, icon: '🛡️', desc: 'Защита от труб' },
@@ -16,6 +28,7 @@ export function initShop() {
         { id: 'ghost',  name: 'Призрак', price: 25, icon: '👻', desc: 'Пролет сквозь стены' }
     ];
 
+    // Формируем HTML-структуру магазина: разделы TON и Способности
     container.innerHTML = `
         <div class="shop-section">
             <h4 style="color: #f7d51d; margin: 10px 0; font-size: 14px; text-align: left; text-transform: uppercase;">💎 Пополнить баланс</h4>
@@ -57,24 +70,29 @@ export function initShop() {
         </div>
         <div style="height: 100px;"></div> `;
 
-    // Привязка кнопки TON Connect
+    // Инициализация кнопки TON Connect (если менеджер кошелька активен)
     if (window.wallet && window.wallet.tonConnectUI) {
         try {
+            // Привязываем UI кнопку кошелька к созданному в верстке блоку
             window.wallet.tonConnectUI.setConnectButtonRoot('#shop-ton-wallet');
         } catch (e) {
+            // В случае ошибки выводим предупреждение в консоль
             console.warn("[Shop] Ошибка TON Connect:", e);
         }
     }
 
-    // 1. Обработка покупки за TON
+    // --- 1. ЛОГИКА ПОКУПКИ МОНЕТ ЗА TON ---
     container.querySelectorAll('.buy-ton-btn').forEach(btn => {
         btn.onclick = async (e) => {
-            const button = e.currentTarget;
-            const { amount, coins } = button.dataset;
+            const button = e.currentTarget; // Получаем текущую кнопку
+            const { amount, coins } = button.dataset; // Извлекаем сумму TON и кол-во монет
 
+            // Проверяем, подключен ли кошелек TON
             if (!window.wallet?.isConnected) {
                 if (tg) {
+                    // Вибрация-предупреждение
                     tg.HapticFeedback.notificationOccurred('warning');
+                    // Предложение перейти в настройки для подключения
                     tg.showConfirm("Кошелек не подключен. Перейти в настройки?", (ok) => {
                         if (ok) window.showRoom('settings');
                     });
@@ -83,26 +101,33 @@ export function initShop() {
             }
             
             try {
-                button.disabled = true;
-                const originalText = button.innerText;
-                button.innerHTML = `⏳`;
+                button.disabled = true; // Блокируем кнопку на время транзакции
+                const originalText = button.innerText; // Сохраняем исходный текст кнопки
+                button.innerHTML = `⏳`; // Показываем индикатор загрузки
                 
+                // Вызываем функцию отправки транзакции в блокчейн TON
                 const tx = await window.wallet.sendTransaction(amount);
                 
+                // Если транзакция прошла успешно в кошельке
                 if (tx) {
+                    // Уведомляем сервер о покупке для зачисления баланса в БД
                     const res = await api.buyCoins(amount);
                     if (res && !res.error) {
-                        state.coins = res.newBalance;
+                        // Обновляем локальный стейт балансом из ответа сервера
+                        state.coins = res.newBalance || (state.coins + parseInt(coins));
+                        // Синхронизируем UI всего приложения
                         if (window.updateGlobalUI) window.updateGlobalUI();
                         if (tg) {
+                            // Успешная вибрация и сообщение пользователю
                             tg.HapticFeedback.notificationOccurred('success');
                             tg.showAlert(`Успешно! Получено ${coins} монет.`);
                         }
                     }
                 }
-                button.innerText = originalText;
-                button.disabled = false;
+                button.innerText = originalText; // Возвращаем текст кнопки
+                button.disabled = false; // Разблокируем кнопку
             } catch (err) {
+                // Обработка ошибок при работе с кошельком или сетью
                 console.error("Shop TON error:", err);
                 button.disabled = false;
                 button.innerText = `${amount} TON`;
@@ -111,15 +136,17 @@ export function initShop() {
         };
     });
 
-    // 2. Обработка покупки за внутриигровые монеты
+    // --- 2. ЛОГИКА ПОКУПКИ ПРЕДМЕТОВ ЗА МОНЕТЫ (БАЛАНС) ---
     container.querySelectorAll('.buy-ingame-btn').forEach(btn => {
         btn.onclick = async (e) => {
-            const button = e.currentTarget;
-            const { item, price } = button.dataset;
-            const cost = parseInt(price);
+            const button = e.currentTarget; // Кнопка, на которую нажали
+            const { item, price } = button.dataset; // Получаем ID предмета и цену
+            const cost = parseInt(price); // Преобразуем цену в число
 
+            // Проверка баланса перед отправкой запроса (локальная проверка)
             if (state.coins < cost) {
                 if (tg) {
+                    // Сообщаем об ошибке вибрацией и алертом
                     tg.HapticFeedback.notificationOccurred('error');
                     tg.showAlert("Недостаточно монет! Загляни в раздел TON.");
                 }
@@ -127,37 +154,48 @@ export function initShop() {
             }
 
             try {
-                button.disabled = true;
+                button.disabled = true; // Защита от двойного клика (спама запросами)
                 const originalText = button.innerText;
-                button.innerText = "⏳";
+                button.innerText = "⏳"; // Визуальный отклик загрузки
                 
-                // Вызов API (api.buyItem должен быть в api.js)
+                // ВАЖНО: Отправляем запрос на сервер для списания денег и добавления предмета
                 const res = await api.buyItem(item); 
                 
+                // Проверяем ответ от сервера (обязательно !res.error)
                 if (res && !res.error) {
+                    // Обновляем монеты строго из ответа сервера (защита от читов)
                     state.coins = res.newBalance;
                     
-                    // Обновляем количество предметов в локальном стейте
+                    // Инициализируем объект способностей в стейте, если его вдруг нет
                     if (!state.powerups) state.powerups = {};
-                    state.powerups[item] = (state.powerups[item] || 0) + 1;
                     
+                    // Обновляем количество предмета (берем из ответа сервера или прибавляем 1)
+                    state.powerups[item] = res.newItemCount || (state.powerups[item] || 0) + 1;
+                    
+                    // Глобальное обновление UI (хедер и бейджи)
                     if (window.updateGlobalUI) window.updateGlobalUI();
+                    
+                    // Средняя тактильная отдача для успеха
                     if (tg) tg.HapticFeedback.impactOccurred('medium');
                     
-                    button.innerText = "✅";
+                    button.innerText = "✅"; // Показываем успех на кнопке
                     button.style.color = "#4ec0ca";
                     
+                    // Через полторы секунды перерисовываем магазин для сброса состояния кнопок
                     setTimeout(() => {
-                        initShop(); // Мягкая перерисовка
+                        initShop(); 
                     }, 1500);
                 } else {
-                    throw new Error("API error");
+                    // Если сервер отказал в покупке (например, недостаточно монет в БД)
+                    throw new Error(res.message || "API error");
                 }
             } catch (err) {
+                // Если запрос упал или сервер вернул ошибку
                 button.disabled = false;
                 button.innerText = "КУПИТЬ";
                 if (tg) tg.HapticFeedback.notificationOccurred('error');
                 console.error("Buy item error:", err);
+                if (tg) tg.showAlert("Ошибка покупки: " + err.message);
             }
         };
     });

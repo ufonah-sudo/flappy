@@ -120,10 +120,10 @@ export class ArcadeGame {
         this.pipes.push(p); // Добавляем в массив
 
         // СПАВН 10 МОНЕТ В РЯД (Твой запрос)
-        const coinsCount = 10; 
+        const coinsCount = 5; 
         for (let i = 0; i < coinsCount; i++) {
             this.coins.push({
-                x: p.x + p.width + (i * 45) + (Math.random() * 20), // Идут друг за другом с небольшим разбросом
+                x: p.x + p.width + (i * 55) + (Math.random() * 20), // Идут друг за другом с небольшим разбросом
                 y: h + (currentGap / 2) + (Math.random() * 60 - 30), // Центрированы в проеме с отклонением
                 collected: false, // Флаг: собрана или нет
                 angle: Math.random() * Math.PI // Рандомный угол для красоты вращения
