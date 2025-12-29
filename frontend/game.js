@@ -54,7 +54,7 @@ export class Game {
         window.addEventListener('resize', this.handleResize);
     }
 
-    resize() {
+   resize() {
         const dpr = window.devicePixelRatio || 1;
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -62,16 +62,23 @@ export class Game {
         this.canvas.width = w * dpr;
         this.canvas.height = h * dpr;
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); 
-        
         this.canvas.style.width = w + 'px';
         this.canvas.style.height = h + 'px';
+
+        // ПУНКТ 6: АДАПТАЦИЯ ПОД ПК
+        // Если экран высокий (ПК), не даем параметрам расти бесконечно
+        const isDesktop = h > 800;
 
         this.bird.x = w / 4; 
         if (!this.isRunning) this.bird.y = h / 2;
         
-        this.gravity = h * 0.0006;   
-        this.jump = -h * 0.010;      
-        this.pipeSpeed = w * 0.007;  
+        // Ограничиваем гравитацию на больших экранах, иначе падает камнем
+        this.gravity = isDesktop ? 0.45 : h * 0.0006;   
+        this.jump = isDesktop ? -7 : -h * 0.010;      
+        
+        // Скорость труб тоже ограничиваем
+        this.pipeSpeed = isDesktop ? 4 : w * 0.007;  
+        
         this.pipeSpawnThreshold = Math.max(90, Math.floor(110 * (w / 375)));
     }
 
@@ -129,8 +136,11 @@ export class Game {
         }
     }
 
-    spawnPipe() {
-        const gap = window.innerHeight * 0.11; // Чистая классика
+  spawnPipe() {
+        // ПУНКТ 6: ФИКС ПРОЕМОВ ДЛЯ ПК
+        // На телефоне - процент от высоты, на ПК - фиксированный размер (180px)
+        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.22; 
+        
         const minH = 100;
         const maxH = window.innerHeight - gap - minH;
         const h = Math.floor(Math.random() * (maxH - minH)) + minH;

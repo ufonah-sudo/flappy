@@ -60,13 +60,17 @@ export class ArcadeGame {
         this.canvas.width = w * dpr;
         this.canvas.height = h * dpr;
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        
+        this.canvas.style.width = w + 'px';
+        this.canvas.style.height = h + 'px';
+
+        const isDesktop = h > 800;
+
         this.bird.x = w / 4;
-        this.gravity = h * 0.0006;
-        this.jump = -h * 0.010;
-        this.pipeSpeed = w * 0.007;
-        // Защита от NaN
-        this.pipeSpawnThreshold = Math.max(70, Math.floor(110 * (w / 375))) || 90;
+        // Фикс физики для ПК
+        this.gravity = isDesktop ? 0.45 : h * 0.0006;
+        this.jump = isDesktop ? -7 : -h * 0.010;
+        this.pipeSpeed = isDesktop ? 4 : w * 0.007;
+        this.pipeSpawnThreshold = Math.max(90, Math.floor(110 * (w / 375)));
     }
 
     start() {
@@ -84,19 +88,24 @@ export class ArcadeGame {
         this.loop();
     }
 
-    spawnPipe() {
-        // Уменьшенные проемы по твоей просьбе
-        const currentGap = this.activePowerups.gap > 0 
-            ? window.innerHeight * 0.25 
-            : window.innerHeight * 0.16;
+   spawnPipe() {
+        const isDesktop = window.innerHeight > 800;
+        
+        // Расчет проема: Если ПК, берем фиксу, если телефон - процент
+        let baseGap = isDesktop ? 170 : window.innerHeight * 0.20; // Обычный проем
+        let largeGap = isDesktop ? 300 : window.innerHeight * 0.35; // Бонусный проем
+        
+        // Выбираем какой использовать
+        const currentGap = this.activePowerups.gap > 0 ? largeGap : baseGap;
 
-        const minH = 80;
+        const minH = 100;
         const maxH = window.innerHeight - currentGap - 100;
         const h = Math.floor(Math.random() * (maxH - minH)) + minH;
 
         const p = { x: window.innerWidth, width: 75, top: h, bottom: h + currentGap, passed: false };
         this.pipes.push(p);
 
+        // Монета
         this.coins.push({
             x: p.x + p.width / 2,
             y: p.top + (currentGap / 2),
