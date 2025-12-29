@@ -263,21 +263,37 @@ export class ArcadeGame {
         const bCenterY = b.y + b.size / 2;
 
         // Сбор монет
-        this.coins.forEach(c => {
-            if (!c.collected && Math.hypot(bCenterX - c.x, bCenterY - c.y) < 35) {
-                c.collected = true; // Помечаем как собранную
-                if (window.state) {
-                    window.state.coins++; // Добавляем монету в общий стейт
-                    // Прогресс ежедневного задания №2 (Монеты)
-                    const task = window.state.user.daily_challenges?.find(c => c.id === 2);
-                    if (task && !task.done) {
-                        task.progress++;
-                        if (task.progress >= task.target) task.done = true;
+       this.coins.forEach(c => {
+    // Проверка дистанции между центром птицы и монетой
+    if (!c.collected && Math.hypot(bCenterX - c.x, bCenterY - c.y) < 35) {
+        c.collected = true; // Помечаем монету как собранную
+        
+        if (window.state) {
+            // 1. Увеличиваем монеты в глобальном стейте
+            window.state.coins = (window.state.coins || 0) + 1;
+
+            // 2. Проверяем наличие заданий (Daily Challenges) максимально безопасно
+            // Используем ?. чтобы код не падал, если user или задания еще не загружены
+            const challenges = window.state.user?.daily_challenges;
+            
+            if (Array.isArray(challenges)) {
+                const coinTask = challenges.find(t => t.id === 2); // ID 2 - сбор монет
+                if (coinTask && !coinTask.done) {
+                    coinTask.progress++;
+                    if (coinTask.progress >= coinTask.target) {
+                        coinTask.done = true;
                     }
-                    if (window.updateGlobalUI) window.updateGlobalUI(); // Обновляем баланс на экране
                 }
             }
-        });
+
+            // 3. Обновляем UI (интерфейс)
+            // Вызываем твою функцию из main.js
+            if (typeof window.updateGlobalUI === 'function') {
+                window.updateGlobalUI();
+            }
+        }
+    }
+});
         
         // Сбор бонусов
         this.items.forEach((it, idx) => {

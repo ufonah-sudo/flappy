@@ -239,17 +239,37 @@ async function init() {
     if (exitGO) exitGO.onclick = () => showRoom('home');
 
     // Загрузка данных игрока с бэкенда (Coins, Lives, Powerups)
-    try {
-        const auth = await api.authPlayer(tg?.initDataUnsafe?.start_param || "");
-        if (auth?.user) {
-            state.coins = auth.user.coins ?? state.coins;
-            state.lives = auth.user.lives ?? state.lives;
-            state.crystals = auth.user.crystals ?? state.crystals;
-            if (auth.user.powerups) {
-                state.powerups = { ...state.powerups, ...auth.user.powerups };
-            }
+   try {
+    const auth = await api.authPlayer(tg?.initDataUnsafe?.start_param || "");
+    if (auth?.user) {
+        state.user = auth.user; // Сохраняем пользователя в стейт!
+        state.coins = auth.user.coins ?? state.coins;
+        state.lives = auth.user.lives ?? state.lives;
+        state.crystals = auth.user.crystals ?? state.crystals;
+
+        // Инициализация заданий, если их нет в ответе от API
+        if (!state.user.daily_challenges) {
+            state.user.daily_challenges = [
+                { id: 1, text: "Fly through 10 pipes", target: 10, progress: 0, done: false },
+                { id: 2, text: "Collect 50 coins", target: 50, progress: 0, done: false },
+                { id: 3, text: "Use 1 ability", target: 1, progress: 0, done: false }
+            ];
         }
-    } catch (e) { console.error("Ошибка загрузки данных:", e); }
+
+        if (auth.user.powerups) {
+            state.powerups = { ...state.powerups, ...auth.user.powerups };
+        }
+    }
+} catch (e) { 
+    console.error("Ошибка загрузки данных:", e);
+    // Фолбэк: если API упало, создаем пустого юзера с заданиями, чтобы игра не зависла
+    state.user = { daily_challenges: [
+        { id: 1, target: 10, progress: 0, done: false },
+        { id: 2, target: 50, progress: 0, done: false },
+        { id: 3, target: 1, progress: 0, done: false }
+    ]};
+}
+
 
     // Финализация: прокидываем стейт в глобальное окно и показываем дом
     window.state = state;
