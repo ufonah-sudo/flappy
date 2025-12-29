@@ -314,16 +314,50 @@ export class ArcadeGame {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Чистим холст
         
-        // Отрисовка труб
-        this.ctx.fillStyle = '#73bf2e'; // Цвет трубы
-        this.pipes.forEach(p => {
-            this.ctx.fillRect(p.x, 0, p.width, p.top); // Верхняя часть
-            this.ctx.fillRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom); // Нижняя часть
-            this.ctx.strokeStyle = '#2d4c12'; // Темная обводка
+        // --- ОТРИСОВКА ТРУБ (ЦВЕТ ХАКИ И УТОЛЩЕНИЯ) ---
+        const pipeColor = '#556b2f';    // Темный хаки для тела трубы
+        const capColor = '#6b8e23';     // Оливковый для "шапки"
+        const strokeColor = '#2d3419';  // Темный контур
+        const capHeight = 20;           // Высота утолщения
+        const capGap = 5;               // На сколько шапка шире трубы
+
+       this.pipes.forEach(p => {
             this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = strokeColor;
+
+            // --- 1. ВЕРХНЯЯ ТРУБА ---
+            this.ctx.fillStyle = pipeColor;
+            this.ctx.fillRect(p.x, 0, p.width, p.top);
+            
+            // Добавляем блик для объема (светлая полоса слева)
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            this.ctx.fillRect(p.x + 8, 0, 10, p.top);
+            
             this.ctx.strokeRect(p.x, 0, p.width, p.top);
+            
+            // Шапка верхней трубы
+            this.ctx.fillStyle = capColor;
+            this.ctx.fillRect(p.x - capGap, p.top - capHeight, p.width + (capGap * 2), capHeight);
+            this.ctx.strokeRect(p.x - capGap, p.top - capHeight, p.width + (capGap * 2), capHeight);
+
+            // --- 2. НИЖНЯЯ ТРУБА ---
+            this.ctx.fillStyle = pipeColor;
+            this.ctx.fillRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom);
+            
+            // Добавляем блик для объема
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            this.ctx.fillRect(p.x + 8, p.bottom, 10, window.innerHeight - p.bottom);
+            
             this.ctx.strokeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom);
+
+            // Шапка нижней трубы
+            this.ctx.fillStyle = capColor;
+            this.ctx.fillRect(p.x - capGap, p.bottom, p.width + (capGap * 2), capHeight);
+            this.ctx.strokeRect(p.x - capGap, p.bottom, p.width + (capGap * 2), capHeight);
         });
+       
+       
+
 
         // Отрисовка монет
         this.coins.forEach(c => {
