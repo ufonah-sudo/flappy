@@ -1,116 +1,119 @@
+/**
+ * ЛОГИКА ИНВЕНТАРЯ (inventory.js)
+ * Отображает текущие запасы игрока и позволяет быстро перейти в магазин.
+ */
 import * as api from '../../api.js';
 
 export function initInventory() {
-    // Берем актуальное состояние из window.state
+    // Получаем актуальный стейт
     const state = window.state; 
     const container = document.querySelector('#scene-inventory #inventory-content');
     
-    if (!container) {
-        console.warn("[Inventory] Container #inventory-content not found");
-        return;
-    }
+    if (!container) return;
 
-    // 1. Формируем список расходных материалов
-    const consumables = [
+    // 1. Формируем список предметов (Синхронизировано со структурой state)
+    const items = [
         { 
             id: 'lives', 
-            name: 'Сердечко', 
+            name: 'СЕРДЕЧКО', 
             icon: '❤️', 
-            count: state.lives || 0,
+            count: state.lives || 0, // Берём напрямую из state.lives
             description: 'Второй шанс: Продолжи игру после столкновения.',
-            status: state.lives > 0 ? 'active' : 'empty'
+            category: 'main'
         },
         { 
             id: 'shield', 
-            name: 'Щит', 
+            name: 'ЩИТ', 
             icon: '🛡️', 
-            count: state.powerups?.shield || 0,
-            description: 'Защита от одного удара',
-            status: state.powerups?.shield > 0 ? 'active' : 'empty'
+            count: state.powerups?.shield || 0, // Из ветки powerups
+            description: 'Защита от одного удара. Активируется в игре.',
+            category: 'powerup'
         },
         { 
             id: 'gap', 
-            name: 'Широкие проёмы', 
+            name: 'ШИРОКИЕ ПРОЁМЫ', 
             icon: '↕️', 
             count: state.powerups?.gap || 0,
-            description: 'Увеличивает расстояние между трубами (5 сек)',
-            status: state.powerups?.gap > 0 ? 'active' : 'empty'
+            description: 'Увеличивает расстояние между трубами.',
+            category: 'powerup'
         },
         { 
             id: 'magnet', 
-            name: 'Магнит', 
+            name: 'МАГНИТ', 
             icon: '🧲', 
             count: state.powerups?.magnet || 0,
-            description: 'Притягивает монеты (6 сек)',
-            status: state.powerups?.magnet > 0 ? 'active' : 'empty'
+            description: 'Притягивает все монеты на пути.',
+            category: 'powerup'
         },
         { 
             id: 'ghost', 
-            name: 'Призрак', 
+            name: 'ПРИЗРАК', 
             icon: '👻', 
             count: state.powerups?.ghost || 0,
-            description: 'Проход сквозь трубы (4 сек)',
-            status: state.powerups?.ghost > 0 ? 'active' : 'empty'
+            description: 'Позволяет лететь сквозь препятствия.',
+            category: 'powerup'
         }
     ];
 
-    // --- ЛОГИКА ДЛЯ ПУСТОГО ИНВЕНТАРЯ ---
-    if (consumables.every(i => i.count === 0)) {
+    // --- ПРОВЕРКА НА ПУСТОТУ ---
+    const isInventoryEmpty = items.every(i => i.count === 0);
+
+    if (isInventoryEmpty) {
         container.innerHTML = `
-            <div class="empty-text" style="padding: 50px 20px; opacity: 0.5; text-align: center;">
-                <p>Твой рюкзак пуст.</p>
-                <button id="go-to-shop-empty" class="primary-btn" style="margin-top:15px;">В МАГАЗИН</button>
+            <div class="empty-state" style="padding: 60px 20px; text-align: center; background: rgba(0,0,0,0.2); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
+                <div style="font-size: 50px; margin-bottom: 10px; opacity: 0.3;">🎒</div>
+                <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Твой рюкзак пуст.</p>
+                <button id="go-to-shop-empty" class="primary-btn" style="width: auto; padding: 12px 30px;">КУПИТЬ ПРЕДМЕТЫ</button>
             </div>
         `;
         
-        // Привязываем событие через JS, так как onclick в строке может не сработать в модуле
         const emptyBtn = container.querySelector('#go-to-shop-empty');
-        if (emptyBtn) {
-            emptyBtn.onclick = (e) => {
-                e.preventDefault();
-                if (window.showRoom) window.showRoom('shop');
-            };
-        }
+        if (emptyBtn) emptyBtn.onclick = () => window.showRoom('shop');
         return;
     }
 
-    // Генерируем HTML списка
-    container.innerHTML = consumables.map(item => {
+    // --- ОТРИСОВКА КАРТОЧЕК ---
+    container.innerHTML = items.map(item => {
         const isEmpty = item.count <= 0;
         
         return `
         <div class="inventory-card" 
-             style="display: flex; align-items: center; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); opacity: ${isEmpty ? '0.6' : '1'};">
+             style="display: flex; align-items: center; background: ${isEmpty ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.05)'}; 
+                    border-radius: 16px; padding: 15px; margin-bottom: 12px; 
+                    border: 1px solid ${isEmpty ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)'}; 
+                    transition: transform 0.2s ease; opacity: ${isEmpty ? '0.5' : '1'};">
             
-            <div class="item-icon-wrapper" style="position: relative; width: 50px; height: 50px; background: rgba(0,0,0,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                <span class="item-icon">${item.icon}</span>
-                ${isEmpty ? '<div style="position:absolute; bottom:-5px; right:-5px; font-size:14px;">🛒</div>' : ''}
+            <div class="item-icon-wrapper" style="position: relative; width: 54px; height: 54px; background: rgba(0,0,0,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 1px solid rgba(255,255,255,0.1);">
+                ${item.icon}
+                ${isEmpty ? '<div style="position:absolute; bottom:-5px; right:-5px; font-size:16px;">🛒</div>' : ''}
             </div>
 
-            <div class="item-info" style="flex-grow: 1; text-align: left; padding-left: 15px;">
+            <div class="item-info" style="flex-grow: 1; margin-left: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 800; font-size: 15px; color: #fff;">${item.name}</span>
-                    <span style="color: #f7d51d; font-size: 11px; font-weight: bold;">
-                        ${isEmpty ? 'КУПИТЬ' : 'x' + item.count}
+                    <span style="font-weight: 800; font-size: 14px; color: #fff; letter-spacing: 0.5px;">${item.name}</span>
+                    <span style="background: ${isEmpty ? '#444' : '#f7d51d'}; color: ${isEmpty ? '#aaa' : '#000'}; 
+                                 padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 900;">
+                        ${isEmpty ? '0' : 'x' + item.count}
                     </span>
                 </div>
-                <p style="margin: 3px 0 0 0; font-size: 11px; color: #aaa; line-height: 1.2;">${item.description}</p>
+                <p style="margin: 4px 0 0 0; font-size: 11px; color: #888; line-height: 1.3;">${item.description}</p>
             </div>
 
             <div class="item-actions" style="margin-left: 10px;">
-                ${!isEmpty 
-                    ? '<div style="color: #4ec0ca; font-size: 10px; font-weight: 800; border: 1px solid #4ec0ca; padding: 4px 8px; border-radius: 6px;">READY</div>' 
-                    : '<button class="secondary-btn go-to-shop-btn" style="padding: 6px 10px; font-size: 10px; width: auto; background: #555; color: #fff; border: none; border-radius: 6px;">SHOP</button>'}
+                ${isEmpty 
+                    ? `<button class="go-to-shop-btn" style="background: #333; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer;">SHOP</button>` 
+                    : `<div style="color: #4ec0ca; font-size: 10px; font-weight: 900; letter-spacing: 1px; padding: 6px; border: 1px solid rgba(78, 192, 202, 0.3); border-radius: 8px;">READY</div>`
+                }
             </div>
         </div>
-    `;
+        `;
     }).join('');
 
-    // Привязываем клик к кнопкам SHOP внутри карточек
+    // Слушатели для кнопок магазина
     container.querySelectorAll('.go-to-shop-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.preventDefault();
-            if (window.showRoom) window.showRoom('shop');
+            window.showRoom('shop');
         };
     });
 }

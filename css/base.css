@@ -355,3 +355,45 @@ canvas {
 /* Утилитарные классы */
 .hidden { display: none !important; } /* Класс для скрытия элементов */
 .blur-overlay { backdrop-filter: blur(5px); } /* Класс для блюра */
+
+
+.streak-grid {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+.daily-card {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid #555;
+    border-radius: 10px;
+    padding: 10px;
+    width: 65px;
+    text-align: center;
+}
+.daily-card.current { border-color: #f7d51d; background: rgba(247, 213, 29, 0.1); }
+.daily-card.claimed { opacity: 0.6; }
+.primary-btn-mini {
+    background: #f7d51d;
+    border: none;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 8px;
+}
+.challenge-item {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 8px;
+    width: 280px;
+}
+.ch-progress-bar {
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    margin: 8px 0;
+    overflow: hidden;
+}
+.ch-fill { height: 100%; background: #f7d51d; transition: width 0.3s; }
+.ch-info { display: flex; justify-content: space-between; font-size: 12px; }

@@ -126,10 +126,25 @@
             <div class="room-content" id="inventory-content"></div>
         </div>
 
-        <div id="scene-daily" class="screen hidden">
-            <h3>DAILY REWARD</h3>
-            <div class="room-content" id="daily-content"></div>
-        </div>
+        <section id="scene-daily" class="screen hidden">
+    <button id="btn-back-to-home" class="ui-corner-btn" style="top:20px; left:20px;">
+        <img src="/frontend/assets/back.png">
+    </button>
+    
+    <h2>DAILY HUB</h2>
+
+    <div class="daily-section">
+        <h3>Daily Rewards</h3>
+        <div id="daily-streak-content" class="streak-grid"></div>
+    </div>
+
+    <div class="daily-section">
+        <h3>Daily Challenges</h3>
+        <div id="daily-challenges-content"></div>
+    </div>
+
+    <div id="daily-bonus-content" style="margin-top: 20px; width: 100%; display: flex; justify-content: center;"></div>
+</section>
 
         <div id="scene-settings" class="screen hidden">
             <h3>SETTINGS</h3>
