@@ -20,35 +20,7 @@
     z-index: 100;
 }
 
-/* 1. БЛОК КНОПОК ТОП И DAILY (СПРАВА) */
-.side-buttons-container {
-    position: absolute;
-    top: calc(env(safe-area-inset-top, 20px) + 70px);
-    right: 20px; 
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    z-index: 1001;
-    pointer-events: none;
-}
 
-.ui-btn-action {
-    pointer-events: auto;
-    width: 58px; 
-    height: 58px;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.ui-btn-action img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
-}
 
 /* 2. ЛОГОТИП В ЦЕНТРЕ */
 .game-logo-container {

@@ -370,3 +370,18 @@ canvas {
 .powerup-slot {
     pointer-events: auto !important;
 }
+/* Принудительное скрытие, которое перебьет z-index и display */
+.hidden { 
+    display: none !important; 
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Настраиваем высоту кнопок, чтобы они были чуть ниже */
+#top-btn, #daily-btn {
+    position: absolute;
+    top: 85px; /* Регулируй высоту здесь */
+    z-index: 2000;
+    display: block; /* По умолчанию видны */
+}
