@@ -14,10 +14,10 @@
 /* В твоем файле base.css замени блок body, html на этот: */
 
 body, html {
-    margin: 0; 
-    padding: 0; 
+    margin: 0 !important;
+    padding: 0 !important; 
     width: 100%; 
-    height: 100%; /* Гарантирует растяжение */
+    height: 100% !important; /* Гарантирует растяжение */
     position: fixed; /* Гвоздями прибиваем к экрану, чтобы не скроллилось */
     overflow: hidden; /* Обрезаем всё лишнее */
     background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
