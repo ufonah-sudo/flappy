@@ -70,12 +70,27 @@
         <div id="game-container" class="screen hidden">
             <canvas id="game-canvas"></canvas>
 
-            <div id="ingame-inventory">
-                <button id="use-shield-btn" class="powerup-slot">
-                    <span style="font-size: 30px;">🛡️</span>
-                    <span id="shield-count" class="badge">0</span>
-                </button>
-            </div>
+           <div id="ingame-inventory" class="arcade-powers-layout">
+    <button class="powerup-slot" data-ability="shield">
+        <span class="p-icon">🛡️</span>
+        <span class="badge" data-powerup="shield">0</span>
+    </button>
+
+    <button class="powerup-slot" data-ability="gap">
+        <span class="p-icon">↔️</span>
+        <span class="badge" data-powerup="gap">0</span>
+    </button>
+
+    <button class="powerup-slot" data-ability="ghost">
+        <span class="p-icon">👻</span>
+        <span class="badge" data-powerup="ghost">0</span>
+    </button>
+
+    <button class="powerup-slot" data-ability="magnet">
+        <span class="p-icon">🧲</span>
+        <span class="badge" data-powerup="magnet">0</span>
+    </button>
+</div>
 
             <div id="score-overlay" style="position: absolute; top: 80px; font-size: 40px; font-weight: 900;">0</div>
         </div>

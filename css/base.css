@@ -282,44 +282,7 @@ canvas {
     -webkit-backdrop-filter: blur(8px); /* Размытие для Safari */
 }
 
-/* --- 8. ВНУТРИИГРОВОЙ ИНВЕНТАРЬ (АРКАДА) --- */
-#ingame-inventory {
-    position: absolute; /* Абсолютное позиционирование */
-    bottom: calc(30px + env(safe-area-inset-bottom)); /* Отступ снизу */
-    left: 20px; /* Отступ слева */
-    z-index: 500; /* Поверх игры */
-    display: flex; /* Flexbox */
-    gap: 12px; /* Расстояние между элементами */
-    pointer-events: auto; /* Разрешаем клики */
-}
 
-.powerup-slot {
-    position: relative; /* Для позиционирования бейджа */
-    width: 60px; /* Ширина слота */
-    height: 60px; /* Высота слота */
-    background: rgba(0, 0, 0, 0.6); /* Темный фон */
-    border: 2px solid #fff; /* Белая рамка */
-    border-radius: 18px; /* Закругление */
-    display: flex; /* Flexbox */
-    align-items: center; /* Центр верт. */
-    justify-content: center; /* Центр гор. */
-    cursor: pointer; /* Курсор */
-}
-
-/* Бейдж с количеством */
-.badge {
-    position: absolute; /* Абсолютное позиционирование */
-    top: -8px; /* Вылезает сверху */
-    right: -8px; /* Вылезает справа */
-    background: #f7d51d; /* Желтый фон */
-    color: #000; /* Черный текст */
-    font-size: 12px; /* Размер текста */
-    font-weight: bold; /* Жирный */
-    padding: 2px 6px; /* Отступы */
-    border-radius: 10px; /* Овальный */
-    border: 1px solid #000; /* Обводка */
-    z-index: 10; /* Поверх слота */
-}
 
 /* --- 9. КНОПКИ И ТИПОГРАФИКА (ОБЩИЕ) --- */
 .primary-btn {
@@ -397,3 +360,13 @@ canvas {
 }
 .ch-fill { height: 100%; background: #f7d51d; transition: width 0.3s; }
 .ch-info { display: flex; justify-content: space-between; font-size: 12px; }
+
+/* Разрешаем клики по всем важным элементам интерфейса */
+.ui-corner-btn, 
+.nav-btn, 
+.primary-btn, 
+.secondary-btn, 
+.mode-card, 
+.powerup-slot {
+    pointer-events: auto !important;
+}

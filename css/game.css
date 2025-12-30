@@ -53,60 +53,65 @@
 }
 
 /* --- 3. ИНТЕРФЕЙС СПОСОБНОСТЕЙ (СЛЕВА) --- */
-.ingame-ui-left {
+/* --- 3. ИНТЕРФЕЙС СПОСОБНОСТЕЙ (АРКАДА) --- */
+#ingame-inventory {
     position: absolute;
-    bottom: calc(100px + env(safe-area-inset-bottom)); /* Над кнопкой Home */
-    left: 20px;
+    bottom: calc(110px + env(safe-area-inset-bottom)); /* Над нижней панелью меню */
+    left: 50%;
+    transform: translateX(-50%); /* Центрируем по горизонтали */
     z-index: 150;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    display: flex; /* Выстраиваем в ряд */
+    flex-direction: row; /* Ряд, а не колонка */
+    gap: 12px;
     pointer-events: none;
 }
 
-.powerup-btn {
+/* Сами кнопки */
+.powerup-slot {
     pointer-events: auto;
-    width: 58px;
-    height: 58px;
-    background: rgba(0, 0, 0, 0.6);
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.7);
     border: 3px solid #fff;
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-    transition: all 0.15s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: all 0.1s ease;
+    padding: 0;
+    position: relative;
 }
 
-/* Состояние, когда щит включен */
-.powerup-btn.active {
-    border-color: #00fbff;
-    box-shadow: 0 0 15px rgba(0, 251, 255, 0.6);
-    background: rgba(0, 251, 255, 0.2);
-    transform: scale(1.1);
+/* Эффект нажатия */
+.powerup-slot:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.powerup-btn img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-}
-
-.powerup-btn .count {
+/* Счётчик предметов (Badge) */
+.powerup-slot .badge {
     position: absolute;
-    top: -10px;
-    right: -10px;
-    background: #f7d51d;
+    top: -8px;
+    right: -8px;
+    background: #f7d51d; /* Желтый как в оригинале */
     color: #000;
     font-size: 13px;
     font-weight: 900;
-    min-width: 24px;
-    height: 24px;
-    border-radius: 12px;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid #000;
+    z-index: 2;
+}
+
+/* Иконка внутри (emoji или картинка) */
+.p-icon, .powerup-slot span[style] {
+    font-size: 28px !important;
+    line-height: 1;
 }
 
 /* --- 4. ЭКРАН GAME OVER (РЕЗУЛЬТАТЫ) --- */
