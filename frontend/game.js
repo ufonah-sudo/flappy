@@ -145,31 +145,37 @@ this.ground.img.src = '/frontend/assets/ground.png';
         }
     }
 
-  spawnPipe() {
-        // ПУНКТ 6: ФИКС ПРОЕМОВ ДЛЯ ПК
-        // На телефоне - процент от высоты, на ПК - фиксированный размер (180px)
-        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.15; 
-        
-        const minH = 100;
-        const maxH = window.innerHeight - gap - minH;
-        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
+spawnPipe() {
+    // 1. Настраиваем размер проема (Gap)
+    let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.15; 
+    
+    // 2. Вводим лимит "потолка" (1/5 экрана сверху)
+    const minAllowedY = window.innerHeight / 5; 
+    const minH = minAllowedY; // Верхняя труба не может быть короче этого значения
+    
+    // 3. Рассчитываем максимально возможную высоту верхней трубы
+    // Оставляем 100px запаса снизу до земли
+    const bottomLimit = 100;
+    const maxH = window.innerHeight - gap - bottomLimit;
 
-        this.pipes.push({
-            x: window.innerWidth,
-            width: 75, 
-            top: h,
-            bottom: h + gap,
-            passed: false
-        });
-    }
+    // 4. Генерируем случайную высоту в безопасном диапазоне
+    const h = Math.floor(Math.random() * (maxH - minH)) + minH;
 
+    this.pipes.push({
+        x: window.innerWidth,
+        width: 75, 
+        top: h,
+        bottom: h + gap,
+        passed: false
+    });
+}
     update() {
         if (!this.isRunning || this.isPaused) return;
 
         this.bird.velocity += this.gravity;
         this.bird.y += this.bird.velocity;
 
-        const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.15)));
+        const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.2)));
         this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
 
         this.tickCount++;
