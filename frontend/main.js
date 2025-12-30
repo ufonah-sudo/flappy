@@ -108,55 +108,55 @@ window.activateAbility = activateAbility;
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
-    // Скрываем все сцены через добавление класса .hidden
+    // 1. Скрываем все экраны
     Object.values(scenes).forEach(scene => { if (scene) scene.classList.add('hidden'); });
     
-    // Показываем целевую сцену
+    // 2. Показываем нужный экран
     const target = scenes[roomName];
-    if (!target) return console.error(`Ошибка: Сцена "${roomName}" не найдена!`);
-    target.classList.remove('hidden');
+    if (target) target.classList.remove('hidden');
 
-    // Настройка Хедера (Баланс виден везде, кроме самой игры и оверлеев)
+    // 3. ЛОГИКА СКРЫТИЯ КНОПОК И ХЕДЕРА
+    // Список комнат, где НЕ ДОЛЖНО быть лишних кнопок и баланса
+    const isGameplay = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
+
+    // Скрываем/показываем Хедер
     const header = document.getElementById('header');
-    if (header) {
-        const isGameUI = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
-        header.style.display = isGameUI ? 'none' : 'flex';
-    }
+    if (header) header.style.display = isGameplay ? 'none' : 'flex';
 
-    // Кнопка Паузы (только внутри геймплея)
-    const pauseBtn = document.getElementById('btn-pause-trigger');
-    if (pauseBtn) pauseBtn.classList.toggle('hidden', roomName !== 'game');
+    // Скрываем/показываем кнопки TOP и DAILY (те, что с классом menu-only)
+    const menuButtons = document.querySelectorAll('.menu-only');
+    menuButtons.forEach(btn => {
+        if (isGameplay) {
+            btn.classList.add('hidden');
+        } else {
+            // Показываем кнопки только на главном экране (home)
+            // Если хочешь, чтобы они были видны во всех комнатах, удали "&& roomName === 'home'"
+            if (roomName === 'home') {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+    });
 
-    // Нижняя навигационная панель (Скрываем в игре и экранах выбора)
+    // Кнопка Паузы (только в самой игре)
+    const pauseBtn = document.getElementById('pause-btn');
+    if (pauseBtn) pauseBtn.style.display = (roomName === 'game') ? 'block' : 'none';
+
+    // Нижняя панель
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
         const hideBottom = ['game', 'gameOver', 'modeSelection', 'pauseMenu'].includes(roomName);
-        bottomPanel.style.setProperty('display', hideBottom ? 'none' : 'flex', 'important');
+        bottomPanel.style.display = hideBottom ? 'none' : 'flex';
     }
 
-    // Логика запуска игровых движков
-    // Логика запуска игровых движков
+    // Запуск движка игры, если зашли в "game"
     if (roomName === 'game') {
-        if (window.game) window.game.isRunning = false;
-        if (window.arcadeGame) window.arcadeGame.isRunning = false;
-
-        const isClassic = state.currentMode === 'classic';
-        const arcadeUI = document.querySelector('.ingame-ui-left') || document.getElementById('ingame-inventory');
-        
-        if (arcadeUI) {
-            arcadeUI.style.display = isClassic ? 'none' : 'flex';
-            // ОБНОВЛЯЕМ ПАНЕЛЬ ПЕРЕД СТАРТОМ
-            if (!isClassic) {
-                updatePowerupsPanel(); 
-            }
-        }
-
-        const engine = isClassic ? window.game : window.arcadeGame;
-        if (engine) {
-            engine.resize(); 
-            engine.start(); 
-        }
+        // Твоя существующая логика запуска...
+        const engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
+        if (engine) { engine.resize(); engine.start(); }
     }
+
 
     // Инициализация контента комнат
     setTimeout(() => {
