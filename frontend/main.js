@@ -190,6 +190,13 @@ async function init() {
     if (canvas) {
         window.game = new Game(canvas, (s, r) => handleGameOver(s, r));
         window.arcadeGame = new ArcadeGame(canvas, (s, r) => handleGameOver(s, r));
+
+        // --- ДОБАВЬ ЭТОТ БЛОК ---
+        // Ждем, пока Telegram закончит анимацию расширения, и обновляем размер
+        setTimeout(() => {
+            window.game?.resize();
+            window.arcadeGame?.resize();
+        }, 350);
     }
 
     try { window.wallet = new WalletManager(); } catch (e) { console.warn("Wallet skip"); }
