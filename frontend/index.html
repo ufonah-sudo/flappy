@@ -1,19 +1,193 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>GiftMa</title>
-    <base href="/" />
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no"> <title>Flappy Bird TON</title>
+    
+    <link rel="stylesheet" href="/css/base.css"> 
+    <link rel="stylesheet" href="/frontend/style.css">
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+</head>
+<body>
 
-    <meta
-      name="viewport"
-      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover"
-    />
-    <link rel="icon" type="image/x-icon" href="https://gift-static.stepcdn.space/favicon.ico" />
-    <script type="module" crossorigin src="https://gift-static.stepcdn.space/assets/index-BB_wTFKf.js"></script>
-    <link rel="stylesheet" crossorigin href="https://gift-static.stepcdn.space/assets/index-m3bcjCF4.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+    <div id="clouds-container" class="sky-container">
+        <img src="/frontend/assets/cloud1.png" class="cloud cloud1" alt="">
+        <img src="/frontend/assets/cloud2.png" class="cloud cloud2" alt="">
+        <img src="/frontend/assets/cloud3.png" class="cloud cloud3" alt="">
+        <img src="/frontend/assets/cloud4.png" class="cloud cloud4" alt="">
+        <img src="/frontend/assets/cloud5.png" class="cloud cloud5" alt="">
+        <img src="/frontend/assets/cloud6.png" class="cloud cloud6" alt="">
+    </div>
+
+    <div id="app">
+        
+        <button id="top-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/top.png" alt="Top" style="width: 100%;">
+        </button>
+
+        <button id="daily-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/daily.png" alt="Daily" style="width: 100%;">
+        </button>
+
+        <button id="pause-btn" class="ui-corner-btn">
+            <span style="font-size: 30px;">⏸️</span>
+        </button>
+
+        <div id="header"> 
+            <div class="header-balances">
+                <div class="balance-item">
+                    <span class="gold-coin-icon">🟡</span> 
+                    <span id="header-coins">0</span>
+                </div>
+                <div class="balance-item">
+                    <span class="icon">💎</span>
+                    <span id="header-crystals">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="scene-home" class="screen">
+            <div class="game-logo-container">
+                <img src="/frontend/assets/flappyname.png" class="main-logo-img" alt="FLAPPY TON">
+            </div>
+            <button id="btn-start" class="primary-btn pulse">START GAME</button>
+        </div>
+
+        <div id="scene-mode-selection" class="screen hidden">
+            <h2 class="menu-title">SELECT MODE</h2>
+            <div class="modes-container">
+                <div id="btn-mode-classic" class="mode-card">CLASSIC</div>
+                <div id="btn-mode-arcade" class="mode-card">ARCADE</div>
+            </div>
+            <button id="btn-back-to-home" class="secondary-btn">BACK</button>
+        </div>
+
+        <div id="game-container" class="screen hidden">
+            <canvas id="game-canvas"></canvas>
+
+            <div id="ingame-inventory" class="arcade-powers-layout">
+                
+                <button class="powerup-slot" data-ability="shield">
+                    <span class="p-icon">🛡️</span>
+                    <span class="badge" data-powerup="shield">0</span>
+                </button>
+
+                <button class="powerup-slot" data-ability="gap">
+                    <span class="p-icon">↔️</span>
+                    <span class="badge" data-powerup="gap">0</span>
+                </button>
+
+                <button class="powerup-slot" data-ability="ghost">
+                    <span class="p-icon">👻</span>
+                    <span class="badge" data-powerup="ghost">0</span>
+                </button>
+
+                <button class="powerup-slot" data-ability="magnet">
+                    <span class="p-icon">🧲</span>
+                    <span class="badge" data-powerup="magnet">0</span>
+                </button>
+            </div>
+
+            <div id="score-overlay" style="position: absolute; top: 80px; font-size: 40px; font-weight: 900;">0</div>
+        </div>
+
+        <div id="pause-menu" class="screen hidden modal-bg blur-overlay">
+            <div class="pause-content">
+                <h2>PAUSE</h2>
+                <button id="btn-resume" class="primary-btn">RESUME</button>
+                <button id="btn-exit-home" class="secondary-btn">EXIT TO MENU</button>
+            </div>
+        </div>
+
+        <div id="game-over" class="screen hidden modal-bg">
+            <h2 class="status-title">GAME OVER</h2>
+            <div class="result-box">
+                <p>Score</p>
+                <span id="final-score">0</span>
+            </div>
+            <div id="revive-section">
+                <button id="btn-revive" class="primary-btn">USE HEART ❤️</button>
+            </div>
+            <div class="game-over-buttons">
+                <button id="btn-restart" class="primary-btn">PLAY AGAIN</button>
+                <button id="btn-exit-gameover" class="secondary-btn">MAIN MENU</button>
+            </div>
+            <button id="btn-share" class="secondary-btn" style="margin-top: 15px;">SHARE RESULT</button>
+        </div>
+
+        <div id="scene-shop" class="screen hidden">
+            <h3>SHOP</h3>
+            <div id="shop-ton-wallet"></div> <div class="room-content" id="shop-content"></div> </div>
+
+        <div id="scene-leaderboard" class="screen hidden">
+            <h3>TOP PLAYERS</h3>
+            <div class="room-content" id="leaderboard-list"></div>
+        </div>
+
+        <div id="scene-friends" class="screen hidden">
+            <h3>FRIENDS</h3>
+            <div class="room-content" id="friends-content"></div>
+            <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
+        </div>
+
+        <div id="scene-inventory" class="screen hidden">
+            <h3>INVENTORY</h3>
+            <div class="room-content" id="inventory-content"></div>
+        </div>
+
+        <section id="scene-daily" class="screen hidden">
+            <button id="btn-back-to-home" class="ui-corner-btn" style="top:20px; left:20px;">
+                <img src="/frontend/assets/back.png">
+            </button>
+            
+            <h2>DAILY HUB</h2>
+
+            <div class="daily-section">
+                <h3>Daily Rewards</h3>
+                <div id="daily-streak-content" class="streak-grid"></div>
+            </div>
+
+            <div class="daily-section">
+                <h3>Daily Challenges</h3>
+                <div id="daily-challenges-content"></div>
+            </div>
+
+            <div id="daily-bonus-content" style="margin-top: 20px; width: 100%; display: flex; justify-content: center;"></div>
+        </section>
+
+        <div id="scene-settings" class="screen hidden">
+            <h3>SETTINGS</h3>
+            <div id="settings-ton-wallet"></div>
+            <div class="room-content" id="settings-content"></div>
+        </div>
+
+        <div class="menu-buttons-panel">
+            <button id="btn-shop" class="nav-btn">
+                <img src="/frontend/assets/shop.png" alt="Shop">
+            </button>
+            <button id="btn-inventory" class="nav-btn">
+                <img src="/frontend/assets/invent.png" alt="Inventory">
+            </button>
+            <button id="btn-home-panel" class="nav-btn">
+                <img src="/frontend/assets/home.png" alt="Home">
+            </button> 
+            <button id="btn-friends" class="nav-btn">
+                <img src="/frontend/assets/friends.png" alt="Friends">
+            </button>
+            <button id="btn-settings" class="nav-btn">
+                <img src="/frontend/assets/settings.png" alt="Settings">
+            </button>
+        </div>
+
+    </div> 
+    
+    <script type="module" src="/main.js"></script>
+</body>
 </html>
