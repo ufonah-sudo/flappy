@@ -7,7 +7,15 @@ export class ArcadeGame {
         this.canvas = canvas; // Сохраняем ссылку на элемент холста
         this.ctx = canvas.getContext('2d'); // Получаем 2D контекст для рисования
         this.onGameOver = onGameOver; // Функция, которая вызовется при конце игры
-        
+        // --- ИНИЦИАЛИЗАЦИЯ ЗЕМЛИ (как в Classic) ---
+this.ground = {
+    img: new Image(),
+    offsetX: 0,
+    h: 100,           // Высота земли
+    realWidth: 512,   // Ширина файла
+    realHeight: 162   // Высота файла
+};
+this.ground.img.src = '/frontend/assets/ground.png';
         // Параметры птицы: координаты, размер, скорость падения и угол наклона
         this.bird = { x: 50, y: 0, size: 38, velocity: 0, rotation: 0 }; 
         this.pipes = []; // Массив для активных труб
@@ -167,7 +175,19 @@ export class ArcadeGame {
         
         // Поворот птицы: смотрим вверх при прыжке, вниз при падении
         this.bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.bird.velocity / 12)));
+// Прокрутка земли
+this.ground.offsetX -= this.pipeSpeed;
+if (this.ground.offsetX <= -this.ground.realWidth) {
+    this.ground.offsetX = 0;
+}
 
+// Коллизия с землей (вместо старой проверки низа экрана)
+const groundTop = window.innerHeight - this.ground.h;
+if (this.bird.y + this.bird.size > groundTop) {
+    this.bird.y = groundTop - this.bird.size; 
+    this.gameOver();
+    return;
+}
         // Уменьшение таймеров способностей
         Object.keys(this.activePowerups).forEach(key => {
             if (this.activePowerups[key] > 0) this.activePowerups[key]--;
@@ -404,6 +424,8 @@ export class ArcadeGame {
             this.ctx.fillText(icons[it.type] || '🎁', it.x - 12, it.y + 10);
         });
 
+        this.drawGround(); // Отрисовываем землю поверх труб
+
         // Отрисовка птицы
         this.ctx.save();
         this.ctx.translate(this.bird.x + this.bird.size/2, this.bird.y + this.bird.size/2); // Перенос в центр птицы
@@ -433,6 +455,24 @@ export class ArcadeGame {
         }
         this.ctx.restore(); // Возвращаем контекст в исходное состояние
     }
+
+    drawGround() {
+    const ctx = this.ctx;
+    const g = this.ground;
+    const y = window.innerHeight - g.h;
+
+    if (g.img.complete) {
+        for (let i = 0; i <= Math.ceil(this.canvas.width / g.realWidth) + 1; i++) {
+            ctx.drawImage(
+                g.img, 
+                i * g.realWidth + g.offsetX, 
+                y, 
+                g.realWidth, 
+                g.h
+            );
+        }
+    }
+}
 
     // Завершение игры
     gameOver() {
