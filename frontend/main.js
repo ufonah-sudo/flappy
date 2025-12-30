@@ -1,83 +1,43 @@
-import * as api from './api.js';
-import { Game } from './game.js';
-import { ArcadeGame } from './arcade.js';
-
 const tg = window.Telegram?.WebApp;
 
-const state = { 
-    coins: 0,
-    currentMode: 'classic',
-    powerups: { heart: 0 }
-};
-
-const scenes = {
-    home: document.getElementById('scene-home'),
-    modeSelection: document.getElementById('scene-mode-selection'),
-    game: document.getElementById('game-container'),
-    gameOver: document.getElementById('game-over')
-};
-
-// --- ФУНКЦИЯ ПРИНУДИТЕЛЬНОГО ПОЛНОГО ЭКРАНА ---
-function forceFullHeight() {
-    if (!tg) return;
-    tg.expand(); // Сообщаем Telegram расшириться
-    
+// Функция для жесткой установки высоты
+function updateViewport() {
     const vh = window.innerHeight;
-    document.documentElement.style.height = `${vh}px`;
-    document.body.style.height = `${vh}px`;
-    document.getElementById('app').style.height = `${vh}px`;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
     
+    // Принудительно скроллим в 0, чтобы скрыть адресную строку, если она есть
     window.scrollTo(0, 0);
-
-    // Обновляем размеры движков
+    
+    // Ресайзим движки, если они инициализированы
     if (window.game) window.game.resize();
     if (window.arcadeGame) window.arcadeGame.resize();
-}
-
-function showRoom(roomName) {
-    Object.values(scenes).forEach(s => s?.classList.add('hidden'));
-    scenes[roomName]?.classList.remove('hidden');
-
-    if (roomName === 'game') {
-        const engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
-        engine?.start();
-    }
 }
 
 async function init() {
     if (tg) {
         tg.ready();
+        tg.expand(); // Разворачиваем на всю высоту
+        
+        // Красим системные области в цвет игры, чтобы зазоры не были видны
         tg.setHeaderColor('#4ec0ca');
         tg.setBackgroundColor('#4ec0ca');
     }
 
-    // Запускаем форсирование высоты сразу и через паузы
-    forceFullHeight();
-    [100, 300, 500, 1000].forEach(ms => setTimeout(forceFullHeight, ms));
+    // Вызываем фикс высоты сразу и через интервалы (для медленных устройств)
+    updateViewport();
+    [100, 300, 600, 1000, 2000].forEach(ms => setTimeout(updateViewport, ms));
 
+    window.addEventListener('resize', updateViewport);
+
+    // Инициализация Canvas
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
-        window.game = new Game(canvas, (s) => handleGameOver(s));
-        window.arcadeGame = new ArcadeGame(canvas, (s) => handleGameOver(s));
+        // Тут твоя инициализация Game и ArcadeGame
+        // window.game = new Game(canvas, ...);
     }
 
-    // Привязка кнопок
-    document.getElementById('btn-start').onclick = () => showRoom('modeSelection');
-    document.getElementById('btn-mode-classic').onclick = () => { state.currentMode = 'classic'; showRoom('game'); };
-    document.getElementById('btn-mode-arcade').onclick = () => { state.currentMode = 'arcade'; showRoom('game'); };
-    document.getElementById('btn-exit-gameover').onclick = () => showRoom('home');
-
-    window.addEventListener('resize', forceFullHeight);
-    showRoom('home');
+    // Показываем главный экран
+    showRoom('home'); 
 }
 
-function handleGameOver(score) {
-    showRoom('gameOver');
-}
-
-// Запуск приложения
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
+init();
