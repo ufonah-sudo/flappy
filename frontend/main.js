@@ -179,7 +179,12 @@ window.showRoom = showRoom;
    6. ИНИЦИАЛИЗАЦИЯ (init) - Запуск всего приложения
    --------------------------------------------------------- */
 async function init() {
-    if (tg) { tg.ready(); tg.expand(); }
+    if (tg) { tg.ready(); tg.expand(); 
+// Устанавливаем цвета, чтобы игра была монолитной
+        tg.setHeaderColor('#4ec0ca'); 
+        tg.setBackgroundColor('#4ec0ca');
+
+    }
 
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
@@ -235,7 +240,7 @@ async function init() {
     const btnAr = document.getElementById('btn-mode-arcade');
     if (btnAr) btnAr.onclick = () => { state.currentMode = 'arcade'; showRoom('game'); };
 
-    const pauseTrigger = document.getElementById('btn-pause-trigger');
+    const pauseTrigger = document.getElementById('pause-btn');
     if (pauseTrigger) {
         pauseTrigger.onclick = (e) => {
             e.preventDefault();
@@ -306,6 +311,12 @@ async function init() {
     window.state = state;
     updateGlobalUI();
     showRoom('home'); 
+
+    window.addEventListener('resize', () => {
+        console.log("Изменение размера экрана...");
+        if (window.game && state.currentMode === 'classic') window.game.resize();
+        if (window.arcadeGame && state.currentMode === 'arcade') window.arcadeGame.resize();
+    });
 }
 
 /* ---------------------------------------------------------
