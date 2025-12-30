@@ -1,43 +1,44 @@
 /**
  * ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (main.js)
- * Оптимизирован для Fullscreen по модели GiftMa
+ * Полностью совместим со структурой root и base.css
  */
 
-import * as api from './api.js';
 import { Game } from './game.js';
 import { ArcadeGame } from './arcade.js';
+import * as api from './api.js';
 
-// Инициализация Telegram WebApp
+// 1. Инициализация Telegram WebApp
 const tg = window.Telegram?.WebApp;
 
-// Состояние игры
+// 2. Глобальное состояние
 const state = {
     coins: 0,
     currentMode: 'classic',
     user: null
 };
 
-// Ссылки на экраны (Scenes)
+// 3. Ссылки на сцены
 const scenes = {
     home: document.getElementById('scene-home'),
     modeSelection: document.getElementById('scene-mode-selection'),
-    game: document.getElementById('game-container'), // Контейнер, где лежит канвас
+    game: document.getElementById('game-container'),
     gameOver: document.getElementById('game-over')
 };
 
 /**
- * ФУНКЦИЯ ФИКСАЦИИ ЭКРАНА (ГЛАВНЫЙ СЕКРЕТ)
+ * ФУНКЦИЯ ПРИНУДИТЕЛЬНОГО ПОЛНОГО ЭКРАНА
+ * Самый важный блок для удаления зазоров
  */
-function forceGeometry() {
+function forceFullscreen() {
     if (!tg) return;
 
-    // 1. Разворачиваем на весь экран
-    tg.expand();
-    
-    // 2. Берем реальную высоту видимой области
+    tg.ready();
+    tg.expand(); // Разворачиваем WebView на максимум
+
+    // Берем реальную высоту окна (в Telegram vh может врать)
     const vh = window.innerHeight;
     
-    // 3. Силой прописываем высоту всем критическим контейнерам
+    // Силой устанавливаем высоту всем корневым элементам
     document.documentElement.style.height = `${vh}px`;
     document.body.style.height = `${vh}px`;
     
@@ -46,10 +47,14 @@ function forceGeometry() {
         root.style.height = `${vh}px`;
     }
 
-    // 4. Убираем системные зазоры через прокрутку
+    // Красим системные области под цвет неба игры
+    tg.setHeaderColor('#4ec0ca');
+    tg.setBackgroundColor('#4ec0ca');
+
+    // Скроллим в самый верх, чтобы убрать возможные сдвиги WebView
     window.scrollTo(0, 0);
 
-    // 5. Оповещаем игровые движки о ресайзе
+    // Сообщаем игровым движкам об обновлении размера
     if (window.gameInstance) window.gameInstance.resize();
     if (window.arcadeInstance) window.arcadeInstance.resize();
 }
@@ -58,18 +63,18 @@ function forceGeometry() {
  * НАВИГАЦИЯ МЕЖДУ ЭКРАНАМИ
  */
 function showRoom(roomName) {
-    // Скрываем все сцены
+    // Скрываем все экраны
     Object.values(scenes).forEach(scene => {
         if (scene) scene.classList.add('hidden');
     });
 
-    // Показываем нужную
+    // Показываем целевой экран
     const target = scenes[roomName];
     if (target) {
         target.classList.remove('hidden');
     }
 
-    // Если заходим в игру — стартуем движок
+    // Логика запуска игры
     if (roomName === 'game') {
         const engine = state.currentMode === 'classic' ? window.gameInstance : window.arcadeInstance;
         if (engine) {
@@ -79,30 +84,23 @@ function showRoom(roomName) {
 }
 
 /**
- * ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+ * ГЛАВНАЯ ИНИЦИАЛИЗАЦИЯ
  */
 async function init() {
-    console.log("App Init Started");
+    console.log("App Init...");
 
-    if (tg) {
-        tg.ready();
-        // Красим системные полоски сразу
-        tg.setHeaderColor('#4ec0ca');
-        tg.setBackgroundColor('#4ec0ca');
-    }
+    // Вызываем фикс экрана сразу и через паузы (чтобы победить лаг iOS)
+    forceFullscreen();
+    [100, 300, 500, 1000].forEach(ms => setTimeout(forceFullscreen, ms));
 
-    // Запускаем фикс геометрии сразу и через интервалы (для iOS)
-    forceGeometry();
-    [100, 300, 500, 1000].forEach(delay => setTimeout(forceGeometry, delay));
-
-    // Инициализация канваса
+    // Инициализация Canvas
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.gameInstance = new Game(canvas, (score) => handleGameOver(score));
         window.arcadeInstance = new ArcadeGame(canvas, (score) => handleGameOver(score));
     }
 
-    // Привязка кнопок меню
+    // Привязка кликов
     const btnStart = document.getElementById('btn-start');
     if (btnStart) {
         btnStart.onclick = () => {
@@ -111,6 +109,7 @@ async function init() {
         };
     }
 
+    // Выбор режима
     const btnClassic = document.getElementById('btn-mode-classic');
     if (btnClassic) {
         btnClassic.onclick = () => {
@@ -127,31 +126,42 @@ async function init() {
         };
     }
 
-    // Следим за поворотом экрана или изменением размера
-    window.addEventListener('resize', forceGeometry);
+    // Кнопка выхода из Game Over
+    const btnExit = document.getElementById('btn-exit-gameover');
+    if (btnExit) {
+        btnExit.onclick = () => showRoom('home');
+    }
+
+    // Следим за изменением размера экрана (например, при скрытии клавиатуры)
+    window.addEventListener('resize', forceFullscreen);
+
+    // Загрузка данных через API (если есть)
+    try {
+        const user = await api.authPlayer();
+        state.user = user;
+    } catch (e) {
+        console.warn("Auth failed, playing as guest");
+    }
 
     // Показываем главный экран
     showRoom('home');
 }
 
 /**
- * ОБРАБОТКА ПРОИГРЫША
+ * ЗАВЕРШЕНИЕ ИГРЫ
  */
 function handleGameOver(score) {
     showRoom('gameOver');
-    const finalScore = document.getElementById('final-score');
-    if (finalScore) finalScore.innerText = score;
+    const finalScoreEl = document.getElementById('final-score');
+    if (finalScoreEl) finalScoreEl.innerText = score;
     
-    // Сохранение очков через API
-    api.saveScore(score).catch(err => console.error("Save score error:", err));
+    // Сохраняем результат
+    api.saveScore(score).catch(() => {});
 }
 
-// Запуск при полной загрузке страницы
+// Запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     init();
 }
-
-// Экспортируем функции, если они нужны в других модулях
-export { showRoom, state, forceGeometry };
