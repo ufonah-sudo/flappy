@@ -56,31 +56,36 @@
 /* --- 3. ИНТЕРФЕЙС СПОСОБНОСТЕЙ (АРКАДА) --- */
 #ingame-inventory {
     position: absolute;
-    bottom: calc(110px + env(safe-area-inset-bottom)); /* Над нижней панелью меню */
+    /* Уменьшаем отступ, если они слишком высоко. 
+       85px (высота меню) + 15px (зазор) = 100px. */
+    bottom: calc(95px + env(safe-area-inset-bottom, 15px)); 
     left: 50%;
-    transform: translateX(-50%); /* Центрируем по горизонтали */
+    transform: translateX(-50%); 
     z-index: 150;
-    display: flex; /* Выстраиваем в ряд */
-    flex-direction: row; /* Ряд, а не колонка */
+    display: flex; 
+    flex-direction: row; 
     gap: 12px;
     pointer-events: none;
+    width: auto;
+    justify-content: center;
 }
 
 /* Сами кнопки */
 .powerup-slot {
     pointer-events: auto;
-    width: 60px;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 3px solid #fff;
-    border-radius: 16px;
+    width: 65px; /* Чуть увеличим для удобства нажатия пальцем */
+    height: 65px;
+    background: rgba(0, 0, 0, 0.75); /* Сделаем чуть темнее для контраста */
+    border: 3px solid #f7d51d; /* Цвет золота из твоего UI вместо белого */
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    transition: all 0.1s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     padding: 0;
     position: relative;
+    backdrop-filter: blur(4px); /* Эффект стекла */
 }
 
 /* Эффект нажатия */
