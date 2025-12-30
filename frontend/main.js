@@ -1,12 +1,12 @@
 /**
- * ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (main.js) — ЧАСТЬ 1/2
- * Назначение: Импорты, Глобальный стейт, Навигация и Логика переключения комнат.
+ * ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (main.js)
+ * Назначение: Импорты, Глобальный стейт, Навигация, Магазин и Синхронизация данных.
  */
 
 // --- 1. ИМПОРТЫ МОДУЛЕЙ ---
 import * as api from './api.js';           // Модуль API (Бэкенд)
-import { Game } from './game.js';          // Движок Классики
-import { ArcadeGame } from './arcade.js';  // Движок Аркады
+import { Game } from './game.js';           // Движок Классики
+import { ArcadeGame } from './arcade.js';   // Движок Аркады
 import { WalletManager } from './wallet.js'; // TON Кошелек
 
 // Импорт инициализаторов комнат
@@ -28,6 +28,7 @@ const state = {
     coins: 0,                  // Монеты
     lives: 3,                  // Энергия
     crystals: 0,               // Кристаллы
+    inventory: [],             // Массив купленных предметов (Скины и т.д.)
     currentMode: 'classic',    // Режим игры
     settings: { sound: true, music: true },
     powerups: { heart: 0, shield: 0, gap: 0, magnet: 0, ghost: 0 }
@@ -51,7 +52,35 @@ const scenes = {
 };
 
 /* ---------------------------------------------------------
-   4. НАВИГАЦИЯ (showRoom)
+   4. ФУНКЦИИ СОХРАНЕНИЯ (Синхронизация)
+   --------------------------------------------------------- */
+
+// Сохранение данных в localStorage и отправка на сервер
+async function saveData() {
+    // Сохраняем локально, чтобы данные не пропали при обновлении
+    localStorage.setItem('game_state', JSON.stringify({
+        coins: state.coins,
+        inventory: state.inventory,
+        powerups: state.powerups
+    }));
+
+    // Отправляем на бэкенд (если API поддерживает метод updateUserData)
+    try {
+        if (api.updateUserData) {
+            await api.updateUserData({
+                coins: state.coins,
+                inventory: state.inventory,
+                powerups: state.powerups
+            });
+        }
+    } catch (e) {
+        console.warn("Ошибка сохранения на сервер:", e);
+    }
+}
+window.saveData = saveData; // Делаем доступным глобально
+
+/* ---------------------------------------------------------
+   5. НАВИГАЦИЯ (showRoom)
    --------------------------------------------------------- */
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
@@ -84,29 +113,24 @@ function showRoom(roomName) {
 
     // Логика запуска игровых движков
     if (roomName === 'game') {
-        // Принудительный сброс состояний перед стартом
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
 
         const isClassic = state.currentMode === 'classic';
-        
-        // Показываем инвентарь способностей только в Аркаде
         const arcadeUI = document.querySelector('.ingame-ui-left') || document.getElementById('ingame-inventory');
         if (arcadeUI) arcadeUI.style.display = isClassic ? 'none' : 'flex';
 
-        // Выбираем движок
         const engine = isClassic ? window.game : window.arcadeGame;
         if (engine) {
             engine.resize(); 
             engine.start(); 
         }
     } else if (roomName !== 'pauseMenu') {
-        // Останавливаем все процессы, если мы не в игре и не на паузе
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
     }
 
-    // Инициализация контента комнат с задержкой (чтобы DOM успел обновиться)
+    // Инициализация контента комнат
     setTimeout(() => {
         try {
             switch(roomName) {
@@ -121,46 +145,51 @@ function showRoom(roomName) {
         } catch (e) { console.error(`Ошибка комнаты ${roomName}:`, e); }
     }, 10);
 }
-
 window.showRoom = showRoom;
 
-// --- КОНЕЦ ЧАСТИ 1 ---
-// Напиши "готов", и я пришлю вторую часть с функцией Init и обработкой UI.
-/**
- * ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (main.js) — ЧАСТЬ 2/2
- * Назначение: Точка входа (init), логика кнопок, Game Over и обновление UI.
- */
-
 /* ---------------------------------------------------------
-   5. ИНИЦИАЛИЗАЦИЯ (init) - Запуск всего приложения
+   6. ИНИЦИАЛИЗАЦИЯ (init) - Запуск всего приложения
    --------------------------------------------------------- */
 async function init() {
-    // Сообщаем Telegram, что мы готовы и разворачиваем на весь экран
     if (tg) { tg.ready(); tg.expand(); }
 
-    // Находим Canvas и привязываем к нему оба игровых движка
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
-        // Передаем колбэк handleGameOver, который сработает при столкновении
         window.game = new Game(canvas, (s, r) => handleGameOver(s, r));
         window.arcadeGame = new ArcadeGame(canvas, (s, r) => handleGameOver(s, r));
     }
 
-    // Инициализация кошелька TON
     try { window.wallet = new WalletManager(); } catch (e) { console.warn("Wallet skip"); }
+
+    // --- ОБРАБОТЧИК ПОКУПКИ (Исправляет buy_item) ---
+    window.addEventListener('buy_item', async (e) => {
+        const { id, price, type, powerupType } = e.detail;
+        if (state.coins >= price) {
+            state.coins -= price;
+            if (type === 'powerup') {
+                state.powerups[powerupType] = (state.powerups[powerupType] || 0) + 1;
+            } else {
+                if (!state.inventory.includes(id)) state.inventory.push(id);
+            }
+            tg?.HapticFeedback.notificationOccurred('success');
+            updateGlobalUI();
+            await saveData(); // Сохраняем после покупки
+        } else {
+            tg?.HapticFeedback.notificationOccurred('error');
+            alert("Not enough coins!");
+        }
+    });
 
     // Универсальный хелпер для привязки кнопок к комнатам
     const bind = (id, room) => {
         const el = document.getElementById(id);
         if (el) el.onclick = (e) => {
-            e.preventDefault(); 
-            e.stopPropagation(); // Важно: чтобы клик по меню не заставлял птицу прыгать
-            tg?.HapticFeedback.impactOccurred('light'); // Вибрация
+            e.preventDefault(); e.stopPropagation();
+            tg?.HapticFeedback.impactOccurred('light');
             showRoom(room);
         };
     };
 
-    // Привязываем все кнопки навигации из HTML
     bind('btn-shop', 'shop');
     bind('btn-inventory', 'inventory');
     bind('btn-friends', 'friends');
@@ -173,14 +202,11 @@ async function init() {
     bind('daily-btn', 'daily');
     bind('btn-daily-icon', 'daily');
 
-    // Настройка кнопок выбора режима игры
     const btnCl = document.getElementById('btn-mode-classic');
     if (btnCl) btnCl.onclick = () => { state.currentMode = 'classic'; showRoom('game'); };
-    
     const btnAr = document.getElementById('btn-mode-arcade');
     if (btnAr) btnAr.onclick = () => { state.currentMode = 'arcade'; showRoom('game'); };
 
-    // Логика кнопки ПАУЗЫ внутри игры
     const pauseTrigger = document.getElementById('btn-pause-trigger');
     if (pauseTrigger) {
         pauseTrigger.onclick = (e) => {
@@ -191,32 +217,30 @@ async function init() {
         };
     }
 
-    // Кнопки управления в меню паузы
     const resBtn = document.getElementById('btn-resume');
     if (resBtn) resBtn.onclick = () => showRoom('game');
-    
     const exitBtn = document.getElementById('btn-exit-home');
     if (exitBtn) exitBtn.onclick = () => showRoom('home');
 
-    // --- ЛОГИКА ЩИТА (ТОЛЬКО АРКАДА) ---
+    // Логика щита (Аркада)
     const shieldBtn = document.getElementById('btn-use-shield') || document.getElementById('use-shield-btn');
     if (shieldBtn) {
         shieldBtn.onclick = (e) => {
             e.preventDefault(); e.stopPropagation();
-            if (state.currentMode !== 'arcade') return; // Запрет в классике
+            if (state.currentMode !== 'arcade') return;
             if (state.powerups.shield > 0) {
-                // Если щит в данный момент не активен
                 if (window.arcadeGame.activePowerups && !window.arcadeGame.activePowerups.shield) {
                     state.powerups.shield--; 
-                    window.arcadeGame.activePowerups.shield = 420; // Активация на время
+                    window.arcadeGame.activePowerups.shield = 420;
                     tg?.HapticFeedback.notificationOccurred('success');
                     updateGlobalUI();
+                    saveData();
                 }
             }
         };
     }
 
-    // --- ЛОГИКА ВОЗРОЖДЕНИЯ ---
+    // Логика возрождения
     const reviveBtn = document.getElementById('btn-revive');
     if (reviveBtn) {
         reviveBtn.onclick = (e) => {
@@ -225,109 +249,99 @@ async function init() {
                 state.powerups.heart--;
                 updateGlobalUI();
                 const engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
-                engine.revive(); // Метод внутри движка для продолжения игры
+                engine.revive();
                 showRoom('game');
+                saveData();
             }
         };
     }
 
-    // Кнопки после проигрыша (Game Over)
     const restartBtn = document.getElementById('btn-restart');
     if (restartBtn) restartBtn.onclick = () => showRoom('game');
-    
     const exitGO = document.getElementById('btn-exit-gameover');
     if (exitGO) exitGO.onclick = () => showRoom('home');
 
-    // Загрузка данных игрока с бэкенда (Coins, Lives, Powerups)
-   try {
-    const auth = await api.authPlayer(tg?.initDataUnsafe?.start_param || "");
-    if (auth?.user) {
-        state.user = auth.user; // Сохраняем пользователя в стейт!
-        state.coins = auth.user.coins ?? state.coins;
-        state.lives = auth.user.lives ?? state.lives;
-        state.crystals = auth.user.crystals ?? state.crystals;
+    // Загрузка данных игрока
+    try {
+        const auth = await api.authPlayer(tg?.initDataUnsafe?.start_param || "");
+        if (auth?.user) {
+            state.user = auth.user;
+            state.coins = auth.user.coins ?? state.coins;
+            state.lives = auth.user.lives ?? state.lives;
+            state.crystals = auth.user.crystals ?? state.crystals;
+            state.inventory = auth.user.inventory ?? [];
 
-        // Инициализация заданий, если их нет в ответе от API
-        if (!state.user.daily_challenges) {
-            state.user.daily_challenges = [
-                { id: 1, text: "Fly through 10 pipes", target: 10, progress: 0, done: false },
-                { id: 2, text: "Collect 50 coins", target: 50, progress: 0, done: false },
-                { id: 3, text: "Use 1 ability", target: 1, progress: 0, done: false }
-            ];
-        }
+            if (!state.user.daily_challenges) {
+                state.user.daily_challenges = [
+                    { id: 1, text: "Fly through 10 pipes", target: 10, progress: 0, done: false },
+                    { id: 2, text: "Collect 50 coins", target: 50, progress: 0, done: false },
+                    { id: 3, text: "Use 1 ability", target: 1, progress: 0, done: false }
+                ];
+            }
 
-        if (auth.user.powerups) {
-            state.powerups = { ...state.powerups, ...auth.user.powerups };
+            if (auth.user.powerups) {
+                state.powerups = { ...state.powerups, ...auth.user.powerups };
+            }
         }
+    } catch (e) { 
+        console.error("Ошибка загрузки:", e);
+        state.user = { daily_challenges: [
+            { id: 1, target: 10, progress: 0, done: false },
+            { id: 2, target: 50, progress: 0, done: false },
+            { id: 3, target: 1, progress: 0, done: false }
+        ]};
     }
-} catch (e) { 
-    console.error("Ошибка загрузки данных:", e);
-    // Фолбэк: если API упало, создаем пустого юзера с заданиями, чтобы игра не зависла
-    state.user = { daily_challenges: [
-        { id: 1, target: 10, progress: 0, done: false },
-        { id: 2, target: 50, progress: 0, done: false },
-        { id: 3, target: 1, progress: 0, done: false }
-    ]};
-}
 
-
-    // Финализация: прокидываем стейт в глобальное окно и показываем дом
     window.state = state;
     updateGlobalUI();
     showRoom('home'); 
 }
 
 /* ---------------------------------------------------------
-   6. ОБРАБОТКА СМЕРТИ (GAME OVER)
+   7. ОБРАБОТКА СМЕРТИ (GAME OVER)
    --------------------------------------------------------- */
 function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
-    
     const scoreEl = document.getElementById('final-score');
     if (scoreEl) scoreEl.innerText = score;
     
     const btnRev = document.getElementById('btn-revive');
     if (btnRev) {
-        // Условие появления кнопки: есть сердце и оно не использовано в этом раунде
         const canRev = !reviveUsed && state.powerups.heart > 0;
         btnRev.classList.toggle('hidden', !canRev);
         btnRev.innerHTML = `USE HEART ❤️ <br><small>(${state.powerups.heart} LEFT)</small>`;
     }
     
+    saveData(); // Сохраняем собранные монеты
     api.saveScore(score).catch(e => console.log("Score not saved:", e));
 }
 
 /* ---------------------------------------------------------
-   7. СИНХРОНИЗАЦИЯ ИНТЕРФЕЙСА (UI)
+   8. СИНХРОНИЗАЦИЯ ИНТЕРФЕЙСА (UI)
    --------------------------------------------------------- */
 function updateGlobalUI() {
     if (!state) return;
 
-    // Обновление текстовых значений монет и кристаллов
     const cEl = document.getElementById('header-coins');
     if (cEl) cEl.innerText = Number(state.coins).toLocaleString();
     
     const crEl = document.getElementById('header-crystals');
     if (crEl) crEl.innerText = state.crystals;
 
-    // Обновление жизней во всех местах (хедер и статы)
     document.querySelectorAll('.stat-lives, #header-lives').forEach(el => {
         el.innerText = state.lives;
     });
 
-    // Обновление бейджей (количества) для каждой способности в инвентаре
     Object.keys(state.powerups).forEach(key => {
         const val = state.powerups[key];
         document.querySelectorAll(`[data-powerup="${key}"]`).forEach(el => {
             el.innerText = val;
-            // Если значение 0 — скрываем бейдж (кроме щита в игре)
             if (el.id !== 'shield-count') {
                 el.classList.toggle('hidden', val <= 0);
             }
         });
     });
 
-    // Визуальное состояние кнопки использования щита
     const sBtn = document.getElementById('btn-use-shield') || document.getElementById('use-shield-btn');
     if (sBtn) {
         const isArc = state.currentMode === 'arcade';
@@ -337,15 +351,13 @@ function updateGlobalUI() {
     }
 }
 
-// Делаем функцию доступной глобально для модулей shop.js и daily.js
 window.updateGlobalUI = updateGlobalUI;
 
-// Окончательный запуск при загрузке страницы
+// Окончательный запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     init();
 }
 
-// Экспорт необходимых данных
 export { showRoom, state, updateGlobalUI };
