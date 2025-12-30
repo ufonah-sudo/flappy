@@ -146,8 +146,8 @@ this.ground.img.src = '/frontend/assets/ground.png';
         const gapLarge = window.innerHeight * 0.30; // Расширенный проем (бонус Gap)
         const currentGap = this.activePowerups.gap > 0 ? gapLarge : gapBase; // Выбор текущего проема
 
-        const minH = 130; // Минимальная высота верхней трубы
-        const maxH = window.innerHeight - currentGap - 130; // Максимальная высота верхней трубы
+        const minH = 100; // Минимальная высота верхней трубы
+        const maxH = window.innerHeight - currentGap - 160; // Максимальная высота верхней трубы
         const h = Math.floor(Math.random() * (maxH - minH)) + minH; // Рандомная точка проема
 
         // Создаем объект трубы
