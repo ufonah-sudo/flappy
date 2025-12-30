@@ -1,29 +1,56 @@
+/**
+ * api/auth.js - Авторизация, синхронизация состояния и рефералы
+ */
 import { supabase, verifyTelegramData, cors } from './_utils.js';
 
 const handler = async (req, res) => {
-    // 1. Логирование входящего запроса (полезно для отладки в Vercel Logs)
-    console.log(`[AUTH] Method: ${req.method} | User: ${req.body?.initData ? 'exists' : 'missing'}`);
-
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { initData, startParam } = req.body;
+    const { initData, startParam, action, coins, crystals, powerups, inventory } = req.body;
 
-    if (!initData) {
-        return res.status(400).json({ error: 'Missing initData' });
-    }
-
-    // 2. Проверка данных Telegram через наши _utils
+    // 1. Проверка Telegram (обязательно для любого действия в auth)
     const user = verifyTelegramData(initData);
-
     if (!user) {
-        console.error("[AUTH] Invalid Telegram signature");
         return res.status(403).json({ error: 'Invalid signature' });
     }
 
     try {
-        // 3. Ищем игрока в базе
+        // --- ОБРАБОТКА ACTION: GET_FRIENDS ---
+        if (action === 'get_friends') {
+            const { data: friends, error: friendsError } = await supabase
+                .from('referrals')
+                .select(`
+                    referred_id,
+                    users!referred_id ( username, coins )
+                `)
+                .eq('referrer_id', user.id);
+
+            if (friendsError) throw friendsError;
+            return res.status(200).json({ friends: friends || [] });
+        }
+
+        // --- ОБРАБОТКА ACTION: SYNC_STATE (СОХРАНЕНИЕ) ---
+        if (action === 'sync_state') {
+            const { data: updated, error: syncError } = await supabase
+                .from('users')
+                .update({ 
+                    coins, 
+                    crystals, 
+                    powerups, 
+                    inventory, 
+                    last_sync: new Date() 
+                })
+                .eq('id', user.id)
+                .select()
+                .single();
+
+            if (syncError) throw syncError;
+            return res.status(200).json({ user: updated });
+        }
+
+        // --- ЛОГИКА АВТОРИЗАЦИИ (БЕЗ ACTION ИЛИ ACTION: GET_USER) ---
         let { data: dbUser, error: fetchError } = await supabase
             .from('users')
             .select('*')
@@ -32,16 +59,16 @@ const handler = async (req, res) => {
 
         if (fetchError) throw fetchError;
 
-        // 4. Если игрока нет — создаем
+        // Если игрока нет — создаем его
         if (!dbUser) {
-            console.log(`[AUTH] Registering new user: ${user.username || user.id}`);
-            
             const { data: newUser, error: createError } = await supabase
                 .from('users')
                 .insert({ 
                     id: user.id, 
                     username: user.username || 'Player', 
-                    coins: 10 // Стартовый капитал
+                    coins: 10,
+                    powerups: {}, // Инициализируем пустым JSON
+                    inventory: []  // Инициализируем пустым массивом
                 })
                 .select()
                 .single();
@@ -49,34 +76,30 @@ const handler = async (req, res) => {
             if (createError) throw createError;
             dbUser = newUser;
 
-            // 5. Логика рефералов (только для новых игроков)
+            // Логика рефералов
             if (startParam && String(startParam) !== String(user.id)) {
-                const inviterId = parseInt(startParam);
-                if (!isNaN(inviterId)) {
-                    // Записываем кто кого пригласил
-                    await supabase
-                        .from('referrals')
-                        .insert({ referrer_id: inviterId, referred_id: user.id })
-                        .then(() => {
-                            // Начисляем монеты пригласившему через RPC
-                            return supabase.rpc('increment_coins', { 
-                                user_id_param: inviterId, 
-                                amount: 5 
-                            });
-                        })
-                        .catch(e => console.warn("[AUTH] Referral bonus failed:", e.message));
-                }
+                const inviterId = String(startParam); // Telegram ID часто лучше хранить как String
+                
+                // 1. Записываем связь
+                await supabase.from('referrals').insert({ 
+                    referrer_id: inviterId, 
+                    referred_id: user.id 
+                });
+
+                // 2. Начисляем бонус пригласившему
+                await supabase.rpc('increment_coins', { 
+                    user_id_param: inviterId, 
+                    amount: 50 // Дадим побольше за друга!
+                });
             }
         }
 
-        // Возвращаем данные игрока на фронтенд
         return res.status(200).json({ user: dbUser });
 
     } catch (err) {
-        console.error("[AUTH] Database error:", err.message);
-        return res.status(500).json({ error: 'Database error' });
+        console.error("[AUTH ERROR]:", err.message);
+        return res.status(500).json({ error: err.message });
     }
 };
 
-// Экспортируем, оборачивая в CORS из _utils.js
 export default cors(handler);
