@@ -1,34 +1,29 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover"
-    />
-    <title>Flappy Game Fullscreen</title>
-    
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
     <link rel="stylesheet" href="base.css">
-  </head>
-  <body>
+</head>
+<body>
     <div id="root">
         <canvas id="game-canvas"></canvas>
-        
         <div id="app-interface">
             <div id="scene-home" class="screen">
                 <button id="btn-start" class="primary-btn">ИГРАТЬ</button>
             </div>
-
+            <div id="scene-mode-selection" class="screen hidden">
+                <button id="btn-mode-classic" class="primary-btn">CLASSIC</button>
+                <button id="btn-mode-arcade" class="primary-btn" style="margin-top:20px">ARCADE</button>
+            </div>
             <div id="game-over" class="screen hidden">
-                <h1 style="color: white; font-size: 40px; margin-bottom: 20px;">GAME OVER</h1>
+                <h1 style="color:white">GAME OVER</h1>
                 <button id="btn-exit-gameover" class="primary-btn">В МЕНЮ</button>
             </div>
-            
-            </div>
+        </div>
     </div>
-
     <script type="module" src="main.js"></script>
-  </body>
+</body>
 </html>
