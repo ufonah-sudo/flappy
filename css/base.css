@@ -1,201 +1,59 @@
-/* ==========================================================================
-   base.css - ГЛОБАЛЬНЫЕ СТИЛИ (ПОЛНЫЙ ФИКС FULLSCREEN)
-   ========================================================================== */
-
-/* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ --- */
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent !important;
-    -webkit-touch-callout: none;
-    user-select: none;
-    outline: none;
-}
-
-html {
-    /* Фикс для iOS: заставляет страницу занимать всё доступное пространство под системными панелями */
-    height: -webkit-fill-available;
-}
-
-body {
+/* ПРИНУДИТЕЛЬНЫЙ СБРОС ДЛЯ ВСЕХ УРОВНЕЙ */
+html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100vw !important;
-    /* Использование динамической высоты */
-    height: 100vh; 
-    height: -webkit-fill-available;
-    position: fixed; /* Критично для Telegram: предотвращает "резиновый" скролл */
+    width: 100% !important;
+    height: 100% !important;
+    /* Фикс для iOS, чтобы не было прыжков высоты */
+    min-height: -webkit-fill-available; 
+    position: fixed; 
+    overflow: hidden;
+    background-color: #4ec0ca;
     top: 0;
     left: 0;
-    overflow: hidden;
-    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
-    background-size: cover; 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    touch-action: none;
 }
 
-/* --- 2. КОНТЕЙНЕРЫ (СЛОИ) --- */
-
-/* Контейнер приложения: база для всего UI */
+/* ГЛАВНЫЙ КОНТЕЙНЕР (Проверь, чтобы в HTML всё было внутри него) */
 #app {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
+    height: -webkit-fill-available;
+    margin: 0 !important;
+    padding: 0 !important;
     display: flex;
     flex-direction: column;
     z-index: 20;
-    pointer-events: none; /* Клики пролетают сквозь пустой интерфейс на канвас */
 }
 
-/* Игровой холст */
+/* ИГРОВОЕ ПОЛЕ - ДОЛЖНО БЫТЬ ПРИБИТО К НУЛЮ */
 canvas, #game-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: -webkit-fill-available !important;
     display: block;
     z-index: 10;
-    object-fit: cover; /* Важно: заполняет экран без черных полос */
+    /* Убираем любые автоматические отступы браузера */
+    image-rendering: pixelated; 
+    object-fit: cover;
 }
 
-/* Слой облаков */
-.sky-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    pointer-events: none;
-    overflow: hidden;
-}
-
-/* --- 3. ВЕРХНЯЯ ПАНЕЛЬ (БАЛАНСЫ) --- */
+/* ИСПРАВЛЕНИЕ ХЕДЕРА (Если зазор сверху — виноват он) */
 #header {
     position: fixed;
-    /* Используем env для челок, но убираем лишние пиксели */
-    top: env(safe-area-inset-top, 0px);
-    padding-top: 15px; 
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    z-index: 1000;
-    pointer-events: none;
-}
-
-.header-balances {
-    display: flex;
-    gap: 15px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 8px 20px;
-    border-radius: 30px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    pointer-events: auto; /* Разрешаем клик по балансу */
-}
-
-/* --- 4. КНОПКИ УПРАВЛЕНИЯ (УГЛОВЫЕ) --- */
-.ui-corner-btn {
-    position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 15px);
-    width: 46px;
-    height: 46px;
-    z-index: 2100;
-    cursor: pointer;
-    background: transparent !important;
-    border: none !important;
-    pointer-events: auto;
-}
-
-#top-btn { left: 15px; }
-#daily-btn { right: 15px; }
-#pause-btn { right: 15px; display: none; }
-
-.ui-corner-btn img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-/* --- 5. ЭКРАНЫ (SCREENS) --- */
-.screen {
-    position: absolute;
-    top: 0;
+    /* Если зазор белый, попробуй заменить на top: 0; */
+    top: env(safe-area-inset-top, 0px); 
     left: 0;
     width: 100%;
-    height: 100%;
+    z-index: 1000;
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    padding: 20px;
-    z-index: 100;
-    pointer-events: auto;
-    /* Убираем лишний padding сверху, чтобы контент был по центру */
-}
-
-/* --- 6. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
-.menu-buttons-panel {
-    position: fixed !important;
-    bottom: 0 !important;
-    /* Фикс для полоски iOS Home Indicator */
-    padding-bottom: env(safe-area-inset-bottom, 15px) !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 100% !important;
-    max-width: 500px !important;
-    height: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 20%, transparent) !important;
-    z-index: 3000 !important;
-    pointer-events: auto !important;
-}
-
-#btn-home-panel {
-    width: 85px;
-    height: 85px;
-    transform: translateY(-15px);
-}
-
-/* --- 7. РЕЖИМЫ И КНОПКИ --- */
-.modes-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 40px;
-}
-
-.mode-card {
-    width: 260px;
-    height: 80px;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    cursor: pointer;
-    transition: transform 0.1s;
-}
-
-.mode-card:active { transform: scale(0.95); }
-
-/* --- 8. УТИЛИТЫ --- */
-.hidden { display: none !important; }
-
-/* Облака анимация */
-.cloud {
-    position: absolute;
-    opacity: 0.6;
-    width: 80px;
-    animation: floatClouds 25s linear infinite;
     pointer-events: none;
+    /* Проверь, нет ли тут margin-top */
+    margin-top: 10px !important; 
 }
-
-@keyframes floatClouds {
-    0% { transform: translateX(-100px); }
-    100% { transform: translateX(110vw); }
-}
-
