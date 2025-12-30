@@ -66,12 +66,10 @@ async function saveData() {
 
     // Отправляем на бэкенд (если API поддерживает метод updateUserData)
     try {
-        if (api.updateUserData) {
-            await api.updateUserData({
-                coins: state.coins,
-                inventory: state.inventory,
-                powerups: state.powerups
-            });
+        if (api.syncState) {
+            // Передаем весь объект state на сервер
+            await api.syncState(state);
+            console.log("Данные синхронизированы!");
         }
     } catch (e) {
         console.warn("Ошибка сохранения на сервер:", e);
@@ -221,24 +219,7 @@ async function init() {
     if (resBtn) resBtn.onclick = () => showRoom('game');
     const exitBtn = document.getElementById('btn-exit-home');
     if (exitBtn) exitBtn.onclick = () => showRoom('home');
-
-    // Логика щита (Аркада)
-    const shieldBtn = document.getElementById('btn-use-shield') || document.getElementById('use-shield-btn');
-    if (shieldBtn) {
-        shieldBtn.onclick = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            if (state.currentMode !== 'arcade') return;
-            if (state.powerups.shield > 0) {
-                if (window.arcadeGame.activePowerups && !window.arcadeGame.activePowerups.shield) {
-                    state.powerups.shield--; 
-                    window.arcadeGame.activePowerups.shield = 420;
-                    tg?.HapticFeedback.notificationOccurred('success');
-                    updateGlobalUI();
-                    saveData();
-                }
-            }
-        };
-    }
+   
 
     // Логика возрождения
     const reviveBtn = document.getElementById('btn-revive');
@@ -353,6 +334,35 @@ function updateGlobalUI() {
 
 window.updateGlobalUI = updateGlobalUI;
 
+function updatePowerupsPanel() {
+    const abilities = ['shield', 'gap', 'ghost', 'magnet'];
+    
+    abilities.forEach(id => {
+        // Ищем элементы по data-ability (как в arcade.js) или по id
+        const slots = document.querySelectorAll(`[data-ability="${id}"]`);
+        slots.forEach(slot => {
+            const countSpan = slot.querySelector('.count') || slot.querySelector('.badge');
+            const realCount = state.powerups[id] || 0;
+            
+            if (countSpan) {
+                // ПРАВИЛО: Если больше 3, пишем 3+, но в стейте остается реальное число
+                countSpan.innerText = realCount > 3 ? "3+" : realCount;
+            }
+            
+            // Если 0 — кнопка тусклая
+            slot.style.opacity = realCount > 0 ? "1" : "0.3";
+            
+            // Навешиваем клик (если еще не висит)
+            slot.onclick = (e) => {
+                e.preventDefault();
+                if (state.currentMode === 'arcade') {
+                    activateAbility(id);
+                }
+            };
+        });
+    });
+}
+window.updatePowerupsPanel = updatePowerupsPanel;
 // Окончательный запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

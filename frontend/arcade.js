@@ -46,6 +46,33 @@ export class ArcadeGame {
 
         this.initEvents(); // Запуск прослушивания кликов
         this.resize(); // Начальная подстройка под размер экрана
+        this.activePowerups = {
+            shield: 0,   // таймер или флаг
+            gap: 0,
+            ghost: 0,
+            magnet: 0
+        };
+
+    }
+    activatePowerupEffect(id) {
+        console.log(`🚀 Активирована способность: ${id}`);
+        
+        switch(id) {
+            case 'shield':
+                this.activePowerups.shield = 500; break; // Активен на 500 кадров (~8 сек)
+                break;
+            case 'gap':
+    this.activePowerups.gap = 600; // Используй тот же ключ, что и в spawnPipe
+    break;
+                setTimeout(() => this.tempGapBonus = 0, 10000); 
+                break;
+            case 'ghost':
+                this.activePowerups.ghost = 300; break; // Пролет сквозь стены на 5 сек
+                break;
+            case 'magnet':
+                this.activePowerups.magnet = 600; break; // Притягивание монет на 10 сек
+                break;
+        }
     }
 
     // Регистрация событий касания и клика
@@ -411,6 +438,10 @@ export class ArcadeGame {
     gameOver() {
         if (!this.isRunning) return; // Чтобы не вызывать дважды
         this.isRunning = false; // Останавливаем логику
+        // Скрываем панель способностей при смерти
+    const panel = document.getElementById('arcade-powerups-panel');
+    if (panel) panel.classList.add('hidden');
+
         if (this.onGameOver) this.onGameOver(this.score); // Сообщаем внешнему коду результат
     }
 
