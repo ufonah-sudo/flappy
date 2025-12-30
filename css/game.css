@@ -58,7 +58,7 @@
     position: absolute;
     /* Уменьшаем отступ, если они слишком высоко. 
        85px (высота меню) + 15px (зазор) = 100px. */
-    bottom: calc(95px + env(safe-area-inset-bottom, 15px)); 
+    bottom: calc(1px + env(safe-area-inset-bottom, 15px)); 
     left: 50%;
     transform: translateX(-50%); 
     z-index: 150;
