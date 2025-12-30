@@ -13,21 +13,29 @@
 
 /* В твоем файле base.css замени блок body, html на этот: */
 
-body, html {
+html, body {
     margin: 0 !important;
-    padding: 0 !important; 
-    width: 100%; 
-    height: 100% !important; /* Гарантирует растяжение */
-    position: fixed; /* Гвоздями прибиваем к экрану, чтобы не скроллилось */
-    overflow: hidden; /* Обрезаем всё лишнее */
-    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
-    background-size: cover; 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: white; 
-    touch-action: none; /* Отключаем жесты браузера */
-    -webkit-user-select: none; /* Запрет выделения на iOS */
-    user-select: none;
-    -webkit-text-size-adjust: 100%; /* Запрет авто-увеличения шрифта при повороте */
+    padding: 0 !important;
+    width: 100% !important;
+    /* Убираем жесткие 100%, ставим динамику */
+    height: 100vh !important; 
+    min-height: -webkit-fill-available; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    background-color: #4ec0ca;
+}
+
+#app {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Этот параметр заставит контейнер игнорировать системные отступы */
+    padding-top: 0 !important; 
+    margin-top: 0 !important;
 }
 /* --- 2. СЛОИ (LAYERS) И КАНВАС --- */
 

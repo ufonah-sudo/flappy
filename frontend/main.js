@@ -1,15 +1,14 @@
 /**
  * ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ (main.js)
- * Назначение: Импорты, Глобальный стейт, Навигация, Магазин и Синхронизация данных.
+ * Исправлено: Полное раскрытие на весь экран без зазоров.
  */
 
-// --- 1. ИМПОРТЫ МОДУЛЕЙ ---
-import * as api from './api.js';           // Модуль API (Бэкенд)
-import { Game } from './game.js';           // Движок Классики
-import { ArcadeGame } from './arcade.js';   // Движок Аркады
-import { WalletManager } from './wallet.js'; // TON Кошелек
+// --- 1. ИМПОРТЫ ---
+import * as api from './api.js';
+import { Game } from './game.js';
+import { ArcadeGame } from './arcade.js';
+import { WalletManager } from './wallet.js';
 
-// Импорт инициализаторов комнат
 import { initShop } from './js/rooms/shop.js';
 import { initInventory } from './js/rooms/inventory.js';
 import { initFriends } from './js/rooms/friends.js';
@@ -17,25 +16,24 @@ import { initDaily } from './js/rooms/daily.js';
 import { initLeaderboard } from './js/rooms/leaderboard.js';
 import { initSettings } from './js/rooms/settings.js';
 
-// Инициализация Telegram SDK
 const tg = window.Telegram?.WebApp;
 
 /* ---------------------------------------------------------
    2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ (STATE)
    --------------------------------------------------------- */
 const state = { 
-    user: null,                // Данные профиля
-    coins: 0,                  // Монеты
-    lives: 3,                  // Энергия
-    crystals: 0,               // Кристаллы
-    inventory: [],             // Массив купленных предметов (Скины и т.д.)
-    currentMode: 'classic',    // Режим игры
+    user: null,
+    coins: 0,
+    lives: 3,
+    crystals: 0,
+    inventory: [],
+    currentMode: 'classic',
     settings: { sound: true, music: true },
     powerups: { heart: 0, shield: 0, gap: 0, magnet: 0, ghost: 0 }
 };
 
 /* ---------------------------------------------------------
-   3. КЭШИРОВАНИЕ DOM-ЭЛЕМЕНТОВ (SCENES)
+   3. КЭШИРОВАНИЕ DOM-ЭЛЕМЕНТОВ
    --------------------------------------------------------- */
 const scenes = {
     home: document.getElementById('scene-home'),
@@ -52,49 +50,42 @@ const scenes = {
 };
 
 /* ---------------------------------------------------------
-   4. ФУНКЦИИ СОХРАНЕНИЯ (Синхронизация)
+   4. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (FIX HEIGHT & NAVIGATION)
    --------------------------------------------------------- */
 
-// Сохранение данных в localStorage и отправка на сервер
+// ФУНКЦИЯ ФИКСА ВЫСОТЫ (Убирает зазоры в Telegram)
+function fixViewportHeight() {
+    const vh = window.innerHeight;
+    document.documentElement.style.height = `${vh}px`;
+    document.body.style.height = `${vh}px`;
+    window.scrollTo(0, 0);
+    
+    // Обновляем размеры канваса, если игра создана
+    if (window.game) window.game.resize();
+    if (window.arcadeGame) window.arcadeGame.resize();
+}
+
 async function saveData() {
-    // Сохраняем локально, чтобы данные не пропали при обновлении
     localStorage.setItem('game_state', JSON.stringify({
         coins: state.coins,
         inventory: state.inventory,
         powerups: state.powerups
     }));
-
-    // Отправляем на бэкенд (если API поддерживает метод updateUserData)
     try {
-        if (api.syncState) {
-            // Передаем весь объект state на сервер
-            await api.syncState(state);
-            console.log("Данные синхронизированы!");
-        }
-    } catch (e) {
-        console.warn("Ошибка сохранения на сервер:", e);
-    }
+        if (api.syncState) await api.syncState(state);
+    } catch (e) { console.warn("Sync error:", e); }
 }
-window.saveData = saveData; // Делаем доступным глобально
+window.saveData = saveData;
+
 async function activateAbility(id) {
     const realCount = state.powerups[id] || 0;
-    
-    // Проверяем: режим Аркада, предмет есть, и эффект еще НЕ активен
     if (state.currentMode === 'arcade' && realCount > 0) {
-        // Проверяем через window.arcadeGame, не запущен ли уже этот эффект
         if (window.arcadeGame && window.arcadeGame.activePowerups && window.arcadeGame.activePowerups[id] <= 0) {
-            
-            // 1. Списываем 1 штуку
             state.powerups[id]--;
-            
-            // 2. Запускаем эффект в движке аркады
             window.arcadeGame.activatePowerupEffect(id);
-            
-            // 3. Обновляем всё
             updatePowerupsPanel();
             updateGlobalUI();
             saveData();
-            
             tg?.HapticFeedback.notificationOccurred('success');
         }
     } else if (realCount === 0) {
@@ -102,53 +93,38 @@ async function activateAbility(id) {
     }
 }
 window.activateAbility = activateAbility;
-/* ---------------------------------------------------------
-   5. НАВИГАЦИЯ (showRoom)
-   --------------------------------------------------------- */
+
 function showRoom(roomName) {
     console.log(`[Navigation] Переход в: ${roomName}`);
     
-    // Скрываем все сцены через добавление класса .hidden
     Object.values(scenes).forEach(scene => { if (scene) scene.classList.add('hidden'); });
-    
-    // Показываем целевую сцену
     const target = scenes[roomName];
-    if (!target) return console.error(`Ошибка: Сцена "${roomName}" не найдена!`);
-    target.classList.remove('hidden');
+    if (target) target.classList.remove('hidden');
 
-    // Настройка Хедера (Баланс виден везде, кроме самой игры и оверлеев)
     const header = document.getElementById('header');
     if (header) {
         const isGameUI = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
         header.style.display = isGameUI ? 'none' : 'flex';
     }
 
-    // Кнопка Паузы (только внутри геймплея)
     const pauseBtn = document.getElementById('btn-pause-trigger');
     if (pauseBtn) pauseBtn.classList.toggle('hidden', roomName !== 'game');
 
-    // Нижняя навигационная панель (Скрываем в игре и экранах выбора)
     const bottomPanel = document.querySelector('.menu-buttons-panel');
     if (bottomPanel) {
         const hideBottom = ['game', 'gameOver', 'modeSelection', 'pauseMenu'].includes(roomName);
         bottomPanel.style.setProperty('display', hideBottom ? 'none' : 'flex', 'important');
     }
 
-    // Логика запуска игровых движков
-    // Логика запуска игровых движков
     if (roomName === 'game') {
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
 
         const isClassic = state.currentMode === 'classic';
-        const arcadeUI = document.querySelector('.ingame-ui-left') || document.getElementById('ingame-inventory');
-        
+        const arcadeUI = document.getElementById('ingame-inventory');
         if (arcadeUI) {
             arcadeUI.style.display = isClassic ? 'none' : 'flex';
-            // ОБНОВЛЯЕМ ПАНЕЛЬ ПЕРЕД СТАРТОМ
-            if (!isClassic) {
-                updatePowerupsPanel(); 
-            }
+            if (!isClassic) updatePowerupsPanel();
         }
 
         const engine = isClassic ? window.game : window.arcadeGame;
@@ -158,7 +134,6 @@ function showRoom(roomName) {
         }
     }
 
-    // Инициализация контента комнат
     setTimeout(() => {
         try {
             switch(roomName) {
@@ -170,38 +145,39 @@ function showRoom(roomName) {
                 case 'settings': initSettings(); break;
             }
             updateGlobalUI(); 
-        } catch (e) { console.error(`Ошибка комнаты ${roomName}:`, e); }
+        } catch (e) { console.error(`Room error ${roomName}:`, e); }
     }, 10);
 }
 window.showRoom = showRoom;
 
 /* ---------------------------------------------------------
-   6. ИНИЦИАЛИЗАЦИЯ (init) - Запуск всего приложения
+   5. ИНИЦИАЛИЗАЦИЯ (INIT)
    --------------------------------------------------------- */
 async function init() {
-    if (tg) { tg.ready(); tg.expand(); 
-// Устанавливаем цвета, чтобы игра была монолитной
-        tg.setHeaderColor('#4ec0ca'); 
+    // 1. Настройка Telegram WebApp
+    if (tg) {
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#4ec0ca');
         tg.setBackgroundColor('#4ec0ca');
-
     }
 
+    // 2. Исправление зазоров (несколько раз для надежности)
+    fixViewportHeight();
+    [100, 300, 600, 1000].forEach(delay => setTimeout(fixViewportHeight, delay));
+    window.addEventListener('resize', fixViewportHeight);
+
+    // 3. Создание игровых движков
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
         window.game = new Game(canvas, (s, r) => handleGameOver(s, r));
         window.arcadeGame = new ArcadeGame(canvas, (s, r) => handleGameOver(s, r));
-
-        // --- ДОБАВЬ ЭТОТ БЛОК ---
-        // Ждем, пока Telegram закончит анимацию расширения, и обновляем размер
-        setTimeout(() => {
-            window.game?.resize();
-            window.arcadeGame?.resize();
-        }, 350);
     }
 
+    // 4. Кошелек
     try { window.wallet = new WalletManager(); } catch (e) { console.warn("Wallet skip"); }
 
-    // --- ОБРАБОТЧИК ПОКУПКИ (Исправляет buy_item) ---
+    // 5. Покупки
     window.addEventListener('buy_item', async (e) => {
         const { id, price, type, powerupType } = e.detail;
         if (state.coins >= price) {
@@ -213,18 +189,18 @@ async function init() {
             }
             tg?.HapticFeedback.notificationOccurred('success');
             updateGlobalUI();
-            await saveData(); // Сохраняем после покупки
+            await saveData();
         } else {
             tg?.HapticFeedback.notificationOccurred('error');
             alert("Not enough coins!");
         }
     });
 
-    // Универсальный хелпер для привязки кнопок к комнатам
+    // 6. Биндинг кнопок
     const bind = (id, room) => {
         const el = document.getElementById(id);
         if (el) el.onclick = (e) => {
-            e.preventDefault(); e.stopPropagation();
+            e.preventDefault();
             tg?.HapticFeedback.impactOccurred('light');
             showRoom(room);
         };
@@ -257,13 +233,11 @@ async function init() {
         };
     }
 
-    const resBtn = document.getElementById('btn-resume');
-    if (resBtn) resBtn.onclick = () => showRoom('game');
-    const exitBtn = document.getElementById('btn-exit-home');
-    if (exitBtn) exitBtn.onclick = () => showRoom('home');
-   
+    document.getElementById('btn-resume')?.addEventListener('click', () => showRoom('game'));
+    document.getElementById('btn-exit-home')?.addEventListener('click', () => showRoom('home'));
+    document.getElementById('btn-restart')?.addEventListener('click', () => showRoom('game'));
+    document.getElementById('btn-exit-gameover')?.addEventListener('click', () => showRoom('home'));
 
-    // Логика возрождения
     const reviveBtn = document.getElementById('btn-revive');
     if (reviveBtn) {
         reviveBtn.onclick = (e) => {
@@ -279,12 +253,7 @@ async function init() {
         };
     }
 
-    const restartBtn = document.getElementById('btn-restart');
-    if (restartBtn) restartBtn.onclick = () => showRoom('game');
-    const exitGO = document.getElementById('btn-exit-gameover');
-    if (exitGO) exitGO.onclick = () => showRoom('home');
-
-    // Загрузка данных игрока
+    // 7. Загрузка данных
     try {
         const auth = await api.authPlayer(tg?.initDataUnsafe?.start_param || "");
         if (auth?.user) {
@@ -293,41 +262,17 @@ async function init() {
             state.lives = auth.user.lives ?? state.lives;
             state.crystals = auth.user.crystals ?? state.crystals;
             state.inventory = auth.user.inventory ?? [];
-
-            if (!state.user.daily_challenges) {
-                state.user.daily_challenges = [
-                    { id: 1, text: "Fly through 10 pipes", target: 10, progress: 0, done: false },
-                    { id: 2, text: "Collect 50 coins", target: 50, progress: 0, done: false },
-                    { id: 3, text: "Use 1 ability", target: 1, progress: 0, done: false }
-                ];
-            }
-
-            if (auth.user.powerups) {
-                state.powerups = { ...state.powerups, ...auth.user.powerups };
-            }
+            if (auth.user.powerups) state.powerups = { ...state.powerups, ...auth.user.powerups };
         }
-    } catch (e) { 
-        console.error("Ошибка загрузки:", e);
-        state.user = { daily_challenges: [
-            { id: 1, target: 10, progress: 0, done: false },
-            { id: 2, target: 50, progress: 0, done: false },
-            { id: 3, target: 1, progress: 0, done: false }
-        ]};
-    }
+    } catch (e) { console.error("Load error:", e); }
 
     window.state = state;
     updateGlobalUI();
     showRoom('home'); 
-
-    window.addEventListener('resize', () => {
-        console.log("Изменение размера экрана...");
-        if (window.game && state.currentMode === 'classic') window.game.resize();
-        if (window.arcadeGame && state.currentMode === 'arcade') window.arcadeGame.resize();
-    });
 }
 
 /* ---------------------------------------------------------
-   7. ОБРАБОТКА СМЕРТИ (GAME OVER)
+   6. ИГРОВАЯ ЛОГИКА И UI
    --------------------------------------------------------- */
 function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
@@ -340,58 +285,34 @@ function handleGameOver(score, reviveUsed) {
         btnRev.classList.toggle('hidden', !canRev);
         btnRev.innerHTML = `USE HEART ❤️ <br><small>(${state.powerups.heart} LEFT)</small>`;
     }
-    
-    saveData(); // Сохраняем собранные монеты
+    saveData();
     api.saveScore(score).catch(e => console.log("Score not saved:", e));
 }
 
-/* ---------------------------------------------------------
-   8. СИНХРОНИЗАЦИЯ ИНТЕРФЕЙСА (UI)
-   --------------------------------------------------------- */
 function updateGlobalUI() {
     if (!state) return;
+    document.getElementById('header-coins').innerText = Number(state.coins).toLocaleString();
+    document.getElementById('header-crystals').innerText = state.crystals;
+    document.querySelectorAll('.stat-lives, #header-lives').forEach(el => el.innerText = state.lives);
 
-    // Обновляем монеты и кристаллы в хедере
-    const cEl = document.getElementById('header-coins');
-    if (cEl) cEl.innerText = Number(state.coins).toLocaleString();
-    
-    const crEl = document.getElementById('header-crystals');
-    if (crEl) crEl.innerText = state.crystals;
-
-    // Обновляем жизни (сердечки)
-    document.querySelectorAll('.stat-lives, #header-lives').forEach(el => {
-        el.innerText = state.lives;
-    });
-
-    // Обновляем ВСЕ бейджи способностей (те, что в магазине и инвентаре)
     Object.keys(state.powerups).forEach(key => {
         const val = state.powerups[key];
-        document.querySelectorAll(`[data-powerup="${key}"]`).forEach(el => {
-            el.innerText = val > 3 ? "3+" : val;
-        });
+        document.querySelectorAll(`[data-powerup="${key}"]`).forEach(el => el.innerText = val > 3 ? "3+" : val);
     });
 
-    // Если мы в игре, обновляем игровую панель способностей
-    if (scenes.game && !scenes.game.classList.contains('hidden')) {
-        updatePowerupsPanel();
-    }
+    if (scenes.game && !scenes.game.classList.contains('hidden')) updatePowerupsPanel();
 }
 window.updateGlobalUI = updateGlobalUI;
+
 function updatePowerupsPanel() {
-    const abilities = ['shield', 'gap', 'ghost', 'magnet'];
-    
-    abilities.forEach(id => {
+    ['shield', 'gap', 'ghost', 'magnet'].forEach(id => {
         const slots = document.querySelectorAll(`[data-ability="${id}"]`);
         const realCount = state.powerups[id] || 0;
 
         slots.forEach(slot => {
             const countSpan = slot.querySelector('.count') || slot.querySelector('.badge');
+            if (countSpan) countSpan.innerText = realCount > 3 ? "3+" : realCount;
             
-            if (countSpan) {
-                countSpan.innerText = realCount > 3 ? "3+" : realCount;
-            }
-            
-            // Если 0 — кнопка тусклая и не нажимается
             if (realCount <= 0) {
                 slot.style.opacity = "0.3";
                 slot.style.filter = "grayscale(1)";
@@ -401,18 +322,16 @@ function updatePowerupsPanel() {
                 slot.style.filter = "grayscale(0)";
                 slot.style.pointerEvents = "auto";
             }
-            
-            // Навешиваем клик
             slot.onclick = (e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 activateAbility(id);
             };
         });
     });
 }
 window.updatePowerupsPanel = updatePowerupsPanel;
-// Окончательный запуск
+
+// Запуск
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
