@@ -1,59 +1,69 @@
-/* ПРИНУДИТЕЛЬНЫЙ СБРОС ДЛЯ ВСЕХ УРОВНЕЙ */
+/* ОБНУЛЕНИЕ */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
 html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    /* Фикс для iOS, чтобы не было прыжков высоты */
-    min-height: -webkit-fill-available; 
-    position: fixed; 
+    width: 100vw !important;
+    height: 100vh !important;
+    height: -webkit-fill-available; /* Важно для iOS */
+    position: fixed; /* Блокирует скролл */
     overflow: hidden;
     background-color: #4ec0ca;
-    top: 0;
-    left: 0;
+    inset: 0;
 }
 
-/* ГЛАВНЫЙ КОНТЕЙНЕР (Проверь, чтобы в HTML всё было внутри него) */
 #app {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    height: -webkit-fill-available;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: flex;
-    flex-direction: column;
-    z-index: 20;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    z-index: 10;
 }
 
-/* ИГРОВОЕ ПОЛЕ - ДОЛЖНО БЫТЬ ПРИБИТО К НУЛЮ */
-canvas, #game-canvas {
+/* КАНВАС НА ВЕСЬ ЭКРАН */
+canvas {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: -webkit-fill-available !important;
+    width: 100% !important;
+    height: 100% !important;
     display: block;
-    z-index: 10;
-    /* Убираем любые автоматические отступы браузера */
-    image-rendering: pixelated; 
+    z-index: 5;
     object-fit: cover;
 }
 
-/* ИСПРАВЛЕНИЕ ХЕДЕРА (Если зазор сверху — виноват он) */
-#header {
-    position: fixed;
-    /* Если зазор белый, попробуй заменить на top: 0; */
-    top: env(safe-area-inset-top, 0px); 
-    left: 0;
-    width: 100%;
-    z-index: 1000;
+.screen {
+    position: absolute;
+    inset: 0;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+.hidden { display: none !important; }
+
+.primary-btn {
+    padding: 15px 40px;
+    font-size: 20px;
+    background: #f7d51d;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.sky-container {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     pointer-events: none;
-    /* Проверь, нет ли тут margin-top */
-    margin-top: 10px !important; 
 }
