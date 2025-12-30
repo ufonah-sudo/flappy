@@ -79,7 +79,7 @@ export class Game {
         // Скорость труб тоже ограничиваем
         this.pipeSpeed = isDesktop ? 4 : w * 0.007;  
         
-        this.pipeSpawnThreshold = Math.max(90, Math.floor(110 * (w / 375)));
+        this.pipeSpawnThreshold = Math.max(120, Math.floor(110 * (w / 375)));
     }
 
     start() {
@@ -139,7 +139,7 @@ export class Game {
   spawnPipe() {
         // ПУНКТ 6: ФИКС ПРОЕМОВ ДЛЯ ПК
         // На телефоне - процент от высоты, на ПК - фиксированный размер (180px)
-        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.22; 
+        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.16; 
         
         const minH = 100;
         const maxH = window.innerHeight - gap - minH;
