@@ -7,7 +7,16 @@ export class Game {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.onGameOver = onGameOver; 
-        
+
+        this.ground = {
+    img: new Image(),
+    offsetX: 0,
+    h: 100, // Высота земли в игре (можешь менять)
+    realWidth: 512, // Ширина твоего файла
+    realHeight: 162 // Высота твоего файла
+};
+this.ground.img.src = '/frontend/assets/ground.png';
+
         // --- СОСТОЯНИЕ ОБЪЕКТОВ ---
         this.bird = { 
             x: 50, 
@@ -139,7 +148,7 @@ export class Game {
   spawnPipe() {
         // ПУНКТ 6: ФИКС ПРОЕМОВ ДЛЯ ПК
         // На телефоне - процент от высоты, на ПК - фиксированный размер (180px)
-        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.17; 
+        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.15; 
         
         const minH = 100;
         const maxH = window.innerHeight - gap - minH;
@@ -168,6 +177,18 @@ export class Game {
             this.tickCount = 0;
             this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
         }
+        // Прокрутка земли
+this.ground.offsetX -= this.pipeSpeed;
+if (this.ground.offsetX <= -this.ground.realWidth) {
+    this.ground.offsetX = 0;
+}
+
+// Коллизия с землей (смерть при касании)
+const groundTop = window.innerHeight - this.ground.h;
+if (this.bird.y + this.bird.size > groundTop) {
+    this.bird.y = groundTop - this.bird.size; // Фиксируем на поверхности
+    this.gameOver();
+}
 
         this.pipeSpawnTimer = (this.pipeSpawnTimer || 0) + 1;
         if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
@@ -198,9 +219,6 @@ export class Game {
             if (p.x < -p.width) this.pipes.splice(i, 1);
         }
 
-        if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < -100) {
-            this.gameOver();
-        }
     }
 
     draw() {
@@ -222,6 +240,8 @@ export class Game {
             this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false, pipeColor, capColor);
         });
 
+        this.drawGround(); // Затем земля (перекрывает основания труб)
+
         // Отрисовка птицы
         this.ctx.save();
         this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
@@ -233,6 +253,25 @@ export class Game {
         }
         this.ctx.restore();
     }
+
+    drawGround() {
+    const ctx = this.ctx;
+    const g = this.ground;
+    const y = window.innerHeight - g.h;
+
+    if (g.img.complete) {
+        // Рисуем столько сегментов, сколько нужно, чтобы закрыть экран + 1 запасной
+        for (let i = 0; i <= Math.ceil(this.canvas.width / g.realWidth) + 1; i++) {
+            ctx.drawImage(
+                g.img, 
+                i * g.realWidth + g.offsetX, 
+                y, 
+                g.realWidth, 
+                g.h
+            );
+        }
+    }
+}
 
     drawPipeRect(x, y, w, h, isTop, pipeColor, capColor) {
         // 1. Рисуем тело трубы
