@@ -1,44 +1,20 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Flappy Game</title>
+    <meta charset="utf-8" />
+    <title>Your Game</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <link rel="stylesheet" href="base.css">
 </head>
 <body>
-    <div id="app">
-        <div class="sky-container">
-            <div class="cloud cloud1">☁️</div>
-            <div class="cloud cloud2">☁️</div>
-            <div class="cloud cloud3">☁️</div>
-        </div>
-
+    <div id="root">
         <canvas id="game-canvas"></canvas>
-
-        <div id="header" class="hidden">
-            <div class="header-balances">
-                <div class="balance-item"><span id="header-coins">0</span> 🪙</div>
+        
+        <div id="app-interface">
             </div>
-        </div>
-
-        <div id="scene-home" class="screen">
-            <button id="btn-start" class="primary-btn">ИГРАТЬ</button>
-        </div>
-
-        <div id="scene-mode-selection" class="screen hidden">
-             <div class="modes-container">
-                <div id="btn-mode-classic" class="mode-card">CLASSIC</div>
-                <div id="btn-mode-arcade" class="mode-card">ARCADE</div>
-             </div>
-        </div>
-
-        <div id="game-container" class="screen hidden"></div>
-        <div id="game-over" class="screen hidden">
-            <h1>GAME OVER</h1>
-            <button id="btn-exit-gameover" class="primary-btn">В МЕНЮ</button>
-        </div>
     </div>
 
     <script type="module" src="main.js"></script>
