@@ -2,38 +2,32 @@
 <html lang="ru">
 <head>
     <meta charset="utf-8" />
-    <title>GiftMa Style Fullscreen</title>
-    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Full Screen Fix</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <style>
-        /* Ядерный сброс стилей прямо в HTML */
+        /* УБИРАЕМ ВСЕ ЗАЗОРЫ НА УРОВНЕ БРАУЗЕРА */
         html, body {
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            height: -webkit-fill-available;
+            height: -webkit-fill-available !important;
             overflow: hidden !important;
-            background-color: #4ec0ca;
-            position: fixed;
-            inset: 0;
+            position: fixed !important;
+            inset: 0 !important;
+            background-color: #4ec0ca !important; /* Цвет неба */
         }
 
         #root {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100vw;
-            height: 100vh;
-            height: -webkit-fill-available;
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: -webkit-fill-available !important;
+            background-color: #4ec0ca;
             display: flex;
             flex-direction: column;
-            margin: 0;
-            padding: 0;
         }
 
         canvas {
@@ -42,37 +36,81 @@
             left: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            display: block;
-            z-index: 5;
+            display: block !important;
             object-fit: cover;
         }
 
-        /* Чтобы твой интерфейс не толкал канвас вниз */
-        #app-interface {
+        .ui {
             position: absolute;
             inset: 0;
-            pointer-events: none; /* Клик проходит сквозь пустой интерфейс на игру */
             z-index: 10;
-        }
-        
-        #app-interface * {
-            pointer-events: auto; /* А кнопки внутри снова кликабельны */
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: sans-serif;
         }
 
-        .hidden { display: none !important; }
+        button {
+            pointer-events: auto;
+            padding: 20px 40px;
+            font-size: 20px;
+            background: #f7d51d;
+            border: none;
+            border-radius: 15px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div id="root">
         <canvas id="game-canvas"></canvas>
-        
-        <div id="app-interface">
-            <div id="scene-home">
-                <button id="btn-start" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); padding: 20px;">START</button>
-            </div>
+        <div class="ui">
+            <h1 id="status">ПРОВЕРКА ЭКРАНА</h1>
+            <button onclick="tg.expand()">РАЗВЕРНУТЬ (EXPAND)</button>
+            <p style="margin-top: 20px;">Если видишь это по центру и фон везде голубой — всё ок!</p>
         </div>
     </div>
 
-    <script type="module" src="main.js"></script>
+    <script>
+        const tg = window.Telegram.WebApp;
+        
+        function setup() {
+            tg.ready();
+            tg.expand();
+            // Красим полоски Telegram
+            tg.setHeaderColor('#4ec0ca');
+            tg.setBackgroundColor('#4ec0ca');
+
+            const canvas = document.getElementById('game-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                draw();
+            }
+
+            function draw() {
+                // Рисуем рамку внутри канваса, чтобы видеть его края
+                ctx.fillStyle = "#4ec0ca";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Рисуем красную линию по самому краю
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 10;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+                
+                document.getElementById('status').innerText = `ОКНО: ${window.innerWidth}x${window.innerHeight}`;
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+        }
+
+        setup();
+    </script>
 </body>
 </html>
