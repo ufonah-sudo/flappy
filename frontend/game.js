@@ -139,7 +139,7 @@ export class Game {
   spawnPipe() {
         // ПУНКТ 6: ФИКС ПРОЕМОВ ДЛЯ ПК
         // На телефоне - процент от высоты, на ПК - фиксированный размер (180px)
-        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.06; 
+        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.17; 
         
         const minH = 100;
         const maxH = window.innerHeight - gap - minH;

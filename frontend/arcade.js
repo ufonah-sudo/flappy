@@ -134,8 +134,8 @@ export class ArcadeGame {
 
     // Создание новой трубы и пачки монет
     spawnPipe() {
-        const gapBase = window.innerHeight * 0.22; // Обычный проем
-        const gapLarge = window.innerHeight * 0.38; // Расширенный проем (бонус Gap)
+        const gapBase = window.innerHeight * 0.18; // Обычный проем
+        const gapLarge = window.innerHeight * 0.30; // Расширенный проем (бонус Gap)
         const currentGap = this.activePowerups.gap > 0 ? gapLarge : gapBase; // Выбор текущего проема
 
         const minH = 80; // Минимальная высота верхней трубы
