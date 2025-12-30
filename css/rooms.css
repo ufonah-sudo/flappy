@@ -4,7 +4,7 @@
 
 /* Базовый экран комнаты */
 .screen {
-    position: absolute;
+   position: absolute;
     top: 0; 
     left: 0; 
     width: 100%; 
@@ -14,9 +14,9 @@
     align-items: center;
     z-index: 50; 
     text-align: center;
-    /* Учитываем header и footer safe areas */
-    padding: calc(env(safe-area-inset-top, 20px) + 60px) 20px 140px 20px; 
-    overflow-y: auto; 
+    /* Убираем +60px, оставляем только безопасную зону */
+    padding: env(safe-area-inset-top, 20px) 20px 120px 20px; 
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     
     opacity: 0; 

@@ -8,12 +8,10 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: -webkit-fill-available; /* Важно для iOS */
+    height: 100%; /* Добавь это жестко */
+    height: -webkit-fill-available; 
     background: transparent !important; 
-    display: flex;
-    justify-content: center; 
-    overflow: hidden;
-    z-index: 5; /* Ниже основного UI, но выше фона */
+    z-index: 5;
 }
 
 #game-canvas { 
