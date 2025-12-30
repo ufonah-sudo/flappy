@@ -63,25 +63,23 @@ this.ground.img.src = '/frontend/assets/ground.png';
 
     }
     activatePowerupEffect(id) {
-        console.log(`🚀 Активирована способность: ${id}`);
-        
-        switch(id) {
-            case 'shield':
-                this.activePowerups.shield = 500; break; // Активен на 500 кадров (~8 сек)
-                break;
-            case 'gap':
-    this.activePowerups.gap = 600; // Используй тот же ключ, что и в spawnPipe
-    break;
-                setTimeout(() => this.tempGapBonus = 0, 10000); 
-                break;
-            case 'ghost':
-                this.activePowerups.ghost = 300; break; // Пролет сквозь стены на 5 сек
-                break;
-            case 'magnet':
-                this.activePowerups.magnet = 600; break; // Притягивание монет на 10 сек
-                break;
-        }
+    console.log(`🚀 Активирована способность: ${id}`);
+    
+    switch(id) {
+        case 'shield':
+            this.activePowerups.shield = 500; 
+            break; // ОБЯЗАТЕЛЬНО
+        case 'gap':
+            this.activePowerups.gap = 600; 
+            break; // ОБЯЗАТЕЛЬНО (удалил лишний setTimeout и старые переменные)
+        case 'ghost':
+            this.activePowerups.ghost = 300; 
+            break;
+        case 'magnet':
+            this.activePowerups.magnet = 600; 
+            break;
     }
+}
 
     // Регистрация событий касания и клика
     initEvents() {
@@ -142,17 +140,25 @@ this.ground.img.src = '/frontend/assets/ground.png';
 
     // Создание новой трубы и пачки монет
     spawnPipe() {
-        const gapBase = window.innerHeight * 0.18; // Обычный проем
-        const gapLarge = window.innerHeight * 0.30; // Расширенный проем (бонус Gap)
-        const currentGap = this.activePowerups.gap > 0 ? gapLarge : gapBase; // Выбор текущего проема
+    const gapBase = window.innerHeight * 0.18;
+    const gapLarge = window.innerHeight * 0.30;
+    const currentGap = this.activePowerups.gap > 0 ? gapLarge : gapBase;
 
-        const minH = 80; // Минимальная высота верхней трубы
-        const maxH = window.innerHeight - currentGap - 300; // Максимальная высота верхней трубы
-        const h = Math.floor(Math.random() * (maxH - minH)) + minH; // Рандомная точка проема
+    const bottomLimit = window.innerHeight / 3;
+    const minH = 80; 
+    
+    // Рассчитываем maxH один раз с защитой
+    let maxH = window.innerHeight - currentGap - bottomLimit;
+    if (maxH <= minH) maxH = minH + 20;
 
-        // Создаем объект трубы
-        const p = { x: window.innerWidth, width: 70, top: h, bottom: h + currentGap, passed: false };
-        this.pipes.push(p); // Добавляем в массив
+    // Рассчитываем h один раз
+    const h = Math.floor(Math.random() * (maxH - minH)) + minH;
+
+    // Создаем объект трубы
+    const p = { x: window.innerWidth, width: 70, top: h, bottom: h + currentGap, passed: false };
+    this.pipes.push(p);
+
+    // ... спавн монет (оставляем как есть) ...
 
         // СПАВН 10 МОНЕТ В РЯД (Твой запрос)
         const coinsCount = 5; 
@@ -207,24 +213,28 @@ if (this.bird.y + this.bird.size > groundTop) {
         }
 
         // СПАВН СЛУЧАЙНЫХ МОНЕТ В НЕБЕ (Твой запрос)
-        if (this.tickCount % 500 === 0) { // Каждые 100 кадров
-            for (let i = 0; i < 5; i++) { // Генерируем 5 штук
-                this.coins.push({
-                    x: window.innerWidth + 50 + (i * 30), // В ряд
-                    y: Math.random() * (window.innerHeight - 100) + 50, // В любом месте по высоте
-                    collected: false,
-                    angle: 0
-                });
-            }
-        }
+       // СПАВН СЛУЧАЙНЫХ МОНЕТ В НЕБЕ
+// СПАВН СЛУЧАЙНЫХ МОНЕТ В НЕБЕ
+if (this.tickCount % 600 === 0) {
+    const minSpawnY = window.innerHeight / 5; // Верхняя граница (1/5 экрана)
+    const groundTop = window.innerHeight - this.ground.h; // Начало земли
+    const maxSpawnY = groundTop - 50; // Нижняя граница (чуть выше земли)
 
+    for (let i = 0; i < 5; i++) {
+        this.coins.push({
+            x: window.innerWidth + 50 + (i * 30),
+            // Генерируем Y строго между 1/5 экрана и землей
+            y: Math.random() * (maxSpawnY - minSpawnY) + minSpawnY,
+            collected: false,
+            angle: 0
+        });
+    }
+}
         this.updateElements(); // Двигаем трубы, монеты и т.д.
         this.checkCollisions(); // Проверяем удары и сбор предметов
 
         // Проверка: не вылетела ли птица за границы экрана
-        if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < -50) {
-            this.gameOver(); // Если упал или улетел в космос — смерть
-        }
+    
     }
 
     // Движение всех объектов влево
@@ -418,7 +428,7 @@ if (this.bird.y + this.bird.size > groundTop) {
         });
 
         // Отрисовка бонусов
-        this.ctx.font = "24px Arial";
+        this.ctx.font = "35px Arial";
         this.items.forEach(it => {
             const icons = { shield: '🛡️', magnet: '🧲', ghost: '👻', gap: '↔️' }; // Сопоставление иконок
             this.ctx.fillText(icons[it.type] || '🎁', it.x - 12, it.y + 10);
