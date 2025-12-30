@@ -3,23 +3,28 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Game</title>
+    <title>FINAL FULLSCREEN TEST</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="base.css">
     <style>
-        /* Ядерный сброс всех отступов прямо в HTML */
-        html, body {
+        /* 1. ЖЕСТКИЙ СБРОС СТИЛЕЙ */
+        * {
             margin: 0 !important;
             padding: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        /* 2. БАЗОВЫЕ СЛОИ (РАСТЯГИВАЕМ НА ВЕСЬ ЭКРАН) */
+        html, body {
             width: 100% !important;
             height: 100% !important;
-            height: -webkit-fill-available !important;
+            height: -webkit-fill-available !important; /* Важно для iOS */
             overflow: hidden !important;
             position: fixed !important;
             inset: 0 !important;
-            background-color: #4ec0ca !important;
-            touch-action: none; /* Запрещает скролл пальцем */
+            background-color: #4ec0ca !important; /* Цвет неба */
         }
+
+        /* 3. КОНТЕЙНЕР ROOT */
         #root {
             position: absolute !important;
             top: 0 !important;
@@ -28,18 +33,126 @@
             height: 100vh !important;
             height: -webkit-fill-available !important;
             display: block !important;
+            background-color: #4ec0ca;
         }
+
+        /* 4. КАНВАС */
+        canvas {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+        }
+
+        /* 5. ИНТЕРФЕЙС */
+        #ui {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+            color: white;
+        }
+
+        button {
+            pointer-events: auto;
+            padding: 15px 30px;
+            background: #f7d51d;
+            border: 3px solid black;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <div id="root">
         <canvas id="game-canvas"></canvas>
-        <div id="app-interface">
-            <div id="scene-home" class="screen">
-                <button id="btn-start" class="primary-btn">ИГРАТЬ</button>
+        <div id="ui">
+            <div id="menu">
+                <h1 style="margin-bottom: 20px; text-shadow: 2px 2px black;">FLAPPY TEST</h1>
+                <button id="start-btn">ИГРАТЬ</button>
             </div>
         </div>
     </div>
-    <script type="module" src="main.js"></script>
+
+    <script>
+        // ВСЯ ЛОГИКА ТУТ
+        const tg = window.Telegram.WebApp;
+
+        function init() {
+            tg.ready();
+            tg.expand(); // Разворачиваем на весь экран
+            tg.setHeaderColor('#4ec0ca');
+            tg.setBackgroundColor('#4ec0ca');
+
+            const canvas = document.getElementById('game-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width, height;
+            let isRunning = false;
+            let birdY = 0;
+            let velocity = 0;
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                birdY = height / 2;
+                
+                // Прокрутка наверх для фикса iOS
+                window.scrollTo(0, 0);
+            }
+
+            function draw() {
+                // Рисуем небо на ВЕСЬ канвас
+                ctx.fillStyle = "#4ec0ca";
+                ctx.fillRect(0, 0, width, height);
+
+                // Рисуем птицу (просто желтый квадрат)
+                ctx.fillStyle = "#f7d51d";
+                ctx.fillRect(width * 0.2, birdY, 30, 30);
+
+                // Рисуем красную рамку по самому краю для проверки фуллскрина
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 5;
+                ctx.strokeRect(0, 0, width, height);
+
+                if (isRunning) {
+                    velocity += 0.5;
+                    birdY += velocity;
+                    if (birdY > height) birdY = height - 30;
+                }
+
+                requestAnimationFrame(draw);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            draw();
+
+            document.getElementById('start-btn').onclick = () => {
+                document.getElementById('menu').classList.add('hidden');
+                isRunning = true;
+                velocity = -10;
+                tg.HapticFeedback.impactOccurred('medium');
+            };
+
+            // Хак: повторный ресайз через секунду
+            setTimeout(resize, 500);
+        }
+
+        init();
+    </script>
 </body>
 </html>
