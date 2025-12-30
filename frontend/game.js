@@ -206,14 +206,23 @@ export class Game {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // Цвета как в Аркаде
+        const pipeColor = '#07e358ff';    // Темный хаки
+        const capColor = '#05ba41ff';     // Оливковый для шапок
+        const strokeColor = '#0d3018ff';  // Темный контур
+
         this.pipes.forEach(p => {
-            this.ctx.fillStyle = '#73bf2e';
-            this.ctx.strokeStyle = '#2d4c12';
-            this.ctx.lineWidth = 3;
-            this.drawPipeRect(p.x, 0, p.width, p.top, true);
-            this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false);
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = strokeColor;
+
+            // Рисуем верхнюю трубу
+            this.drawPipeRect(p.x, 0, p.width, p.top, true, pipeColor, capColor);
+            
+            // Рисуем нижнюю трубу
+            this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false, pipeColor, capColor);
         });
 
+        // Отрисовка птицы
         this.ctx.save();
         this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
         this.ctx.rotate(this.bird.rotation);
@@ -225,19 +234,35 @@ export class Game {
         this.ctx.restore();
     }
 
-    drawPipeRect(x, y, w, h, isTop) {
+    drawPipeRect(x, y, w, h, isTop, pipeColor, capColor) {
+        // 1. Рисуем тело трубы
+        this.ctx.fillStyle = pipeColor;
         this.ctx.fillRect(x, y, w, h);
+        
+        // Добавляем блик слева для объема
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        this.ctx.fillRect(x + 8, y, 10, h);
+        
+        // Контур тела
         this.ctx.strokeRect(x, y, w, h);
-        const capH = 30;
-        const capW = 10;
-        this.ctx.fillStyle = '#73bf2e';
-        if (isTop) {
-            this.ctx.fillRect(x - capW/2, y + h - capH, w + capW, capH);
-            this.ctx.strokeRect(x - capW/2, y + h - capH, w + capW, capH);
-        } else {
-            this.ctx.fillRect(x - capW/2, y, w + capW, capH);
-            this.ctx.strokeRect(x - capW/2, y, w + capW, capH);
-        }
+
+        // 2. Параметры шапки
+        const capH = 25; // Высота шапки
+        const capW = 10; // На сколько шапка шире тела трубы
+        
+        // Определяем Y координату для шапки
+        const capY = isTop ? (y + h - capH) : y;
+
+        // Рисуем шапку
+        this.ctx.fillStyle = capColor;
+        this.ctx.fillRect(x - capW/2, capY, w + capW, capH);
+        
+        // Блик на шапке
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        this.ctx.fillRect(x - capW/2 + 8, capY, 10, capH);
+        
+        // Контур шапки
+        this.ctx.strokeRect(x - capW/2, capY, w + capW, capH);
     }
 
     gameOver() {
