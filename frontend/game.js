@@ -1,188 +1,264 @@
 /**
- * ИГРОВОЙ ДВИЖОК (game.js)
- * Полностью адаптивный под любой размер экрана.
+ * game.js - КЛАССИЧЕСКИЙ РЕЖИМ (СУХОЙ КОД)
  */
-
 export class Game {
     constructor(canvas, onGameOver) {
+        // --- ИНИЦИАЛИЗАЦИЯ ХОЛСТА ---
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.onGameOver = onGameOver;
-
-        // Настройки птицы (в процентах от экрана для адаптивности)
-        this.bird = {
-            x: 50,
-            y: 0,
-            width: 34,
-            height: 24,
-            gravity: 0.6,
-            velocity: 0,
-            jump: -8
-        };
-
+        this.onGameOver = onGameOver; 
+        
+        // --- СОСТОЯНИЕ ОБЪЕКТОВ ---
+        this.bird = { 
+            x: 50, 
+            y: 0, 
+            size: 34, 
+            velocity: 0, 
+            rotation: 0 
+        }; 
         this.pipes = [];
         this.score = 0;
-        this.isRunning = false;
-        this.reviveUsed = false;
-        this.frameCount = 0;
-
-        // Инициализация размеров
-        this.resize();
         
-        // Слушатель кликов
-        window.addEventListener('mousedown', () => this.flap());
-        window.addEventListener('touchstart', (e) => {
-            if (this.isRunning) {
-                e.preventDefault();
-                this.flap();
-            }
-        }, { passive: false });
+        // --- ФЛАГИ СОСТОЯНИЯ ---
+        this.isRunning = false;
+        this.isPaused = false;
+        this.reviveUsed = false;
+
+        // --- ЗАГРУЗКА СПРАЙТОВ ПТИЦЫ ---
+        this.birdSprites = [];
+        const sources = ['bird1.png', 'bird2.png', 'bird3.png'];
+        sources.forEach(src => {
+            const img = new Image();
+            img.src = `/frontend/assets/${src}`; 
+            this.birdSprites.push(img);
+        });
+
+        this.frameIndex = 0;
+        this.tickCount = 0;
+        this.ticksPerFrame = 6; 
+
+        // --- ПРИВЯЗКА КОНТЕКСТА ---
+        this.loop = this.loop.bind(this);
+        this.handleInput = this.handleInput.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleResize = this.resize.bind(this);
+
+        this.initEvents();
+        this.resize();
     }
 
-    /**
-     * ГЛАВНЫЙ МЕТОД: Подгонка под размер окна
-     */
-    resize() {
-        // Устанавливаем внутреннее разрешение канваса равным физическому размеру окна
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+    initEvents() {
+        this.canvas.addEventListener('mousedown', this.handleInput);
+        this.canvas.addEventListener('touchstart', this.handleInput, { passive: false });
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('resize', this.handleResize);
+    }
 
-        // Корректируем позицию птицы при изменении экрана
-        this.bird.x = this.canvas.width * 0.25;
-        if (!this.isRunning) {
-            this.bird.y = this.canvas.height / 2;
-        }
+   resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
 
-        console.log(`Canvas resized: ${this.canvas.width}x${this.canvas.height}`);
+        this.canvas.width = w * dpr;
+        this.canvas.height = h * dpr;
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); 
+        this.canvas.style.width = w + 'px';
+        this.canvas.style.height = h + 'px';
+
+        // ПУНКТ 6: АДАПТАЦИЯ ПОД ПК
+        // Если экран высокий (ПК), не даем параметрам расти бесконечно
+        const isDesktop = h > 800;
+
+        this.bird.x = w / 4; 
+        if (!this.isRunning) this.bird.y = h / 2;
+        
+        // Ограничиваем гравитацию на больших экранах, иначе падает камнем
+        this.gravity = isDesktop ? 0.45 : h * 0.0006;   
+        this.jump = isDesktop ? -7 : -h * 0.010;      
+        
+        // Скорость труб тоже ограничиваем
+        this.pipeSpeed = isDesktop ? 4 : w * 0.007;  
+        
+        this.pipeSpawnThreshold = Math.max(90, Math.floor(110 * (w / 375)));
     }
 
     start() {
-        this.reset();
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+        
+        this.score = 0;
+        this.pipes = [];
+        this.bird.y = window.innerHeight / 2;
+        this.bird.velocity = 0;
+        this.bird.rotation = 0;
+        this.pipeSpawnTimer = 0;
+        this.reviveUsed = false;
+
+        this.updateScoreUI();
         this.isRunning = true;
         this.loop();
     }
 
-    reset() {
-        this.bird.y = this.canvas.height / 2;
-        this.bird.velocity = 0;
-        this.pipes = [];
-        this.score = 0;
-        this.reviveUsed = false;
-        this.frameCount = 0;
+    revive() {
+        this.reviveUsed = true;
+        this.isRunning = true;
+        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 200);
+        if (this.bird.y > window.innerHeight || this.bird.y < 0) {
+            this.bird.y = window.innerHeight / 2;
+        }
+        this.bird.velocity = this.jump * 0.8; 
+        this.bird.rotation = 0;
+        this.loop();
+    }
+
+    updateScoreUI() {
+        const scoreEl = document.getElementById('score-overlay');
+        if (scoreEl) scoreEl.innerText = this.score;
     }
 
     flap() {
-        if (!this.isRunning) return;
-        this.bird.velocity = this.bird.jump;
-        // Звук или вибрация может быть здесь
+        if (!this.isRunning || this.isPaused) return;
+        this.bird.velocity = this.jump;
+        
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
     }
 
-    createPipe() {
-        const gap = 160; // Проход между трубами
-        const minPipeHeight = 50;
-        const maxPipeHeight = this.canvas.height - gap - minPipeHeight;
-        const topHeight = Math.floor(Math.random() * (maxPipeHeight - minPipeHeight + 1)) + minPipeHeight;
+    handleInput(e) {
+        if (this.isRunning && e.type === 'touchstart') e.preventDefault();
+        this.flap();
+    }
+
+    handleKeyDown(e) {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            this.flap();
+        }
+    }
+
+  spawnPipe() {
+        // ПУНКТ 6: ФИКС ПРОЕМОВ ДЛЯ ПК
+        // На телефоне - процент от высоты, на ПК - фиксированный размер (180px)
+        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.22; 
+        
+        const minH = 100;
+        const maxH = window.innerHeight - gap - minH;
+        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
 
         this.pipes.push({
-            x: this.canvas.width,
-            top: topHeight,
-            bottom: this.canvas.height - topHeight - gap,
-            width: 52,
+            x: window.innerWidth,
+            width: 75, 
+            top: h,
+            bottom: h + gap,
             passed: false
         });
     }
 
     update() {
-        if (!this.isRunning) return;
+        if (!this.isRunning || this.isPaused) return;
 
-        this.frameCount++;
-        
-        // Птица
-        this.bird.velocity += this.bird.gravity;
+        this.bird.velocity += this.gravity;
         this.bird.y += this.bird.velocity;
 
-        // Генерация труб (каждые 90 кадров)
-        if (this.frameCount % 90 === 0) {
-            this.createPipe();
+        const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.15)));
+        this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
+
+        this.tickCount++;
+        if (this.tickCount > this.ticksPerFrame) {
+            this.tickCount = 0;
+            this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
         }
 
-        // Логика труб
+        this.pipeSpawnTimer = (this.pipeSpawnTimer || 0) + 1;
+        if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
+            this.spawnPipe();
+            this.pipeSpawnTimer = 0;
+        }
+
         for (let i = this.pipes.length - 1; i >= 0; i--) {
-            let p = this.pipes[i];
-            p.x -= 3; // Скорость движения
+            const p = this.pipes[i];
+            p.x -= this.pipeSpeed;
 
-            // Удаление труб за экраном
-            if (p.x + p.width < 0) {
-                this.pipes.splice(i, 1);
-                continue;
-            }
+            // КОЛЛИЗИЯ БЕЗ ПОБЛАЖЕК
+            const pad = 10;
+            const hitX = this.bird.x + this.bird.size - pad > p.x && this.bird.x + pad < p.x + p.width;
+            const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
 
-            // Коллизии (столкновения)
-            if (
-                this.bird.x + this.bird.width > p.x &&
-                this.bird.x < p.x + p.width &&
-                (this.bird.y < p.top || this.bird.y + this.bird.height > this.canvas.height - p.bottom)
-            ) {
+            if (hitX && hitY) {
                 this.gameOver();
+                return;
             }
 
-            // Начисление очков
             if (!p.passed && p.x + p.width < this.bird.x) {
                 p.passed = true;
                 this.score++;
+                this.updateScoreUI();
             }
+
+            if (p.x < -p.width) this.pipes.splice(i, 1);
         }
 
-        // Падение на землю или вылет в космос
-        if (this.bird.y + this.bird.height > this.canvas.height || this.bird.y < 0) {
+        if (this.bird.y + this.bird.size > window.innerHeight || this.bird.y < -100) {
             this.gameOver();
         }
     }
 
     draw() {
-        // Очистка экрана (прозрачно, так как фон в CSS)
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Рисуем птицу
-        this.ctx.fillStyle = "#f7d51d";
-        this.ctx.fillRect(this.bird.x, this.bird.y, this.bird.width, this.bird.height);
-
-        // Рисуем трубы
-        this.ctx.fillStyle = "#2ecc71";
         this.pipes.forEach(p => {
-            // Верхняя труба
-            this.ctx.fillRect(p.x, 0, p.width, p.top);
-            // Нижняя труба
-            this.ctx.fillRect(p.x, this.canvas.height - p.bottom, p.width, p.bottom);
+            this.ctx.fillStyle = '#73bf2e';
+            this.ctx.strokeStyle = '#2d4c12';
+            this.ctx.lineWidth = 3;
+            this.drawPipeRect(p.x, 0, p.width, p.top, true);
+            this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false);
         });
 
-        // Рисуем счет (внутри канваса для надежности)
-        if (this.isRunning) {
-            this.ctx.fillStyle = "white";
-            this.ctx.font = "bold 32px Arial";
-            this.ctx.textAlign = "center";
-            this.ctx.fillText(this.score, this.canvas.width / 2, 80);
+        this.ctx.save();
+        this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
+        this.ctx.rotate(this.bird.rotation);
+
+        const img = this.birdSprites[this.frameIndex];
+        if (img && img.complete) {
+            this.ctx.drawImage(img, -this.bird.size / 2, -this.bird.size / 2, this.bird.size, this.bird.size);
         }
+        this.ctx.restore();
+    }
+
+    drawPipeRect(x, y, w, h, isTop) {
+        this.ctx.fillRect(x, y, w, h);
+        this.ctx.strokeRect(x, y, w, h);
+        const capH = 30;
+        const capW = 10;
+        this.ctx.fillStyle = '#73bf2e';
+        if (isTop) {
+            this.ctx.fillRect(x - capW/2, y + h - capH, w + capW, capH);
+            this.ctx.strokeRect(x - capW/2, y + h - capH, w + capW, capH);
+        } else {
+            this.ctx.fillRect(x - capW/2, y, w + capW, capH);
+            this.ctx.strokeRect(x - capW/2, y, w + capW, capH);
+        }
+    }
+
+    gameOver() {
+        if (!this.isRunning) return;
+        this.isRunning = false;
+        if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
     }
 
     loop() {
         if (!this.isRunning) return;
         this.update();
         this.draw();
-        requestAnimationFrame(() => this.loop());
+        this.animationId = requestAnimationFrame(this.loop);
     }
 
-    gameOver() {
+    destroy() {
         this.isRunning = false;
-        if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
-    }
-
-    revive() {
-        this.bird.y = this.canvas.height / 2;
-        this.bird.velocity = 0;
-        this.pipes = []; // Очищаем трубы вокруг птицы
-        this.reviveUsed = true;
-        this.isRunning = true;
-        this.loop();
+        cancelAnimationFrame(this.animationId);
+        window.removeEventListener('resize', this.handleResize);
+        window.removeEventListener('keydown', this.handleKeyDown);
+        this.canvas.removeEventListener('mousedown', this.handleInput);
+        this.canvas.removeEventListener('touchstart', this.handleInput);
     }
 }

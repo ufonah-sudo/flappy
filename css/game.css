@@ -8,16 +8,18 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%; /* Добавь это жестко */
-    height: -webkit-fill-available; 
+    height: 100%;
     background: transparent !important; 
-    z-index: 5;
+    display: flex;
+    justify-content: center; 
+    overflow: hidden;
+    z-index: 5; /* Ниже основного UI, но выше фона */
 }
 
 #game-canvas { 
     display: block; 
-    width: 100%; 
-    height: 100%; 
+    width: 100vw; 
+    height: 100vh; 
     object-fit: cover;
     touch-action: none; /* Критично для мобилок: отключает системный скролл при игре */
 }
