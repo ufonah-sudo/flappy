@@ -11,24 +11,24 @@
     outline: none; /* Убираем обводку браузера при фокусе */
 }
 
-body, html {
-    margin: 0; /* Убираем все внешние отступы страницы */
-    padding: 0; /* Убираем все внутренние отступы страницы */
-    width: 100%; /* Устанавливаем ширину на весь экран */
-    height: 100vh; /* Устанавливаем высоту на весь экран устройства */
-    height: -webkit-fill-available; /* Фикс высоты для мобильных браузеров (Safari) */
-    overflow: hidden; /* Скрываем полосы прокрутки, чтобы не было скролла */
-    position: fixed; /* Жестко фиксируем страницу, предотвращая "резинку" */
-    top: 0; /* Прижимаем контент к верхней границе */
-    left: 0; /* Прижимаем контент к левой границе */
-    /* Основной фон (самый нижний слой 0) */
-    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center; /* Цвет фона и картинка по центру */
-    background-size: cover; /* Растягиваем картинку фона на весь экран без искажений */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* Системные шрифты для быстрой отрисовки */
-    color: white; /* Белый цвет текста по умолчанию для всего приложения */
-    touch-action: none; /* Отключаем стандартные жесты браузера (зум, свайп назад) */
-}
+/* В твоем файле base.css замени блок body, html на этот: */
 
+body, html {
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    height: 100%; /* Гарантирует растяжение */
+    position: fixed; /* Гвоздями прибиваем к экрану, чтобы не скроллилось */
+    overflow: hidden; /* Обрезаем всё лишнее */
+    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center;
+    background-size: cover; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: white; 
+    touch-action: none; /* Отключаем жесты браузера */
+    -webkit-user-select: none; /* Запрет выделения на iOS */
+    user-select: none;
+    -webkit-text-size-adjust: 100%; /* Запрет авто-увеличения шрифта при повороте */
+}
 /* --- 2. СЛОИ (LAYERS) И КАНВАС --- */
 
 /* Контейнер для облаков (Слой 1 - ФОН) */
