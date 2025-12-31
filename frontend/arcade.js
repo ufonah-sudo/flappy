@@ -31,7 +31,7 @@ this.ground.img.src = '/frontend/assets/ground.png';
         // Глобальные настройки шансов и длительности
         this.config = {
             itemChance: 0.3, // Шанс появления предмета (не используется напрямую здесь)
-            magnetRadius: 180, // Радиус, в котором монеты летят к птице
+            magnetRadius: 200, // Радиус, в котором монеты летят к птице
             powerupDuration: 420, // Длительность бонуса (ок. 7 секунд при 60 FPS)
         };
 
@@ -253,8 +253,8 @@ if (this.tickCount % 600 === 0) {
             if (this.activePowerups.magnet > 0) {
                 const dist = Math.hypot(this.bird.x - c.x, this.bird.y - c.y); // Расстояние до птицы
                 if (dist < this.config.magnetRadius) { // Если в радиусе действия
-                    c.x += (this.bird.x - c.x) * 0.45; // Тянем по X (ускоренно)
-                    c.y += (this.bird.y - c.y) * 0.45; // Тянем по Y (ускоренно)
+                    c.x += (this.bird.x - c.x) * 0.2; // Тянем по X (ускоренно)
+                    c.y += (this.bird.y - c.y) * 0.2; // Тянем по Y (ускоренно)
                 }
             }
         });
