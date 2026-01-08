@@ -2,11 +2,31 @@ import * as api from '../../api.js';
 
 export function initSettings() {
     const container = document.querySelector('#scene-settings #settings-content');
-    const walletContainerId = 'settings-ton-wallet'; // Этот ID уже есть в index.html (внутри .vision-window)
+    const walletContainerId = 'settings-ton-wallet'; // ID, который мы только что добавили в HTML
+
+    // 1. ЛОГИКА КОШЕЛЬКА (Самое важное)
+    // Проверяем, загрузилась ли библиотека и существует ли контейнер
+    if (window.wallet && window.wallet.tonConnectUI) {
+        const walletDiv = document.getElementById(walletContainerId);
+        
+        if (walletDiv) {
+            console.log("Отрисовка кнопки кошелька в Настройках...");
+            // Очищаем контейнер от мусора
+            walletDiv.innerHTML = ''; 
+            // Говорим библиотеке: "Рисуй кнопку здесь!"
+            try {
+                window.wallet.tonConnectUI.setConnectButtonRoot(walletContainerId);
+            } catch (e) {
+                console.warn("Ошибка отрисовки кнопки:", e);
+            }
+        } else {
+            console.error("Не найден контейнер #settings-ton-wallet в HTML!");
+        }
+    }
 
     if (!container) return;
 
-    // 1. Отрисовка кнопок (Звук, Музыка, Инфо)
+    // 2. ОТРИСОВКА ОСТАЛЬНЫХ НАСТРОЕК
     const settings = {
         sound: localStorage.getItem('sound') !== 'off',
         music: localStorage.getItem('music') !== 'off'
@@ -34,27 +54,10 @@ export function initSettings() {
             <button id="btn-support" class="secondary-btn">🆘 ПОДДЕРЖКА</button>
         </div>
         
-        <div class="version-info" style="margin-top: 30px; font-size: 10px; opacity: 0.5; color: #fff;">Версия 1.0.3</div>
+        <div class="version-info" style="margin-top: 30px; font-size: 10px; opacity: 0.5; color: #fff; text-align: center;">Версия 1.0.4</div>
     `;
 
-    // 2. Логика Кошелька (перепривязка кнопки)
-    // Мы делаем это ПОСЛЕ рендера, чтобы не мешать отрисовке кнопок
-    if (window.wallet && window.wallet.tonConnectUI) {
-        // Проверяем, существует ли контейнер кошелька в DOM
-        const walletDiv = document.getElementById(walletContainerId);
-        if (walletDiv) {
-            // Очищаем его на всякий случай
-            walletDiv.innerHTML = ''; 
-            // Говорим TON Connect UI рисовать кнопку именно сюда
-            try {
-                window.wallet.tonConnectUI.setConnectButtonRoot(walletContainerId);
-            } catch (e) {
-                console.warn("TON Wallet UI error:", e);
-            }
-        }
-    }
-
-    // 3. Логика переключателей
+    // 3. Обработчики кнопок
     const soundBtn = document.getElementById('toggle-sound');
     if (soundBtn) {
         soundBtn.onclick = () => {
@@ -63,11 +66,6 @@ export function initSettings() {
             const statusEl = soundBtn.querySelector('.status');
             statusEl.innerText = settings.sound ? 'ВКЛ' : 'ВЫКЛ';
             statusEl.style.color = settings.sound ? '#4ec0ca' : '#ff4f4f';
-            
-            // Если есть глобальный метод управления музыкой
-            if (window.game && typeof window.game.updateAudio === 'function') {
-                window.game.updateAudio();
-            }
         };
     }
 
@@ -82,18 +80,15 @@ export function initSettings() {
         };
     }
     
-    // 4. Логика кнопок ссылок
+    // Ссылки
     const openLink = (url) => {
-        if (window.Telegram?.WebApp) {
+        if (window.Telegram?.WebApp?.openTelegramLink) {
             window.Telegram.WebApp.openTelegramLink(url);
         } else {
             window.open(url, '_blank');
         }
     };
 
-    const btnChannel = document.getElementById('btn-channel');
-    if (btnChannel) btnChannel.onclick = () => openLink('https://t.me/ТВОЙ_КАНАЛ'); // Замени ссылку
-
-    const btnSupport = document.getElementById('btn-support');
-    if (btnSupport) btnSupport.onclick = () => openLink('https://t.me/ТВОЙ_САППОРТ'); // Замени ссылку
+    document.getElementById('btn-channel').onclick = () => openLink('https://t.me/ТВОЙ_КАНАЛ');
+    document.getElementById('btn-support').onclick = () => openLink('https://t.me/ТВОЙ_КОНТАКТ');
 }
