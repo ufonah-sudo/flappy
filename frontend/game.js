@@ -2,51 +2,47 @@
  * game.js - КЛАССИЧЕСКИЙ РЕЖИМ (СУХОЙ КОД)
  */
 export class Game {
+
     constructor(canvas, onGameOver) {
-        // --- ИНИЦИАЛИЗАЦИЯ ХОЛСТА ---
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.onGameOver = onGameOver; 
-
+        this.onGameOver = onGameOver;
+        
         this.ground = {
-    img: new Image(),
-    offsetX: 0,
-    h: 100, // Высота земли в игре (можешь менять)
-    realWidth: 512, // Ширина твоего файла
-    realHeight: 162 // Высота твоего файла
-};
-this.ground.img.src = '/frontend/assets/ground.png';
+            img: new Image(),
+            offsetX: 0,
+            h: 100, 
+            realWidth: 512,
+            realHeight: 162
+        };
+        this.ground.img.src = '/frontend/assets/ground.png';
 
-        // --- СОСТОЯНИЕ ОБЪЕКТОВ ---
         this.bird = { 
             x: 50, 
             y: 0, 
-            size: 34, 
+            size: 42, // Увеличили размер птицы (было 34)
             velocity: 0, 
             rotation: 0 
         }; 
+        
         this.pipes = [];
         this.score = 0;
-        
-        // --- ФЛАГИ СОСТОЯНИЯ ---
         this.isRunning = false;
         this.isPaused = false;
         this.reviveUsed = false;
+        this.isGhost = false; // Флаг неуязвимости
 
-        // --- ЗАГРУЗКА СПРАЙТОВ ПТИЦЫ ---
         this.birdSprites = [];
-        const sources = ['bird1.png', 'bird2.png', 'bird3.png'];
-        sources.forEach(src => {
+        ['bird1.png', 'bird2.png', 'bird3.png'].forEach(src => {
             const img = new Image();
-            img.src = `/frontend/assets/${src}`; 
+            img.src = `/frontend/assets/${src}`;
             this.birdSprites.push(img);
         });
-
+        
         this.frameIndex = 0;
         this.tickCount = 0;
         this.ticksPerFrame = 6; 
 
-        // --- ПРИВЯЗКА КОНТЕКСТА ---
         this.loop = this.loop.bind(this);
         this.handleInput = this.handleInput.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -63,37 +59,28 @@ this.ground.img.src = '/frontend/assets/ground.png';
         window.addEventListener('resize', this.handleResize);
     }
 
-   resize() {
+    resize() {
         const dpr = window.devicePixelRatio || 1;
         const w = window.innerWidth;
         const h = window.innerHeight;
-
         this.canvas.width = w * dpr;
         this.canvas.height = h * dpr;
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); 
         this.canvas.style.width = w + 'px';
         this.canvas.style.height = h + 'px';
 
-        // ПУНКТ 6: АДАПТАЦИЯ ПОД ПК
-        // Если экран высокий (ПК), не даем параметрам расти бесконечно
         const isDesktop = h > 800;
-
         this.bird.x = w / 4; 
         if (!this.isRunning) this.bird.y = h / 2;
         
-        // Ограничиваем гравитацию на больших экранах, иначе падает камнем
         this.gravity = isDesktop ? 0.45 : h * 0.0006;   
-        this.jump = isDesktop ? -7 : -h * 0.010;      
-        
-        // Скорость труб тоже ограничиваем
+        this.jump = isDesktop ? -7 : -h * 0.010;       
         this.pipeSpeed = isDesktop ? 4 : w * 0.007;  
-        
         this.pipeSpawnThreshold = Math.max(10, Math.floor(110 * (w / 375)));
     }
 
     start() {
         if (this.animationId) cancelAnimationFrame(this.animationId);
-        
         this.score = 0;
         this.pipes = [];
         this.bird.y = window.innerHeight / 2;
@@ -101,21 +88,29 @@ this.ground.img.src = '/frontend/assets/ground.png';
         this.bird.rotation = 0;
         this.pipeSpawnTimer = 0;
         this.reviveUsed = false;
-
+        this.isGhost = false;
         this.updateScoreUI();
         this.isRunning = true;
         this.loop();
     }
 
+    /**
+     * Возрождение без сброса прогресса
+     */
     revive() {
-        this.reviveUsed = true;
         this.isRunning = true;
-        this.pipes = this.pipes.filter(p => p.x > this.bird.x + 200);
-        if (this.bird.y > window.innerHeight || this.bird.y < 0) {
-            this.bird.y = window.innerHeight / 2;
-        }
-        this.bird.velocity = this.jump * 0.8; 
-        this.bird.rotation = 0;
+        this.reviveUsed = true;
+        
+        // Подбрасываем птицу
+        this.bird.velocity = -4; 
+        
+        // Удаляем ближайшие трубы (чтобы не врезаться сразу)
+        this.pipes = this.pipes.filter(p => p.x < this.bird.x - 100 || p.x > this.bird.x + 300);
+        
+        // Включаем режим призрака (неуязвимость) на 2 сек
+        this.isGhost = true;
+        setTimeout(() => { this.isGhost = false; }, 2000);
+        
         this.loop();
     }
 
@@ -127,7 +122,6 @@ this.ground.img.src = '/frontend/assets/ground.png';
     flap() {
         if (!this.isRunning || this.isPaused) return;
         this.bird.velocity = this.jump;
-        
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
@@ -145,73 +139,70 @@ this.ground.img.src = '/frontend/assets/ground.png';
         }
     }
 
-spawnPipe() {
-    // 1. Настраиваем размер проема (Gap)
-    let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.15; 
-    
-    // 2. Вводим лимит "потолка" (1/5 экрана сверху)
-    const minAllowedY = window.innerHeight / 5; 
-    const minH = minAllowedY; // Верхняя труба не может быть короче этого значения
-    
-    // 3. Рассчитываем максимально возможную высоту верхней трубы
-    // Оставляем 100px запаса снизу до земли
-    const bottomLimit = 100;
-    const maxH = window.innerHeight - gap - bottomLimit;
+    spawnPipe() {
+        let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.15; 
+        const minAllowedY = window.innerHeight / 5; 
+        const minH = minAllowedY; 
+        const bottomLimit = 100;
+        const maxH = window.innerHeight - gap - bottomLimit;
+        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
+        
+        this.pipes.push({
+            x: window.innerWidth,
+            width: 75, 
+            top: h,
+            bottom: h + gap,
+            passed: false
+        });
+    }
 
-    // 4. Генерируем случайную высоту в безопасном диапазоне
-    const h = Math.floor(Math.random() * (maxH - minH)) + minH;
-
-    this.pipes.push({
-        x: window.innerWidth,
-        width: 75, 
-        top: h,
-        bottom: h + gap,
-        passed: false
-    });
-}
     update() {
         if (!this.isRunning || this.isPaused) return;
-
+        
         this.bird.velocity += this.gravity;
         this.bird.y += this.bird.velocity;
-
+        
         const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.2)));
         this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
-
+        
         this.tickCount++;
         if (this.tickCount > this.ticksPerFrame) {
             this.tickCount = 0;
             this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
         }
-        // Прокрутка земли
-this.ground.offsetX -= this.pipeSpeed;
-if (this.ground.offsetX <= -this.ground.realWidth) {
-    this.ground.offsetX = 0;
-}
 
-// Коллизия с землей (смерть при касании)
-const groundTop = window.innerHeight - this.ground.h;
-if (this.bird.y + this.bird.size > groundTop) {
-    this.bird.y = groundTop - this.bird.size; // Фиксируем на поверхности
-    this.gameOver();
-}
+        // Земля
+        this.ground.offsetX -= this.pipeSpeed;
+        if (this.ground.offsetX <= -this.ground.realWidth) this.ground.offsetX = 0;
 
+        // Смерть об пол
+        const groundTop = window.innerHeight - this.ground.h;
+        if (this.bird.y + this.bird.size > groundTop) {
+            this.bird.y = groundTop - this.bird.size;
+            this.gameOver();
+            return;
+        }
+
+        // Спавн труб
         this.pipeSpawnTimer = (this.pipeSpawnTimer || 0) + 1;
         if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
             this.spawnPipe();
             this.pipeSpawnTimer = 0;
         }
 
+        // Движение и коллизии
         for (let i = this.pipes.length - 1; i >= 0; i--) {
             const p = this.pipes[i];
             p.x -= this.pipeSpeed;
 
-            // КОЛЛИЗИЯ БЕЗ ПОБЛАЖЕК
             const pad = 10;
             const hitX = this.bird.x + this.bird.size - pad > p.x && this.bird.x + pad < p.x + p.width;
             const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
 
             if (hitX && hitY) {
+                // Если призрак (после ревайва), то не умираем
+                if (this.isGhost) continue;
+                
                 this.gameOver();
                 return;
             }
@@ -224,89 +215,72 @@ if (this.bird.y + this.bird.size > groundTop) {
 
             if (p.x < -p.width) this.pipes.splice(i, 1);
         }
-
     }
 
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Цвета как в Аркаде
-        const pipeColor = '#07e358ff';    // Темный хаки
-        const capColor = '#05ba41ff';     // Оливковый для шапок
-        const strokeColor = '#0d3018ff';  // Темный контур
+        
+        const pipeColor = '#07e358ff'; 
+        const capColor = '#05ba41ff'; 
+        const strokeColor = '#0d3018ff';
 
         this.pipes.forEach(p => {
             this.ctx.lineWidth = 2;
             this.ctx.strokeStyle = strokeColor;
-
-            // Рисуем верхнюю трубу
             this.drawPipeRect(p.x, 0, p.width, p.top, true, pipeColor, capColor);
-            
-            // Рисуем нижнюю трубу
             this.drawPipeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom, false, pipeColor, capColor);
         });
 
-        this.drawGround(); // Затем земля (перекрывает основания труб)
+        this.drawGround();
 
         // Отрисовка птицы
         this.ctx.save();
+        
+        // Если призрак — делаем полупрозрачной
+        if (this.isGhost) {
+            this.ctx.globalAlpha = 0.5;
+        }
+        
         this.ctx.translate(this.bird.x + this.bird.size / 2, this.bird.y + this.bird.size / 2);
         this.ctx.rotate(this.bird.rotation);
-
         const img = this.birdSprites[this.frameIndex];
         if (img && img.complete) {
             this.ctx.drawImage(img, -this.bird.size / 2, -this.bird.size / 2, this.bird.size, this.bird.size);
         }
-        this.ctx.restore();
+        
+        this.ctx.restore(); // Сбрасываем прозрачность и поворот
     }
 
     drawGround() {
-    const ctx = this.ctx;
-    const g = this.ground;
-    const y = window.innerHeight - g.h;
-
-    if (g.img.complete) {
-        // Рисуем столько сегментов, сколько нужно, чтобы закрыть экран + 1 запасной
-        for (let i = 0; i <= Math.ceil(this.canvas.width / g.realWidth) + 1; i++) {
-            ctx.drawImage(
-                g.img, 
-                i * g.realWidth + g.offsetX, 
-                y, 
-                g.realWidth, 
-                g.h
-            );
+        const ctx = this.ctx;
+        const g = this.ground;
+        const y = window.innerHeight - g.h;
+        if (g.img.complete) {
+            for (let i = 0; i <= Math.ceil(this.canvas.width / g.realWidth) + 1; i++) {
+                ctx.drawImage(g.img, i * g.realWidth + g.offsetX, y, g.realWidth, g.h);
+            }
         }
     }
-}
 
     drawPipeRect(x, y, w, h, isTop, pipeColor, capColor) {
-        // 1. Рисуем тело трубы
         this.ctx.fillStyle = pipeColor;
         this.ctx.fillRect(x, y, w, h);
         
-        // Добавляем блик слева для объема
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
         this.ctx.fillRect(x + 8, y, 10, h);
         
-        // Контур тела
         this.ctx.strokeRect(x, y, w, h);
-
-        // 2. Параметры шапки
-        const capH = 25; // Высота шапки
-        const capW = 10; // На сколько шапка шире тела трубы
         
-        // Определяем Y координату для шапки
+        const capH = 25; 
+        const capW = 10; 
         const capY = isTop ? (y + h - capH) : y;
-
-        // Рисуем шапку
+        
         this.ctx.fillStyle = capColor;
         this.ctx.fillRect(x - capW/2, capY, w + capW, capH);
         
-        // Блик на шапке
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         this.ctx.fillRect(x - capW/2 + 8, capY, 10, capH);
         
-        // Контур шапки
         this.ctx.strokeRect(x - capW/2, capY, w + capW, capH);
     }
 
