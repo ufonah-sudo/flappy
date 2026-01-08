@@ -20,7 +20,9 @@ export class WalletManager {
             const TonConnectUI = window.TON_CONNECT_UI.TonConnectUI;
             
             this.tonConnectUI = new TonConnectUI({
-                manifestUrl: 'https://flappy-ton-bird.vercel.app/tonconnect-manifest.json', 
+                // АВТОМАТИЧЕСКАЯ ССЫЛКА НА МАНИФЕСТ (Идеально для Vercel)
+                manifestUrl: window.location.origin + '/tonconnect-manifest.json', 
+                
                 // Не указываем buttonRootId сразу, мы будем назначать его вручную в настройках
                 uiOptions: {
                     twaReturnUrl: 'https://t.me/FlappyTonBird_bot/app'

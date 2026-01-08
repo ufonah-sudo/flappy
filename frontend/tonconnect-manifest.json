@@ -1,7 +1,7 @@
 {
-  "url": "https://flappy2-ashen.vercel.app",
+  "url": "https://flappy-inky.vercel.app",
   "name": "Flappy TON Bird",
-  "iconUrl": "https://ton.org/download/ton_symbol.png",
-  "termsOfUseUrl": "https://flappy2-ashen.vercel.app/terms.html",
-  "privacyPolicyUrl": "https://flappy2-ashen.vercel.app/privacy.html"
+  "iconUrl": "https://flappy-inky.vercel.app/assets/icon.png",
+  "termsOfUseUrl": "https://flappy-inky.vercel.app/terms.html",
+  "privacyPolicyUrl": "https://flappy-inky.vercel.app/privacy.html"
 }
