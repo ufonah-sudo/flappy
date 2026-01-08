@@ -142,9 +142,15 @@ function showRoom(roomName) {
     }
 
 
-    // Управление кнопкой Паузы (видна ТОЛЬКО в игре)
+        // Кнопка Паузы
     const pauseBtn = document.getElementById('pause-btn');
-    if (pauseBtn) pauseBtn.classList.toggle('hidden', roomName !== 'game');
+    if (pauseBtn) {
+        if (roomName === 'game') {
+            pauseBtn.style.display = 'block';
+        } else {
+            pauseBtn.style.display = 'none';
+        }
+    }
 
     // Управление Нижней Панелью Меню (Скрыта в игре и некоторых экранах)
     const bottomPanel = document.querySelector('.menu-buttons-panel');

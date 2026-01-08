@@ -94,3 +94,19 @@
 body:has(#scene-home:not(.hidden)) .menu-buttons-panel {
     display: none !important;
 }
+
+/* Заголовок выбора режима */
+.menu-title {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+    
+    /* Жирная черная обводка */
+    text-shadow: 
+        3px 3px 0 #000, 
+        -3px -3px 0 #000, 
+        3px -3px 0 #000, 
+        -3px 3px 0 #000;
+}

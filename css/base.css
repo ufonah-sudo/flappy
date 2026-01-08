@@ -125,17 +125,28 @@ canvas {
 }
 
 /* Кнопка ПАУЗЫ (Справа вверху в игре) */
+/* Кнопка ПАУЗЫ (Справа вверху в игре) */
 #pause-btn {
-    position: absolute; /* Абсолютное позиционирование */
-    top: 20px; /* Отступ сверху */
-    right: 20px; /* Отступ справа (на месте дейли) */
-    z-index: 2100; /* Выше чем обычные кнопки, чтобы нажималась в игре */
-    cursor: pointer; /* Курсор-рука */
-    pointer-events: auto; /* Разрешаем клик */
-    background: transparent; /* Без фона */
-    border: none; /* Без рамки */
-    display: none; /* Скрыта по умолчанию (показывается JS) */
+    position: absolute;
+    
+    /* Опускаем чуть ниже хедера (15px + 25px + 50px хедер = ~90px) */
+    top: 90px; 
+    right: 20px;
+    
+    z-index: 2100; /* Выше игры */
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    
+    /* Скрыта по умолчанию, показывается JS-ом при старте игры */
+    display: none; 
 }
+
+/* Важно: класс для показа */
+#pause-btn.show {
+    display: block !important;
+}
+
 
 /* --- 4. ВЕРХНЯЯ ПАНЕЛЬ (БАЛАНСЫ) --- */
 #header {
