@@ -83,7 +83,7 @@ export function initShop() {
                         </div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 10px; color: #666; margin-bottom: 2px;">Цена:</div>
+                        <div style="font-size: 10px; color: #666; margin-bottom: 2px;"></div>
                         <!-- Кнопка вызывает exchange_crystals -->
                         <button class="exchange-btn" 
                             style="background: #9b59b6; color: #fff; border: none; border-radius: 15px; padding: 6px 15px; font-size: 11px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 0 #8e44ad;">
