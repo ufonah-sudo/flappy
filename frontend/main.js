@@ -363,27 +363,38 @@ async function init() {
    7. ОБРАБОТКА СМЕРТИ (GAME OVER)
    --------------------------------------------------------- */
 /* --- GAME OVER --- */
+/* --- GAME OVER --- */
 function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
     
-    // Счет (Белый)
+    // Счет
     const scoreEl = document.getElementById('final-score');
     if (scoreEl) scoreEl.innerText = score;
     
     // Кнопка Revive
     const btnRev = document.getElementById('btn-revive');
-    const revCount = document.getElementById('revive-count'); // Ссылка на скобочки
+    const revCount = document.getElementById('revive-count'); 
     
     if (btnRev) {
-        // Проверяем: режим не карьера, сердце есть, еще не юзали
-        const canRev = !reviveUsed && state.powerups.heart > 0 && state.currentMode !== 'career';
-        
-        // Скрываем/показываем весь блок
-        const section = document.getElementById('revive-section');
-        if(section) section.style.display = canRev ? 'block' : 'none';
+        // Условие: не карьера, не использовали, есть сердца
+        const canRev = state.currentMode !== 'career' && !reviveUsed && state.powerups.heart > 0;
+        const heartsLeft = state.powerups.heart || 0;
 
-        if (canRev && revCount) {
-            revCount.innerText = `(${state.powerups.heart})`; // Обновляем только цифру
+        // Обновляем текст (0)
+        if (revCount) revCount.innerText = `(${heartsLeft})`;
+
+        if (canRev) {
+            // АКТИВНА
+            btnRev.disabled = false;
+            btnRev.style.opacity = "1";
+            btnRev.style.filter = "none";
+            btnRev.style.cursor = "pointer";
+        } else {
+            // НЕАКТИВНА (Серая)
+            btnRev.disabled = true;
+            btnRev.style.opacity = "0.5";
+            btnRev.style.filter = "grayscale(1)";
+            btnRev.style.cursor = "not-allowed";
         }
     }
     
