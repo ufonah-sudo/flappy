@@ -17,7 +17,7 @@ this.ground = {
 };
 this.ground.img.src = '/frontend/assets/ground.png';
         // Параметры птицы: координаты, размер, скорость падения и угол наклона
-        this.bird = { x: 50, y: 0, size: 38, velocity: 0, rotation: 0 }; 
+        this.bird = { x: 50, y: 0, size: 45, velocity: 0, rotation: 0 }; 
         this.pipes = []; // Массив для активных труб
         this.coins = []; // Массив для всех монет на экране
         this.items = []; // Массив для выпадающих бонусов (способностей)
@@ -109,7 +109,7 @@ this.ground.img.src = '/frontend/assets/ground.png';
 
         this.bird.x = w / 4; // Птица всегда на 1/4 ширины слева
         this.gravity = h * 0.00055; // Динамическая гравитация от высоты экрана
-        this.jump = -h * 0.0095; // Сила прыжка (отрицательная, так как Y растет вниз)
+        this.jump = -h * 0.014; // Сила прыжка (отрицательная, так как Y растет вниз)
         this.pipeSpeed = w * 0.008; // Скорость движения труб от ширины экрана
         this.pipeSpawnThreshold = Math.max(80, Math.floor(100 * (w / 375))); // Частота появления труб
     }

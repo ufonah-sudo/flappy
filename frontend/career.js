@@ -20,7 +20,7 @@ export class CareerGame {
         this.ground.img.src = '/frontend/assets/ground.png';
 
         // Птица
-        this.bird = { x: 50, y: 0, size: 34, velocity: 0, rotation: 0 };
+        this.bird = { x: 50, y: 0, size: 45, velocity: 0, rotation: 0 };
         
         // Спрайты птицы
         this.birdSprites = [];

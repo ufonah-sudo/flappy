@@ -20,7 +20,7 @@ export class Game {
         this.bird = { 
             x: 50, 
             y: 0, 
-            size: 42, // Увеличили размер птицы (было 34)
+            size: 45, // Увеличили размер птицы (было 34)
             velocity: 0, 
             rotation: 0 
         }; 
@@ -74,7 +74,7 @@ export class Game {
         if (!this.isRunning) this.bird.y = h / 2;
         
         this.gravity = isDesktop ? 0.45 : h * 0.0006;   
-        this.jump = isDesktop ? -7 : -h * 0.010;       
+        this.jump = isDesktop ? -10 : -h * 0.014;       
         this.pipeSpeed = isDesktop ? 4 : w * 0.007;  
         this.pipeSpawnThreshold = Math.max(10, Math.floor(110 * (w / 375)));
     }
