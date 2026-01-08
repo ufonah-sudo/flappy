@@ -349,3 +349,107 @@
     opacity: 0.7;
     background: #d1d1d1 !important;
 }
+
+/* --- КАРТА КАРЬЕРЫ (ДОРОГА) --- */
+
+/* Контейнер для уровней */
+.career-road {
+    display: flex;
+    flex-direction: column-reverse; /* Уровень 1 внизу, 10 вверху (как гора) */
+    align-items: center;
+    gap: 40px; /* Расстояние между уровнями */
+    padding: 20px 0;
+    width: 100%;
+    position: relative;
+}
+
+/* Вертикальная пунктирная линия (Тропинка) */
+.career-road::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    bottom: 20px;
+    left: 50%;
+    width: 4px;
+    margin-left: -2px;
+    background-image: linear-gradient(to bottom, rgba(255,255,255,0.3) 50%, transparent 50%);
+    background-size: 100% 20px;
+    z-index: 0;
+}
+
+/* Ряд с уровнем (чтобы двигать влево-вправо) */
+.level-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 1;
+    position: relative;
+}
+
+/* Змейка: сдвигаем четные/нечетные ряды */
+/* Центр (по дефолту) */
+/* Сдвиг влево */
+.level-row.pos-left { justify-content: flex-start; padding-left: 20%; }
+/* Сдвиг вправо */
+.level-row.pos-right { justify-content: flex-end; padding-right: 20%; }
+
+/* Кнопка Уровня (Кружок) */
+.level-node {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    font-weight: 900;
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 1px 1px 0 #000;
+    
+    border: 3px solid #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: transform 0.2s;
+    background-size: cover;
+    background-position: center;
+}
+
+.level-node:active { transform: scale(0.9); }
+
+/* --- СОСТОЯНИЯ УРОВНЯ --- */
+
+/* 1. ЗАБЛОКИРОВАН 🔒 */
+.level-node.locked {
+    background: #555;
+    border-color: #888;
+    color: #aaa;
+    cursor: default;
+    filter: grayscale(1);
+}
+
+/* 2. ТЕКУЩИЙ (Пульсирует) 🔥 */
+.level-node.current {
+    background: radial-gradient(circle, #f1c40f 0%, #f39c12 100%);
+    border-color: #fff;
+    animation: pulseLevel 1.5s infinite;
+    transform: scale(1.1);
+    z-index: 2;
+}
+
+@keyframes pulseLevel {
+    0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(241, 196, 15, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
+}
+
+/* 3. ПРОЙДЕН ✅ */
+.level-node.completed {
+    background: radial-gradient(circle, #2ecc71 0%, #27ae60 100%);
+    border-color: #fff;
+    font-size: 0; /* Скрываем цифру */
+}
+.level-node.completed::after {
+    content: '★'; /* Звезда */
+    font-size: 24px;
+}

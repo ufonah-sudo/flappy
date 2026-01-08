@@ -237,20 +237,23 @@
     </div>
 </div>
 
-        <!-- Вставь это где-то рядом с другими div id="scene-..." -->
-        <div id="scene-career-map" class="screen hidden">
-            <!-- Тут будет карта уровней -->
-            <div class="vision-window">
+               <div id="scene-career-map" class="screen hidden">
+            <!-- ⚠️ ВАЖНО: Используем класс career-window, а не vision-window -->
+            <div class="career-window">
                 <h3>CAREER MAP</h3>
+                
+                <!-- Контейнер для скролла дороги -->
                 <div class="room-content" id="career-map-content">
-                    <p style="text-align:center; color:#ccc;">Levels coming soon...</p>
+                    <!-- Тут JS нарисует кружочки -->
                 </div>
-                <!-- Кнопка назад внутри карты -->
-                <button id="btn-back-from-career" class="ui-corner-btn" style="position:absolute; top:20px; left:20px; width:40px;">
+
+                <!-- Кнопка назад -->
+                <button id="btn-back-from-career" class="ui-corner-btn" style="position:absolute; top:20px; left:20px; width:50px;">
                     <img src="/frontend/assets/back.png" style="width:100%;">
                 </button>
             </div>
         </div>
+
 
 
 
