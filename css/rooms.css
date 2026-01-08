@@ -453,3 +453,29 @@
     content: '★'; /* Звезда */
     font-size: 24px;
 }
+
+/* --- СТИЛЬ БЕЛЫХ ОВАЛЬНЫХ КНОПОК (GAME OVER) --- */
+.white-oval-btn {
+    background: #e3e3e3; /* Белый фон */
+    border: 3px solid #fff; /* Белая обводка */
+    border-radius: 30px; /* Овал */
+    
+    color: #333; /* Темный текст */
+    font-weight: 900;
+    font-size: 14px;
+    text-transform: uppercase;
+    
+    width: 100%;
+    padding: 12px 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* Легкая тень */
+    transition: transform 0.1s;
+    
+    /* Убираем дефолтные стили */
+    text-shadow: none;
+}
+
+.white-oval-btn:active {
+    transform: scale(0.96);
+    background: #d1d1d1;
+}

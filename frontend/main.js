@@ -362,26 +362,35 @@ async function init() {
 /* ---------------------------------------------------------
    7. ОБРАБОТКА СМЕРТИ (GAME OVER)
    --------------------------------------------------------- */
+/* --- GAME OVER --- */
 function handleGameOver(score, reviveUsed) {
     showRoom('gameOver');
     
-    // Показываем финальный счет
+    // Счет (Белый)
     const scoreEl = document.getElementById('final-score');
     if (scoreEl) scoreEl.innerText = score;
     
-    // Логика кнопки "Revive"
+    // Кнопка Revive
     const btnRev = document.getElementById('btn-revive');
+    const revCount = document.getElementById('revive-count'); // Ссылка на скобочки
+    
     if (btnRev) {
-        // Можно возродиться, если не использовали это ранее и есть сердце
-        const canRev = !reviveUsed && state.powerups.heart > 0;
-        btnRev.classList.toggle('hidden', !canRev);
-        btnRev.innerHTML = `USE HEART ❤️ <br><small>(${state.powerups.heart} LEFT)</small>`;
+        // Проверяем: режим не карьера, сердце есть, еще не юзали
+        const canRev = !reviveUsed && state.powerups.heart > 0 && state.currentMode !== 'career';
+        
+        // Скрываем/показываем весь блок
+        const section = document.getElementById('revive-section');
+        if(section) section.style.display = canRev ? 'block' : 'none';
+
+        if (canRev && revCount) {
+            revCount.innerText = `(${state.powerups.heart})`; // Обновляем только цифру
+        }
     }
     
     saveData();
-    // Отправляем рекорд на сервер
-    api.saveScore(score).catch(e => console.log("Score not saved:", e));
+    if(state.currentMode !== 'career') api.saveScore(score).catch(e => console.log("Score not saved:", e));
 }
+
 
 /* ---------------------------------------------------------
    8. СИНХРОНИЗАЦИЯ ИНТЕРФЕЙСА (UI)
