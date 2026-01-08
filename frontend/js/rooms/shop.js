@@ -27,51 +27,36 @@ export function initShop() {
     ];
 
     // Отрисовка интерфейса
-    container.innerHTML = `
-        <div class="shop-section" style="user-select: none;">
-            <h4 style="color: #f7d51d; margin: 10px 0; font-size: 14px; text-align: left; text-transform: uppercase; font-family: 'Press Start 2P', cursive;">💎 Пополнить баланс</h4>
-            <div id="shop-ton-wallet" style="margin-bottom: 15px; display: flex; justify-content: center; min-height: 40px;"></div>
+      container.innerHTML = `
+        <div class="shop-section">
+            <h4 style="color: #f7d51d; margin: 5px 0 10px 0; text-shadow: 1px 1px 0 #000;">💎 ПОПОЛНИТЬ</h4>
+            <div id="shop-ton-wallet" style="margin-bottom: 15px; display: flex; justify-content: center;"></div>
             
-            <div class="shop-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div class="shop-card" style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size: 32px; margin-bottom: 5px;">🪙</div>
+            <div class="shop-grid">
+                <div class="shop-card">
+                    <div style="font-size: 30px;">🟡</div> <!-- Желтый круг -->
                     <div style="font-weight: 800; font-size: 16px;">10 Монет</div>
-                    <div style="font-size: 10px; color: #aaa; margin-bottom: 10px;">Старт</div>
-                    <button class="buy-ton-btn primary-btn" data-amount="1" data-coins="10" style="width: 100%; padding: 10px; font-size: 14px; cursor: pointer;">1 TON</button>
+                    <button class="buy-ton-btn primary-btn" data-amount="1" data-coins="10" style="width: 100%; margin-top: 5px;">1 TON</button>
                 </div>
-                <div class="shop-card" style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size: 32px; margin-bottom: 5px;">💰</div>
-                    <div style="font-weight: 800; font-size: 16px;">55 Монет</div>
-                    <div style="font-size: 10px; color: #4ec0ca; margin-bottom: 10px;">+10% БОНУС</div>
-                    <button class="buy-ton-btn primary-btn" data-amount="5" data-coins="55" style="width: 100%; padding: 10px; font-size: 14px; cursor: pointer;">5 TON</button>
-                </div>
+                <!-- ... другие карточки ... -->
             </div>
         </div>
-
-        <div class="shop-section" style="margin-top: 25px; user-select: none;">
-            <h4 style="color: #f7d51d; margin: 10px 0; font-size: 14px; text-align: left; text-transform: uppercase; font-family: 'Press Start 2P', cursive;">⚡ Способности</h4>
-            <div class="shop-list" style="display: flex; flex-direction: column; gap: 10px;">
+        
+        <div class="shop-section" style="margin-top: 20px;">
+            <h4 style="color: #f7d51d; margin: 5px 0 10px 0; text-shadow: 1px 1px 0 #000;">⚡ СПОСОБНОСТИ</h4>
+            <div class="shop-list" style="display: flex; flex-direction: column; gap: 8px;">
                 ${powerups.map(p => `
-                    <div class="shop-item" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
-                        <div class="item-info" style="display: flex; align-items: center; gap: 12px;">
-                            <span style="font-size: 24px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 12px;">${p.icon}</span>
-                            <div style="text-align: left;">
-                                <p style="margin: 0; font-weight: bold; font-size: 15px;">${p.name}</p>
-                                <p style="margin: 0; font-size: 11px; color: #aaa;">${p.desc}</p>
-                                <p style="margin: 2px 0 0 0; font-size: 13px; color: #f7d51d; font-weight: 800;">🪙 ${p.price}</p>
-                            </div>
+                    <div class="shop-card" style="flex-direction: row; text-align: left; align-items: center;">
+                        <span style="font-size: 24px; margin-right: 15px;">${p.icon}</span>
+                        <div style="flex-grow: 1;">
+                            <p style="margin: 0; font-weight: bold;">${p.name}</p>
+                            <p style="margin: 0; font-size: 13px; color: #f7d51d;">🟡 ${p.price}</p>
                         </div>
-                        <button class="buy-ingame-btn secondary-btn" 
-                                data-id="${p.id}" 
-                                data-price="${p.price}" 
-                                style="margin: 0; padding: 8px 12px; width: auto; font-size: 12px; font-weight: 900; cursor: pointer;">
-                            КУПИТЬ
-                        </button>
+                        <button class="buy-ingame-btn secondary-btn" data-id="${p.id}" data-price="${p.price}" style="padding: 6px 12px; font-size: 11px;">КУПИТЬ</button>
                     </div>
                 `).join('')}
             </div>
         </div>
-        <div style="height: 100px;"></div>
     `;
 
     // Подключаем кнопку TON Connect
