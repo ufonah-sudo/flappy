@@ -1,34 +1,37 @@
 import * as api from '../../api.js';
 
 export function initSettings() {
+    // 1. Ищем контейнер настроек
     const container = document.querySelector('#scene-settings #settings-content');
-    
-    if (!container) return;
+    if (!container) {
+        console.error("Контейнер настроек не найден!");
+        return;
+    }
 
     const settings = {
         sound: localStorage.getItem('sound') !== 'off',
         music: localStorage.getItem('music') !== 'off'
     };
 
-    // 1. РИСУЕМ ИНТЕРФЕЙС (ТЕПЕРЬ С ПРАВИЛЬНОЙ HTML СТРУКТУРОЙ)
+    // 2. ВСТАВЛЯЕМ HTML С ЯВНЫМ МЕСТОМ ПОД КНОПКУ
     container.innerHTML = `
-        <!-- Секция Кошелька -->
-        <div style="width: 100%; margin-bottom: 20px;">
-            <h4 style="color: #f7d51d; margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; text-shadow: 1px 1px 0 #000;">
-                💎 КОШЕЛЕК
-            </h4>
-            
-            <!-- 👇 ВАЖНО: Именно в этот DIV скрипт вставит кнопку 👇 -->
-            <div id="dynamic-wallet-root" style="width: 100%; display: flex; justify-content: center; min-height: 50px;">
-                <!-- Тут появится кнопка -->
-            </div>
-            
-            <p style="font-size: 10px; color: #aaa; margin-top: 5px; text-align: center;">
-                Подключи TON Wallet для покупок и вывода
-            </p>
+        <!-- ЗАГОЛОВОК -->
+        <h4 style="color: #f7d51d; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase; text-shadow: 1px 1px 0 #000; text-align: center;">
+            💎 УПРАВЛЕНИЕ КОШЕЛЬКОМ
+        </h4>
+
+        <!-- ГЛАВНОЕ: КОНТЕЙНЕР ДЛЯ СИНЕЙ КНОПКИ -->
+        <!-- width: fit-content центрирует саму кнопку -->
+        <div id="settings-wallet-root-unique" style="width: 100%; display: flex; justify-content: center; min-height: 50px; margin-bottom: 20px;">
+            <!-- СЮДА СКРИПТ ВСТАВИТ КНОПКУ -->
         </div>
 
-        <!-- Секция Аудио -->
+        <!-- РЕЗЕРВНАЯ КНОПКА (Если синяя не появится) -->
+        <button id="manual-connect-btn" class="wooden-btn" style="display: none; margin-bottom: 20px; background: #0098ea; border-color: #0077b5;">
+            CONNECT TON WALLET
+        </button>
+
+        <!-- ПЕРЕКЛЮЧАТЕЛИ -->
         <div class="settings-group" style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
             <button id="toggle-sound" class="settings-btn wooden-btn" style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
                 <span>🔊 ЗВУК</span>
@@ -45,56 +48,75 @@ export function initSettings() {
             </button>
         </div>
 
-        <!-- Секция Инфо -->
+        <!-- ИНФО -->
         <div class="settings-group info-section" style="margin-top: 25px; width: 100%; display: flex; flex-direction: column; gap: 10px;">
             <button id="btn-channel" class="secondary-btn" style="width: 100%;">📢 НАШ КАНАЛ</button>
             <button id="btn-support" class="secondary-btn" style="width: 100%;">🆘 ПОДДЕРЖКА</button>
         </div>
         
-        <div class="version-info" style="margin-top: 30px; font-size: 10px; opacity: 0.5; color: #fff; text-align: center;">
-            Версия 1.0.6
-        </div>
+        <div class="version-info" style="margin-top: 30px; font-size: 10px; opacity: 0.5; color: #fff; text-align: center;">v1.0.7</div>
     `;
 
-    // 2. ЛОГИКА ВСТАВКИ КНОПКИ (С задержкой для надежности)
+    // 3. ЛОГИКА ОТРИСОВКИ КОШЕЛЬКА
     setTimeout(() => {
-        // Проверяем, загружен ли модуль кошелька
-        if (window.wallet && window.wallet.tonConnectUI) {
-            console.log("Попытка отрисовки кошелька в настройках...");
+        const rootId = 'settings-wallet-root-unique';
+        const rootEl = document.getElementById(rootId);
+        const manualBtn = document.getElementById('manual-connect-btn');
+
+        if (window.wallet && window.wallet.tonConnectUI && rootEl) {
+            console.log("Пытаемся нарисовать кнопку TON...");
+            
             try {
-                // ПРИНУДИТЕЛЬНО переносим кнопку в наш новый контейнер
-                window.wallet.tonConnectUI.setConnectButtonRoot('dynamic-wallet-root');
+                // ПРИНУДИТЕЛЬНО СТАВИМ КНОПКУ СЮДА
+                window.wallet.tonConnectUI.setConnectButtonRoot(rootId);
+                
+                // Проверяем, появилась ли кнопка через 0.5 сек. Если нет — покажем свою.
+                setTimeout(() => {
+                    if (rootEl.childNodes.length === 0) {
+                        console.warn("Синяя кнопка не отрисовалась, показываем резервную.");
+                        if (manualBtn) manualBtn.style.display = 'block';
+                    }
+                }, 500);
+
             } catch (e) {
-                console.error("Ошибка привязки кошелька:", e);
+                console.error("Ошибка библиотеки TON:", e);
+                if (manualBtn) manualBtn.style.display = 'block';
             }
         } else {
-            console.warn("Модуль window.wallet не найден");
+            // Если библиотеки нет, показываем резервную кнопку
+            if (manualBtn) manualBtn.style.display = 'block';
+        }
+
+        // Логика резервной кнопки
+        if (manualBtn) {
+            manualBtn.onclick = () => {
+                if (window.wallet && window.wallet.tonConnectUI) {
+                    window.wallet.tonConnectUI.openModal();
+                } else {
+                    alert("Библиотека TON не загружена!");
+                }
+            };
         }
     }, 100);
 
-    // 3. ОБРАБОТЧИКИ КНОПОК
-    
-    // Звук
+    // 4. ОБРАБОТЧИКИ ОСТАЛЬНЫХ КНОПОК
     const soundBtn = document.getElementById('toggle-sound');
     if (soundBtn) {
         soundBtn.onclick = () => {
             settings.sound = !settings.sound;
             localStorage.setItem('sound', settings.sound ? 'on' : 'off');
-            const st = soundBtn.querySelector('.status');
-            st.innerText = settings.sound ? 'ВКЛ' : 'ВЫКЛ';
-            st.style.color = settings.sound ? '#4ec0ca' : '#ff4f4f';
+            soundBtn.querySelector('.status').innerText = settings.sound ? 'ВКЛ' : 'ВЫКЛ';
+            soundBtn.querySelector('.status').style.color = settings.sound ? '#4ec0ca' : '#ff4f4f';
         };
     }
 
-    // Музыка
     const musicBtn = document.getElementById('toggle-music');
     if (musicBtn) {
         musicBtn.onclick = () => {
             settings.music = !settings.music;
             localStorage.setItem('music', settings.music ? 'on' : 'off');
-            const st = musicBtn.querySelector('.status');
-            st.innerText = settings.music ? 'ВКЛ' : 'ВЫКЛ';
-            st.style.color = settings.music ? '#4ec0ca' : '#ff4f4f';
+            musicBtn.querySelector('.status').innerText = settings.music ? 'ВКЛ' : 'ВЫКЛ';
+            musicBtn.querySelector('.status').style.color = settings.music ? '#4ec0ca' : '#ff4f4f';
         };
     }
     
@@ -107,9 +129,6 @@ export function initSettings() {
         }
     };
 
-    const btnChannel = document.getElementById('btn-channel');
-    if (btnChannel) btnChannel.onclick = () => openLink('https://t.me/твой_канал');
-
-    const btnSupport = document.getElementById('btn-support');
-    if (btnSupport) btnSupport.onclick = () => openLink('https://t.me/твой_саппорт');
+    document.getElementById('btn-channel').onclick = () => openLink('https://t.me/your_channel');
+    document.getElementById('btn-support').onclick = () => openLink('https://t.me/your_support');
 }
