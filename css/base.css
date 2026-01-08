@@ -140,7 +140,7 @@ canvas {
 /* --- 4. ВЕРХНЯЯ ПАНЕЛЬ (БАЛАНСЫ) --- */
 #header {
     position: fixed; /* Фиксируем панель при скролле */
-    top: env(safe-area-inset-top, 15px); /* Учитываем "челку" iPhone или ставим 15px */
+   top: calc(env(safe-area-inset-top, 0px) + 25px);  /* Учитываем "челку" iPhone или ставим 15px */
     width: 100%; /* На всю ширину */
     display: flex; /* Flexbox */
     justify-content: center; /* Центрируем содержимое по горизонтали */

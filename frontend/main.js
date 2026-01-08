@@ -134,11 +134,13 @@ function showRoom(roomName) {
     target.classList.remove('hidden');
 
     // Управление Хедером (Баланс виден везде, КРОМЕ игры, паузы и геймовера)
+       // Хедер
     const header = document.getElementById('header');
     if (header) {
-        const isGameUI = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
-        header.style.display = isGameUI ? 'none' : 'flex';
+        // Всегда показываем хедер (flex), кроме экрана загрузки (если он есть)
+        header.style.display = 'flex';
     }
+
 
     // Управление кнопкой Паузы (видна ТОЛЬКО в игре)
     const pauseBtn = document.getElementById('pause-btn');
