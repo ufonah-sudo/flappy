@@ -1,79 +1,108 @@
-/**
- * js/rooms/shop.js - Модуль управления внутриигровым магазином
- */
-
-// Импортируем методы API для связи с сервером
 import * as api from '../../api.js';
 
-/**
- * Инициализация магазина: отрисовка контента и навешивание обработчиков событий
- */
 export function initShop() {
-    // Получаем доступ к глобальному состоянию игры и SDK Telegram
     const state = window.state;
     const tg = window.Telegram?.WebApp;
-
-    // Находим контейнер для верстки
     const container = document.querySelector('#scene-shop #shop-content');
+
     if (!container) return;
 
     // Конфигурация способностей
     const powerups = [
-        { id: 'heart',  name: 'Сердечко', price: 50, icon: '❤️', desc: 'Вторая жизнь' },
-        { id: 'shield', name: 'Щит',     price: 20, icon: '🛡️', desc: 'Защита от труб' },
-        { id: 'gap',    name: 'Проемы',  price: 20, icon: '↔️', desc: 'Широкие проходы' },
-        { id: 'magnet', name: 'Магнит',  price: 30, icon: '🧲', desc: 'Притяжение монет' },
-        { id: 'ghost',  name: 'Призрак', price: 25, icon: '👻', desc: 'Пролет сквозь стены' }
+        { id: 'heart',  name: 'СЕРДЦЕ', price: 50, icon: '❤️', desc: '+1 Жизнь' },
+        { id: 'shield', name: 'ЩИТ',     price: 20, icon: '🛡️', desc: 'Защита от удара' },
+        { id: 'gap',    name: 'ПРОЕМЫ',  price: 20, icon: '↔️', desc: 'Широкие трубы' },
+        { id: 'magnet', name: 'МАГНИТ',  price: 30, icon: '🧲', desc: 'Ловит монеты' },
+        { id: 'ghost',  name: 'ПРИЗРАК', price: 25, icon: '👻', desc: 'Сквозь стены' }
     ];
 
-    // Отрисовка интерфейса
-      container.innerHTML = `
+    container.innerHTML = `
+        <!-- РАЗДЕЛ 1: МОНЕТЫ (TON) -->
         <div class="shop-section">
-            <h4 style="color: #f7d51d; margin: 5px 0 10px 0; text-shadow: 1px 1px 0 #000;">💎 ПОПОЛНИТЬ</h4>
-            <div id="shop-ton-wallet" style="margin-bottom: 15px; display: flex; justify-content: center;"></div>
+            <div class="shop-separator">
+                <h4>💎 Монеты (TON)</h4>
+            </div>
+            
+            <!-- Место для кнопки кошелька -->
+            <div id="shop-ton-wallet" style="margin-bottom: 10px; display: flex; justify-content: center;"></div>
             
             <div class="shop-grid">
+                <!-- Пакет 1 -->
                 <div class="shop-card">
-                    <div style="font-size: 30px;">🟡</div> <!-- Желтый круг -->
-                    <div style="font-weight: 800; font-size: 16px;">10 Монет</div>
-                    <button class="buy-ton-btn primary-btn" data-amount="1" data-coins="10" style="width: 100%; margin-top: 5px;">1 TON</button>
+                    <div style="font-size: 32px; margin-bottom: 5px;">🟡</div>
+                    <div style="font-weight: 800; font-size: 15px; color: #fff; text-shadow: 1px 1px 0 #000;">10 Монет</div>
+                    <div style="font-size: 10px; color: #aaa;">Стартовый пак</div>
+                    <button class="buy-ton-btn primary-btn" data-amount="1" data-coins="10" style="width: 100%; margin-top: 8px; font-size: 12px; padding: 8px;">1 TON</button>
                 </div>
-                <!-- ... другие карточки ... -->
+
+                <!-- Пакет 2 -->
+                <div class="shop-card">
+                    <div style="font-size: 32px; margin-bottom: 5px;">💰</div>
+                    <div style="font-weight: 800; font-size: 15px; color: #fff; text-shadow: 1px 1px 0 #000;">55 Монет</div>
+                    <div style="font-size: 10px; color: #f7d51d;">+10% Бонус</div>
+                    <button class="buy-ton-btn primary-btn" data-amount="5" data-coins="55" style="width: 100%; margin-top: 8px; font-size: 12px; padding: 8px;">5 TON</button>
+                </div>
             </div>
         </div>
         
-        <div class="shop-section" style="margin-top: 20px;">
-            <h4 style="color: #f7d51d; margin: 5px 0 10px 0; text-shadow: 1px 1px 0 #000;">⚡ СПОСОБНОСТИ</h4>
-            <div class="shop-list" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- РАЗДЕЛ 2: СПОСОБНОСТИ (ЗА ИГРОВЫЕ МОНЕТЫ) -->
+        <div class="shop-section">
+            <div class="shop-separator" style="margin-top: 25px;">
+                <h4>⚡ Способности</h4>
+            </div>
+
+            <div class="shop-list">
                 ${powerups.map(p => `
-                    <div class="shop-card" style="flex-direction: row; text-align: left; align-items: center;">
-                        <span style="font-size: 24px; margin-right: 15px;">${p.icon}</span>
-                        <div style="flex-grow: 1;">
-                            <p style="margin: 0; font-weight: bold;">${p.name}</p>
-                            <p style="margin: 0; font-size: 13px; color: #f7d51d;">🟡 ${p.price}</p>
+                    <!-- Используем новый класс powerup-card -->
+                    <div class="powerup-card">
+                        <div style="display: flex; align-items: center;">
+                            <div class="icon">${p.icon}</div>
+                            <div>
+                                <div class="name">${p.name}</div>
+                                <div class="desc">${p.desc}</div>
+                            </div>
                         </div>
-                        <button class="buy-ingame-btn secondary-btn" data-id="${p.id}" data-price="${p.price}" style="padding: 6px 12px; font-size: 11px;">КУПИТЬ</button>
+                        
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <div class="powerup-price">🟡 ${p.price}</div>
+                            <button class="buy-ingame-btn" data-id="${p.id}" data-price="${p.price}" 
+                                style="
+                                    background: #4ec0ca; 
+                                    color: #fff; 
+                                    border: none; 
+                                    border-radius: 15px; 
+                                    padding: 4px 12px; 
+                                    font-size: 10px; 
+                                    font-weight: 900; 
+                                    margin-top: 4px;
+                                    cursor: pointer;
+                                    box-shadow: 0 2px 0 #2e8b94;
+                                ">
+                                КУПИТЬ
+                            </button>
+                        </div>
                     </div>
                 `).join('')}
             </div>
         </div>
+        
+        <!-- Пустой блок, чтобы скролл не обрезал низ -->
+        <div style="height: 40px;"></div>
     `;
 
-    // Подключаем кнопку TON Connect
+    // --- ЛОГИКА (Остается прежней) ---
+    
+    // 1. Кнопка кошелька
     if (window.wallet?.tonConnectUI) {
-        try {
-            window.wallet.tonConnectUI.setConnectButtonRoot('#shop-ton-wallet');
-        } catch (e) {
-            console.warn("[Shop] Ошибка подключения кнопки TON Connect:", e);
-        }
+        try { window.wallet.tonConnectUI.setConnectButtonRoot('#shop-ton-wallet'); } catch (e) {}
     }
 
-    // --- 1. ЛОГИКА TON ТРАНЗАКЦИЙ ---
+    // 2. Обработчики TON
     container.querySelectorAll('.buy-ton-btn').forEach(btn => {
         btn.onclick = async (e) => {
             const button = e.currentTarget;
             const { amount, coins } = button.dataset;
-
+            
             if (!window.wallet?.isConnected) {
                 tg?.HapticFeedback.notificationOccurred('warning');
                 tg?.showConfirm("Кошелек не подключен. Перейти в настройки?", (ok) => {
@@ -85,79 +114,69 @@ export function initShop() {
             try {
                 button.disabled = true;
                 const originalText = button.innerText;
-                button.innerHTML = `⏳`;
-                
+                button.innerText = "⏳";
                 const tx = await window.wallet.sendTransaction(amount);
-                
                 if (tx) {
                     const res = await api.buyCoins(amount);
                     if (res && !res.error) {
                         state.coins = res.newBalance || (state.coins + parseInt(coins));
                         window.updateGlobalUI?.();
                         tg?.HapticFeedback.notificationOccurred('success');
-                        tg?.showAlert(`Успешно! Получено ${coins} монет.`);
+                        tg?.showAlert(`Успешно! +${coins} монет.`);
                     }
                 }
                 button.innerText = originalText;
                 button.disabled = false;
             } catch (err) {
-                console.error("TON error:", err);
+                console.error(err);
                 button.disabled = false;
-                button.innerText = `${amount} TON`;
-                tg?.HapticFeedback.notificationOccurred('error');
+                button.innerText = originalText;
             }
         };
     });
 
-    // --- 2. ЛОГИКА ПОКУПКИ ЗА МОНЕТЫ ---
+    // 3. Обработчики покупок за монеты
     container.querySelectorAll('.buy-ingame-btn').forEach(btn => {
         btn.onclick = async (e) => {
             const button = e.currentTarget;
             const { id, price } = button.dataset;
             const cost = parseInt(price);
 
-            // 1. Локальная проверка
             if (state.coins < cost) {
                 tg?.HapticFeedback.notificationOccurred('error');
-                tg?.showAlert("Недостаточно монет!");
+                // Визуально показываем ошибку на кнопке
+                const oldColor = button.style.background;
+                button.style.background = "#ff4f4f";
+                button.innerText = "НЕТ 🟡";
+                setTimeout(() => {
+                    button.style.background = oldColor;
+                    button.innerText = "КУПИТЬ";
+                }, 1000);
                 return;
             }
 
             try {
                 button.disabled = true;
                 button.innerText = "⏳";
-
-                // 2. Отправляем запрос на бэкенд
+                
                 const res = await api.buyItem(id);
-
+                
                 if (res && !res.error) {
-                    // 3. Вызываем глобальное событие покупки (которое слушает main.js)
-                    // Это гарантирует, что инвентарь и монеты обновятся везде синхронно
-                    const buyEvent = new CustomEvent('buy_item', {
-                        detail: { 
-                            id: id, 
-                            price: cost, 
-                            type: 'powerup', 
-                            powerupType: id 
-                        }
-                    });
-                    window.dispatchEvent(buyEvent);
-
-                    // 4. Визуальный успех
+                    // Событие покупки
+                    window.dispatchEvent(new CustomEvent('buy_item', {
+                        detail: { id, price: cost, type: 'powerup', powerupType: id }
+                    }));
+                    
+                    button.style.background = "#2ecc71"; // Зеленый
                     button.innerText = "✅";
-                    button.style.color = "#4ec0ca";
-                    tg?.HapticFeedback.impactOccurred('medium');
-
-                    // 5. Мягкое обновление через 1 сек
-                    setTimeout(() => initShop(), 1200);
+                    
+                    setTimeout(() => { initShop(); }, 1000);
                 } else {
-                    throw new Error(res?.message || "Ошибка сервера");
+                    throw new Error("Ошибка");
                 }
             } catch (err) {
                 button.disabled = false;
                 button.innerText = "КУПИТЬ";
-                tg?.HapticFeedback.notificationOccurred('error');
-                tg?.showAlert("Ошибка: " + err.message);
             }
         };
     });
