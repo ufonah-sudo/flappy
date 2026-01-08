@@ -1,95 +1,103 @@
 /**
- * arcade.js - АРКАДНЫЙ РЕЖИМ (СПОСОБНОСТИ)
+ * arcade.js - Полная логика игры с комментариями каждой строки
  */
 export class ArcadeGame {
-
+    // Конструктор: инициализация холста и обратного вызова при смерти
     constructor(canvas, onGameOver) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.onGameOver = onGameOver;
-
-        this.ground = {
-            img: new Image(),
-            offsetX: 0,
-            h: 100, 
-            realWidth: 512,
-            realHeight: 162
-        };
-        this.ground.img.src = '/frontend/assets/ground.png';
-
-        // Птица (Такая же большая, как в Классике)
-        this.bird = { 
-            x: 50, 
-            y: 0, 
-            size: 45, 
-            velocity: 0, 
-            rotation: 0 
-        }; 
-
-        this.pipes = [];
-        this.coins = [];
-        this.items = [];
-        this.score = 0;
+        this.canvas = canvas; // Сохраняем ссылку на элемент холста
+        this.ctx = canvas.getContext('2d'); // Получаем 2D контекст для рисования
+        this.onGameOver = onGameOver; // Функция, которая вызовется при конце игры
+        // --- ИНИЦИАЛИЗАЦИЯ ЗЕМЛИ (как в Classic) ---
+this.ground = {
+    img: new Image(),
+    offsetX: 0,
+    h: 100,           // Высота земли
+    realWidth: 512,   // Ширина файла
+    realHeight: 162   // Высота файла
+};
+this.ground.img.src = '/frontend/assets/ground.png';
+        // Параметры птицы: координаты, размер, скорость падения и угол наклона
+        this.bird = { x: 50, y: 0, size: 45, velocity: 0, rotation: 0 }; 
+        this.pipes = []; // Массив для активных труб
+        this.coins = []; // Массив для всех монет на экране
+        this.items = []; // Массив для выпадающих бонусов (способностей)
+        this.score = 0; // Текущий счет очков (пройденные трубы)
         
-        this.isRunning = false;
-        this.isPaused = false;
-        this.reviveUsed = false; // Флаг: использовали ли сердце
-        this.isGhost = false;    // Флаг: неуязвимость (после удара или способности)
+        this.isRunning = false; // Состояние: идет ли игра сейчас
+        this.isPaused = false; // Состояние: стоит ли игра на паузе
 
+        // Таймеры активных способностей (в кадрах)
         this.activePowerups = { shield: 0, magnet: 0, ghost: 0, gap: 0 };
-        
+        // Глобальные настройки шансов и длительности
         this.config = {
-            itemChance: 0.3,
-            magnetRadius: 250, // Увеличил радиус магнита
-            powerupDuration: 420
+            itemChance: 0.3, // Шанс появления предмета (не используется напрямую здесь)
+            magnetRadius: 200, // Радиус, в котором монеты летят к птице
+            powerupDuration: 420, // Длительность бонуса (ок. 7 секунд при 60 FPS)
         };
 
+        // Загрузка изображений птицы для анимации взмаха крыльев
         this.birdSprites = [];
         ['bird1.png', 'bird2.png', 'bird3.png'].forEach(src => {
             const img = new Image();
-            img.src = `/frontend/assets/${src}`;
-            this.birdSprites.push(img);
+            img.src = `assets/${src}`; // Путь к файлам в папке assets
+            this.birdSprites.push(img); // Добавляем в массив загрузок
         });
 
-        this.frameIndex = 0;
-        this.tickCount = 0;
-        this.ticksPerFrame = 6;
-        this.itemTimer = 0;
+        this.animFrame = 0; // Текущий кадр анимации (0, 1 или 2)
+        this.tickCount = 0; // Счетчик кадров для генерации труб
+        this.itemTimer = 0; // Счетчик кадров для генерации бонусов
 
+        // Привязка контекста 'this' к методам, чтобы не терять его в обработчиках
         this.loop = this.loop.bind(this);
         this.handleInput = this.handleInput.bind(this);
-        this.handleResize = this.resize.bind(this);
+        this.resize = this.resize.bind(this);
 
-        this.initEvents();
-        this.resize();
+        this.initEvents(); // Запуск прослушивания кликов
+        this.resize(); // Начальная подстройка под размер экрана
+        this.activePowerups = {
+            shield: 0,   // таймер или флаг
+            gap: 0,
+            ghost: 0,
+            magnet: 0
+        };
+
     }
-
     activatePowerupEffect(id) {
-        console.log(`🚀 Powerup: ${id}`);
-        switch(id) {
-            case 'shield': this.activePowerups.shield = 600; break;
-            case 'gap':    this.activePowerups.gap = 700; break;
-            case 'ghost':  this.activePowerups.ghost = 400; break;
-            case 'magnet': this.activePowerups.magnet = 700; break;
-        }
+    console.log(`🚀 Активирована способность: ${id}`);
+    
+    switch(id) {
+        case 'shield':
+            this.activePowerups.shield = 500; 
+            break; // ОБЯЗАТЕЛЬНО
+        case 'gap':
+            this.activePowerups.gap = 600; 
+            break; // ОБЯЗАТЕЛЬНО (удалил лишний setTimeout и старые переменные)
+        case 'ghost':
+            this.activePowerups.ghost = 300; 
+            break;
+        case 'magnet':
+            this.activePowerups.magnet = 600; 
+            break;
     }
+}
 
+    // Регистрация событий касания и клика
     initEvents() {
         this.canvas.addEventListener('touchstart', (e) => {
-            if (e.target.tagName === 'BUTTON') return;
-            e.preventDefault();
-            this.handleInput();
+            if (e.target.tagName === 'BUTTON') return; // Если нажали на кнопку интерфейса — не прыгаем
+            e.preventDefault(); // Предотвращаем скролл страницы при игре
+            this.handleInput(); // Вызываем прыжок
         }, { passive: false });
         
         this.canvas.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'BUTTON') return;
-            this.handleInput();
+            if (e.target.tagName === 'BUTTON') return; // Проверка на кнопки
+            this.handleInput(); // Вызываем прыжок
         });
-        
-        window.addEventListener('resize', this.handleResize);
+        window.addEventListener('resize', this.resize); // Пересчет размеров при повороте экрана
     }
 
-    resize() {
+    // Подстройка холста под разрешение экрана (с учетом Retina-дисплеев)
+       resize() {
         const dpr = window.devicePixelRatio || 1;
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -103,335 +111,415 @@ export class ArcadeGame {
         this.bird.x = w / 4; 
         if (!this.isRunning) this.bird.y = h / 2;
 
-        // === ФИЗИКА (СИНХРОНИЗИРОВАНА С GAME.JS) ===
+        // Физика (как в Game.js)
         this.gravity = isDesktop ? 0.45 : h * 0.0006;
-        this.jump = isDesktop ? -9 : -h * 0.013; // Такая же амплитуда!
-        
-        this.pipeSpeed = isDesktop ? 4 : w * 0.008; // Чуть быстрее для драйва
+        this.jump = isDesktop ? -9 : -h * 0.013; // Сильный прыжок
+        this.pipeSpeed = isDesktop ? 4 : w * 0.008;
         this.pipeSpawnThreshold = Math.max(80, Math.floor(100 * (w / 375)));
     }
 
-    start() {
-        if (this.animationId) cancelAnimationFrame(this.animationId);
-        this.score = 0;
-        this.pipes = [];
-        this.coins = [];
-        this.items = [];
-        this.activePowerups = { shield: 0, magnet: 0, ghost: 0, gap: 0 };
-        this.reviveUsed = false;
-        this.isGhost = false;
-        
-        this.bird.y = window.innerHeight / 2;
-        this.bird.velocity = 0;
-        this.bird.rotation = 0;
-        
-        this.isRunning = true;
-        
-        // Скрываем счет во время игры, чтобы не мешал хедеру?
-        // Или обновляем его
-        const scoreEl = document.getElementById('score-overlay');
-        if(scoreEl) scoreEl.innerText = "0";
 
-        this.loop();
+    // Сброс всех параметров и начало новой игры
+    start() {
+        this.score = 0; // Обнуляем очки
+        this.pipes = []; // Очищаем трубы
+        this.coins = []; // Очищаем монеты
+        this.items = []; // Очищаем бонусы
+        this.activePowerups = { shield: 0, magnet: 0, ghost: 0, gap: 0 }; // Сброс баффов
+        this.bird.y = window.innerHeight / 2; // Птица по центру
+        this.bird.velocity = 0; // Скорость падения ноль
+        this.bird.rotation = 0; // Наклон ноль
+        this.isRunning = true; // Запуск цикла
+        this.loop(); // Запуск рендеринга
     }
 
-    revive() {
+    // Оживление после смерти (использование сердечка)
+       revive() {
         this.isRunning = true;
         this.reviveUsed = true;
         
         // Подброс
         this.bird.velocity = -4; 
         
-        // Чистим зону
+        // Удаляем трубы рядом
         this.pipes = this.pipes.filter(p => p.x < this.bird.x - 100 || p.x > this.bird.x + 300);
         
         // Неуязвимость
         this.isGhost = true;
-        // Важно: не сбрасываем activePowerups.ghost, а используем флаг
         setTimeout(() => { this.isGhost = false; }, 2000);
         
         this.loop();
     }
 
+
+    // Создание новой трубы и пачки монет
     spawnPipe() {
-        const gapBase = window.innerHeight * 0.18;
-        const gapLarge = window.innerHeight * 0.35; // Широкий проем стал еще шире
-        
-        // Если активна способность GAP
-        const currentGap = this.activePowerups.gap > 0 ? gapLarge : gapBase;
-        
-        const minH = window.innerHeight / 5;
-        const maxH = window.innerHeight - currentGap - 100;
-        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
+    const gapBase = window.innerHeight * 0.18;
+    const gapLarge = window.innerHeight * 0.30;
+    const currentGap = this.activePowerups.gap > 0 ? gapLarge : gapBase;
 
-        const p = { 
-            x: window.innerWidth, 
-            width: 75, 
-            top: h, 
-            bottom: h + currentGap, 
-            passed: false 
-        };
-        this.pipes.push(p);
+    const bottomLimit = window.innerHeight / 3;
+    const minH = 80; 
+    
+    // Рассчитываем maxH один раз с защитой
+    let maxH = window.innerHeight - currentGap - bottomLimit;
+    if (maxH <= minH) maxH = minH + 20;
 
-        // СПАВН МОНЕТ (Внутри труб)
-        if (Math.random() > 0.3) {
+    // Рассчитываем h один раз
+    const h = Math.floor(Math.random() * (maxH - minH)) + minH;
+
+    // Создаем объект трубы
+    const p = { x: window.innerWidth, width: 70, top: h, bottom: h + currentGap, passed: false };
+    this.pipes.push(p);
+
+    // ... спавн монет (оставляем как есть) ...
+
+        // СПАВН 10 МОНЕТ В РЯД (Твой запрос)
+        const coinsCount = 5; 
+        for (let i = 0; i < coinsCount; i++) {
             this.coins.push({
-                x: p.x + 35,
-                y: h + (currentGap / 2), // По центру проема
-                angle: 0
+                x: p.x + p.width + (i * 55) + (Math.random() * 20), // Идут друг за другом с небольшим разбросом
+                y: h + (currentGap / 2) + (Math.random() * 60 - 30), // Центрированы в проеме с отклонением
+                collected: false, // Флаг: собрана или нет
+                angle: Math.random() * Math.PI // Рандомный угол для красоты вращения
             });
         }
     }
 
+    // Обновление физики и логики (каждый кадр)
     update() {
-        if (!this.isRunning || this.isPaused) return;
+        if (!this.isRunning || this.isPaused) return; // Если стоим — ничего не считаем
 
-        // Физика
-        this.bird.velocity += this.gravity;
-        this.bird.y += this.bird.velocity;
+        this.bird.velocity += this.gravity; // Применяем гравитацию к скорости
+        this.bird.y += this.bird.velocity; // Применяем скорость к координате Y
         
-        const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.2)));
-        this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
+        // Поворот птицы: смотрим вверх при прыжке, вниз при падении
+        this.bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.bird.velocity / 12)));
+// Прокрутка земли
+this.ground.offsetX -= this.pipeSpeed;
+if (this.ground.offsetX <= -this.ground.realWidth) {
+    this.ground.offsetX = 0;
+}
 
-        // Анимация
-        this.tickCount++;
-        if (this.tickCount > this.ticksPerFrame) {
-            this.tickCount = 0;
-            this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
-        }
-
-        // Таймеры способностей
+// Коллизия с землей (вместо старой проверки низа экрана)
+const groundTop = window.innerHeight - this.ground.h;
+if (this.bird.y + this.bird.size > groundTop) {
+    this.bird.y = groundTop - this.bird.size; 
+    this.gameOver();
+    return;
+}
+        // Уменьшение таймеров способностей
         Object.keys(this.activePowerups).forEach(key => {
             if (this.activePowerups[key] > 0) this.activePowerups[key]--;
         });
 
-        // Спавн бонусов (Способностей)
+        // Логика появления бонусов (раз в 500 тиков)
         this.itemTimer++;
-        if (this.itemTimer > 600) { // Раз в ~10 сек
-            const types = ['shield', 'magnet', 'ghost', 'gap'];
+        if (this.itemTimer > 500) {
+            const types = ['shield', 'magnet', 'ghost', 'gap']; // Список типов
             this.items.push({
-                x: window.innerWidth + 50,
-                y: Math.random() * (window.innerHeight - 300) + 100,
-                type: types[Math.floor(Math.random() * types.length)],
-                osc: 0
+                x: window.innerWidth + 50, // Появляется за правым краем
+                y: Math.random() * (window.innerHeight - 200) + 100, // Рандомная высота
+                type: types[Math.floor(Math.random() * types.length)], // Рандомный тип
+                osc: 0 // Для анимации плавного плавания вверх-вниз
             });
-            this.itemTimer = 0;
+            this.itemTimer = 0; // Сброс таймера
         }
 
-        // Земля
-        this.ground.offsetX -= this.pipeSpeed;
-        if (this.ground.offsetX <= -this.ground.realWidth) this.ground.offsetX = 0;
+        // СПАВН СЛУЧАЙНЫХ МОНЕТ В НЕБЕ (Твой запрос)
+       // СПАВН СЛУЧАЙНЫХ МОНЕТ В НЕБЕ
+// СПАВН СЛУЧАЙНЫХ МОНЕТ В НЕБЕ
+if (this.tickCount % 600 === 0) {
+    const minSpawnY = window.innerHeight / 5; // Верхняя граница (1/5 экрана)
+    const groundTop = window.innerHeight - this.ground.h; // Начало земли
+    const maxSpawnY = groundTop - 50; // Нижняя граница (чуть выше земли)
 
-        // Смерть об пол
-        const groundTop = window.innerHeight - this.ground.h;
-        if (this.bird.y + this.bird.size > groundTop) {
-            this.bird.y = groundTop - this.bird.size;
-            this.gameOver();
-            return;
-        }
+    for (let i = 0; i < 5; i++) {
+        this.coins.push({
+            x: window.innerWidth + 50 + (i * 30),
+            // Генерируем Y строго между 1/5 экрана и землей
+            y: Math.random() * (maxSpawnY - minSpawnY) + minSpawnY,
+            collected: false,
+            angle: 0
+        });
+    }
+}
+        this.updateElements(); // Двигаем трубы, монеты и т.д.
+        this.checkCollisions(); // Проверяем удары и сбор предметов
 
-        // Спавн труб
+        // Проверка: не вылетела ли птица за границы экрана
+    
+    }
+
+    // Движение всех объектов влево
+    updateElements() {
+        const speed = this.pipeSpeed; // Текущая скорость игры
+        
+        this.pipes.forEach(p => p.x -= speed); // Двигаем трубы
+        // Двигаем бонусы и заставляем их плавать по синусоиде
+        this.items.forEach(it => { it.x -= speed; it.osc += 0.05; it.y += Math.sin(it.osc) * 1.5; });
+
+        this.coins.forEach(c => {
+            c.x -= speed; // Двигаем монеты
+            c.angle += 0.1; // Вращаем их
+            
+            // ЕСЛИ АКТИВИРОВАН МАГНИТ
+            if (this.activePowerups.magnet > 0) {
+                const dist = Math.hypot(this.bird.x - c.x, this.bird.y - c.y); // Расстояние до птицы
+                if (dist < this.config.magnetRadius) { // Если в радиусе действия
+                    c.x += (this.bird.x - c.x) * 0.2; // Тянем по X (ускоренно)
+                    c.y += (this.bird.y - c.y) * 0.2; // Тянем по Y (ускоренно)
+                }
+            }
+        });
+
+        // Очистка массивов: удаляем объекты, которые улетели далеко влево
+        this.pipes = this.pipes.filter(p => p.x > -p.width);
+        this.coins = this.coins.filter(c => c.x > -50 && !c.collected);
+        this.items = this.items.filter(it => it.x > -50);
+        
+        // Проверка: пора ли создавать новую трубу?
         if (++this.tickCount > this.pipeSpawnThreshold) {
-            this.spawnPipe();
-            this.tickCount = 0;
+            this.spawnPipe(); // Создаем трубу
+            this.tickCount = 0; // Сброс счетчика
         }
+    }
 
-        // ДВИЖЕНИЕ ЭЛЕМЕНТОВ
-        const speed = this.pipeSpeed;
+    // Проверка столкновений
+    checkCollisions() {
+        const b = this.bird; // Ссылка для удобства
+        const pad = 10; // "Мягкое" столкновение (отступ от краев спрайта)
 
-        // 1. Трубы
+        // Проверка труб
         for (let i = this.pipes.length - 1; i >= 0; i--) {
             const p = this.pipes[i];
-            p.x -= speed;
-
-            // Коллизия
-            const pad = 10;
-            const hitX = this.bird.x + this.bird.size - pad > p.x && this.bird.x + pad < p.x + p.width;
-            const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
+            // Проверка на пересечение по X и по Y
+            const hitX = b.x + b.size - pad > p.x && b.x + pad < p.x + p.width;
+            const hitY = b.y + pad < p.top || b.y + b.size - pad > p.bottom;
 
             if (hitX && hitY) {
-                // Если Призрак (способность) или Ревайв (временный) - живем
-                if (this.activePowerups.ghost > 0 || this.isGhost) {
-                    // Пролетаем сквозь
-                } 
-                else if (this.activePowerups.shield > 0) {
+                if (this.activePowerups.ghost > 0) continue; // Если призрак — летим сквозь
+                if (this.activePowerups.shield > 0) { // Если щит
                     this.activePowerups.shield = 0; // Ломаем щит
-                    this.pipes.splice(i, 1); // Ломаем трубу
-                    if(window.updateGlobalUI) window.updateGlobalUI();
-                    continue;
-                } else {
-                    this.gameOver();
-                    return;
+                    this.pipes.splice(i, 1); // Удаляем эту трубу
+                    if (window.updateGlobalUI) window.updateGlobalUI(); // Обновляем UI (иконку щита)
+                    continue; // Живем дальше
                 }
+                this.gameOver(); // Иначе — смерть
+                return;
             }
 
-            if (!p.passed && p.x + p.width < this.bird.x) {
+            // Начисление очков, если труба пройдена
+            if (!p.passed && p.x + p.width < b.x) {
                 p.passed = true;
                 this.score++;
-                const scoreEl = document.getElementById('score-overlay');
-                if(scoreEl) scoreEl.innerText = this.score;
-            }
+                
+                // Прогресс ежедневного задания №1 (Трубы)
+                if (window.state?.user?.daily_challenges) {
+                    const task = window.state.user.daily_challenges.find(c => c.id === 1);
+                    if (task && !task.done) {
+                        task.progress++;
+                        if (task.progress >= task.target) task.done = true;
+                    }
+                }
 
-            if (p.x < -p.width) this.pipes.splice(i, 1);
+                // Обновление цифры счета на экране
+                const scoreEl = document.getElementById('score-overlay');
+                if (scoreEl) scoreEl.innerText = this.score;
+            }
         }
 
-        // 2. Монеты
-        this.coins.forEach(c => {
-            c.x -= speed;
-            c.angle += 0.1;
-            
-            // Магнит
-            if (this.activePowerups.magnet > 0) {
-                const dist = Math.hypot(this.bird.x - c.x, this.bird.y - c.y);
-                if (dist < this.config.magnetRadius) {
-                    c.x += (this.bird.x - c.x) * 0.15;
-                    c.y += (this.bird.y - c.y) * 0.15;
-                }
-            }
-        });
-        
-        // Сбор монет
-        const bX = this.bird.x + this.bird.size/2;
-        const bY = this.bird.y + this.bird.size/2;
-        
-        this.coins = this.coins.filter(c => {
-            if (Math.hypot(bX - c.x, bY - c.y) < 40) {
-                // Собрали!
-                if(window.state) {
-                    window.state.coins++;
-                    if(window.updateGlobalUI) window.updateGlobalUI();
-                }
-                return false; // Удаляем из массива
-            }
-            return c.x > -50; // Оставляем, если еще на экране
-        });
+        // Центр птицы для более точного сбора монет
+        const bCenterX = b.x + b.size / 2;
+        const bCenterY = b.y + b.size / 2;
 
-        // 3. Бонусы (Items)
-        this.items.forEach(it => {
-            it.x -= speed;
-            it.osc += 0.05;
-            it.y += Math.sin(it.osc) * 1.5;
-        });
+        // Сбор монет
+       this.coins.forEach(c => {
+    // Проверка дистанции между центром птицы и монетой
+    if (!c.collected && Math.hypot(bCenterX - c.x, bCenterY - c.y) < 35) {
+        c.collected = true; // Помечаем монету как собранную
+        
+        if (window.state) {
+            // 1. Увеличиваем монеты в глобальном стейте
+            window.state.coins = (window.state.coins || 0) + 1;
+
+            // 2. Проверяем наличие заданий (Daily Challenges) максимально безопасно
+            // Используем ?. чтобы код не падал, если user или задания еще не загружены
+            const challenges = window.state.user?.daily_challenges;
+            
+            if (Array.isArray(challenges)) {
+                const coinTask = challenges.find(t => t.id === 2); // ID 2 - сбор монет
+                if (coinTask && !coinTask.done) {
+                    coinTask.progress++;
+                    if (coinTask.progress >= coinTask.target) {
+                        coinTask.done = true;
+                    }
+                }
+            }
+
+            // 3. Обновляем UI (интерфейс)
+            // Вызываем твою функцию из main.js
+            if (typeof window.updateGlobalUI === 'function') {
+                window.updateGlobalUI();
+            }
+        }
+    }
+});
         
         // Сбор бонусов
-        this.items = this.items.filter(it => {
-            if (Math.hypot(bX - it.x, bY - it.y) < 45) {
-                // Активируем!
-                this.activatePowerupEffect(it.type);
-                if(window.updateGlobalUI) window.updateGlobalUI();
-                return false;
+        this.items.forEach((it, idx) => {
+            if (Math.hypot(bCenterX - it.x, bCenterY - it.y) < 40) {
+                this.activePowerups[it.type] = this.config.powerupDuration; // Активируем время действия
+                this.items.splice(idx, 1); // Удаляем иконку с экрана
+                
+                // Прогресс ежедневного задания №3 (Способности)
+                const task = window.state.user.daily_challenges?.find(c => c.id === 3);
+                if (task && !task.done) { task.progress++; task.done = true; }
+                
+                if (window.updateGlobalUI) window.updateGlobalUI(); // Показываем активный бафф
             }
-            return it.x > -50;
         });
     }
 
+    // Отрисовка всей графики
     draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Чистим холст
         
-        const pipeColor = '#d35400'; // Аркадный цвет (Оранжевый)
-        const capColor = '#e67e22'; 
-        const strokeColor = '#6e2c00';
+        // --- ОТРИСОВКА ТРУБ (ЦВЕТ ХАКИ И УТОЛЩЕНИЯ) ---
+        const pipeColor = '#556b2f';    // Темный хаки для тела трубы
+        const capColor = '#6b8e23';     // Оливковый для "шапки"
+        const strokeColor = '#2d3419';  // Темный контур
+        const capHeight = 20;           // Высота утолщения
+        const capGap = 5;               // На сколько шапка шире трубы
 
-        this.pipes.forEach(p => {
+       this.pipes.forEach(p => {
             this.ctx.lineWidth = 2;
             this.ctx.strokeStyle = strokeColor;
-            
-            // Верх
+
+            // --- 1. ВЕРХНЯЯ ТРУБА ---
             this.ctx.fillStyle = pipeColor;
             this.ctx.fillRect(p.x, 0, p.width, p.top);
-            this.ctx.fillStyle = capColor;
-            this.ctx.fillRect(p.x - 5, p.top - 25, p.width + 10, 25);
-            this.ctx.strokeRect(p.x - 5, p.top - 25, p.width + 10, 25);
+            
+            // Добавляем блик для объема (светлая полоса слева)
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            this.ctx.fillRect(p.x + 8, 0, 10, p.top);
+            
             this.ctx.strokeRect(p.x, 0, p.width, p.top);
+            
+            // Шапка верхней трубы
+            this.ctx.fillStyle = capColor;
+            this.ctx.fillRect(p.x - capGap, p.top - capHeight, p.width + (capGap * 2), capHeight);
+            this.ctx.strokeRect(p.x - capGap, p.top - capHeight, p.width + (capGap * 2), capHeight);
 
-            // Низ
+            // --- 2. НИЖНЯЯ ТРУБА ---
             this.ctx.fillStyle = pipeColor;
             this.ctx.fillRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom);
-            this.ctx.fillStyle = capColor;
-            this.ctx.fillRect(p.x - 5, p.bottom, p.width + 10, 25);
-            this.ctx.strokeRect(p.x - 5, p.bottom, p.width + 10, 25);
+            
+            // Добавляем блик для объема
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            this.ctx.fillRect(p.x + 8, p.bottom, 10, window.innerHeight - p.bottom);
+            
             this.ctx.strokeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom);
+
+            // Шапка нижней трубы
+            this.ctx.fillStyle = capColor;
+            this.ctx.fillRect(p.x - capGap, p.bottom, p.width + (capGap * 2), capHeight);
+            this.ctx.strokeRect(p.x - capGap, p.bottom, p.width + (capGap * 2), capHeight);
         });
+       
+       
 
-        this.drawGround();
 
-        // Монеты
+        // Отрисовка монет
         this.coins.forEach(c => {
             this.ctx.save();
-            this.ctx.translate(c.x, c.y);
-            this.ctx.scale(Math.abs(Math.cos(c.angle)), 1);
-            this.ctx.fillStyle = "#FFD700";
+            this.ctx.translate(c.x, c.y); // Переходим в координаты монеты
+            this.ctx.scale(Math.abs(Math.cos(c.angle)), 1); // Эффект вращения через сжатие по ширине
+            this.ctx.fillStyle = "#FFD700"; // Золотой цвет
             this.ctx.beginPath(); this.ctx.arc(0, 0, 12, 0, Math.PI*2); this.ctx.fill();
-            this.ctx.strokeStyle = "#b36b15"; this.ctx.stroke();
+            this.ctx.strokeStyle = "#b36b15"; this.ctx.stroke(); // Медная обводка
             this.ctx.restore();
         });
 
-        // Бонусы
+        // Отрисовка бонусов
         this.ctx.font = "35px Arial";
         this.items.forEach(it => {
-            const icons = { shield: '🛡️', magnet: '🧲', ghost: '👻', gap: '↔️' };
-            this.ctx.fillText(icons[it.type] || '🎁', it.x - 15, it.y + 10);
+            const icons = { shield: '🛡️', magnet: '🧲', ghost: '👻', gap: '↔️' }; // Сопоставление иконок
+            this.ctx.fillText(icons[it.type] || '🎁', it.x - 12, it.y + 10);
         });
 
-        // Птица
+        this.drawGround(); // Отрисовываем землю поверх труб
+
+        // Отрисовка птицы
         this.ctx.save();
-        // Эффекты на птице
-        if (this.isGhost || this.activePowerups.ghost > 0) this.ctx.globalAlpha = 0.5;
+        this.ctx.translate(this.bird.x + this.bird.size/2, this.bird.y + this.bird.size/2); // Перенос в центр птицы
+        this.ctx.rotate(this.bird.rotation); // Поворот
         
+        if (this.activePowerups.ghost > 0) this.ctx.globalAlpha = 0.5; // Полупрозрачность, если призрак
+
+        // Эффект светящегося щита вокруг птицы
         if (this.activePowerups.shield > 0) {
             this.ctx.beginPath();
-            this.ctx.arc(this.bird.x + this.bird.size/2, this.bird.y + this.bird.size/2, this.bird.size, 0, Math.PI*2);
-            this.ctx.strokeStyle = "rgba(0, 255, 255, 0.7)";
-            this.ctx.lineWidth = 3;
+            this.ctx.arc(0, 0, this.bird.size * 0.9, 0, Math.PI * 2);
+            this.ctx.strokeStyle = "rgba(0, 255, 255, 0.6)"; // Неоновый голубой
+            this.ctx.lineWidth = 4;
             this.ctx.stroke();
         }
 
-        this.ctx.translate(this.bird.x + this.bird.size/2, this.bird.y + this.bird.size/2);
-        this.ctx.rotate(this.bird.rotation);
-        const img = this.birdSprites[this.frameIndex];
+        // Анимация кадров: меняем картинку каждые 100мс
+        this.animFrame = (Math.floor(Date.now() / 100) % 3);
+        const img = this.birdSprites[this.animFrame]; 
+        
         if (img && img.complete) {
             this.ctx.drawImage(img, -this.bird.size/2, -this.bird.size/2, this.bird.size, this.bird.size);
+        } else {
+            // Фолбэк на случай, если картинка не загрузилась
+            this.ctx.fillStyle = "yellow";
+            this.ctx.fillRect(-this.bird.size/2, -this.bird.size/2, this.bird.size, this.bird.size);
         }
-        this.ctx.restore();
+        this.ctx.restore(); // Возвращаем контекст в исходное состояние
     }
 
     drawGround() {
-        const ctx = this.ctx;
-        const g = this.ground;
-        const y = window.innerHeight - g.h;
-        if (g.img.complete) {
-            for (let i = 0; i <= Math.ceil(this.canvas.width / g.realWidth) + 1; i++) {
-                ctx.drawImage(g.img, i * g.realWidth + g.offsetX, y, g.realWidth, g.h);
-            }
+    const ctx = this.ctx;
+    const g = this.ground;
+    const y = window.innerHeight - g.h;
+
+    if (g.img.complete) {
+        for (let i = 0; i <= Math.ceil(this.canvas.width / g.realWidth) + 1; i++) {
+            ctx.drawImage(
+                g.img, 
+                i * g.realWidth + g.offsetX, 
+                y, 
+                g.realWidth, 
+                g.h
+            );
         }
     }
+}
 
-    handleInput(e) {
-        if (!this.isRunning || this.isPaused) return;
-        if (e && e.type === 'touchstart') e.preventDefault();
-        
-        this.bird.velocity = this.jump; // Теперь прыжок такой же сильный
-        
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    }
-
+    // Завершение игры
     gameOver() {
-        if (!this.isRunning) return;
-        this.isRunning = false;
-        
-        // Скрываем панель способностей
-        const panel = document.querySelector('.arcade-powers-layout');
-        if (panel) panel.style.display = 'none';
-        
-        if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
+        if (!this.isRunning) return; // Чтобы не вызывать дважды
+        this.isRunning = false; // Останавливаем логику
+        // Скрываем панель способностей при смерти
+    const panel = document.getElementById('arcade-powerups-panel');
+    if (panel) panel.classList.add('hidden');
+
+        if (this.onGameOver) this.onGameOver(this.score); // Сообщаем внешнему коду результат
     }
 
+    // Главный игровой цикл
     loop() {
-        if (!this.isRunning) return;
-        this.update();
-        this.draw();
-        this.animationId = requestAnimationFrame(this.loop);
+        if (!this.isRunning) return; // Если игра стоп — прекращаем рекурсию
+        this.update(); // Расчет физики
+        this.draw(); // Рисование
+        requestAnimationFrame(this.loop); // Просим браузер вызвать нас снова перед следующим обновлением экрана
+    }
+
+    // Обработка ввода (прыжок)
+    handleInput() { 
+        if (!this.isRunning || this.isPaused) return; // Прыгаем только в активной игре
+        this.bird.velocity = this.jump; // Устанавливаем вертикальную скорость равной силе прыжка
     }
 }
