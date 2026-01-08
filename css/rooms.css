@@ -540,3 +540,52 @@
     font-weight: 900;
     z-index: 2;
 }
+/* --- СТИЛИ ДЛЯ ВКЛАДОК МАГАЗИНА (TABS) --- */
+.shop-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 20px; /* Отступ до контента */
+}
+
+.shop-tab-btn {
+    background: rgba(0, 0, 0, 0.6); /* Темный фон неактивной вкладки */
+    border: 2px solid #5c4d32;
+    color: #aaa; /* Серый текст */
+    padding: 10px 25px;
+    border-radius: 25px; /* Овальные кнопки */
+    font-weight: 900;
+    font-size: 14px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1; /* Чтобы кнопки занимали всю ширину */
+    max-width: 140px;
+}
+
+/* Активная вкладка (Золотая) */
+.shop-tab-btn.active {
+    background: #f7d51d;
+    color: #000;
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
+    transform: scale(1.05);
+}
+
+/* Скрытие/Показ контента */
+.shop-tab-content {
+    display: none;
+    width: 100%;
+    animation: fadeTab 0.3s ease;
+}
+
+.shop-tab-content.active-view {
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeTab {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
