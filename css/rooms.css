@@ -242,48 +242,48 @@
 
 /* --- СТИЛИ ДЛЯ ВКЛАДОК МАГАЗИНА (TABS) --- */
 
-/* --- УНИВЕРСАЛЬНЫЕ ВКЛАДКИ (TABS) --- */
-.ui-tabs {
+.shop-tabs {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 15px;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Отступ до контента */
 }
 
-.ui-tab-btn {
-    background: rgba(0, 0, 0, 0.6);
+.shop-tab-btn {
+    background: rgba(0, 0, 0, 0.6); /* Темный фон неактивной вкладки */
     border: 2px solid #5c4d32;
-    color: #aaa;
-    padding: 8px 16px;
-    border-radius: 20px;
+    color: #aaa; /* Серый текст */
+    padding: 10px 25px;
+    border-radius: 25px; /* Овальные кнопки */
     font-weight: 900;
-    font-size: 12px;
+    font-size: 14px;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex: 1; /* Растягиваем равномерно */
-    max-width: 100px;
 }
 
-.ui-tab-btn.active {
+/* Активная вкладка (Золотая) */
+.shop-tab-btn.active {
     background: #f7d51d;
     color: #000;
     border-color: #fff;
-    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
+    transform: scale(1.05); /* Чуть увеличивается */
 }
 
-.ui-tab-content {
+/* Скрытие неактивных разделов */
+.shop-tab-content {
     display: none;
     width: 100%;
-    animation: fadeTab 0.3s ease;
+    animation: fadeTab 0.3s ease; /* Плавное появление */
 }
 
-.ui-tab-content.active-view {
+/* Показ активного раздела */
+.shop-tab-content.active-view {
     display: flex;
     flex-direction: column;
 }
-
 
 @keyframes fadeTab {
     from { opacity: 0; transform: translateY(10px); }
@@ -478,114 +478,4 @@
 .white-oval-btn:active {
     transform: scale(0.96);
     background: #d1d1d1;
-}
-/* --- КНОПКИ ПОКУПКИ (МАГАЗИН / ИНВЕНТАРЬ) --- */
-.action-btn {
-    border: none;
-    border-radius: 15px;
-    padding: 6px 14px;
-    font-size: 11px;
-    font-weight: 900;
-    cursor: pointer;
-    text-transform: uppercase;
-    color: #fff;
-    transition: transform 0.1s, filter 0.1s;
-    /* Тень для объема */
-    box-shadow: 0 3px 0 rgba(0,0,0,0.2); 
-    margin-top: 5px;
-}
-
-.action-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
-}
-
-/* Цвета кнопок */
-.btn-blue   { background-color: #0098ea; } /* TON */
-.btn-green  { background-color: #4ec0ca; } /* Игровые */
-.btn-purple { background-color: #9b59b6; } /* Обмен */
-
-
-/* --- СТИЛЬ ОКНА КАРЬЕРЫ (Фон) --- */
-.career-window {
-    /* Фон карты */
-    background: url('/frontend/assets/careermap.png') no-repeat center center;
-    background-size: 100% 100%;
-    
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    
-    /* Размеры (чуть больше обычного окна Vision) */
-    width: 96%;           
-    max-width: 450px;     
-    height: 82vh;         
-    max-height: 750px;
-    
-    /* Отступы для контента внутри рамки */
-    padding: 70px 20px 40px 20px; 
-    
-    position: relative;
-    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
-    box-sizing: border-box;
-}
-
-/* Заголовок внутри карты */
-.career-window h3 {
-    color: #f7d51d;
-    font-size: 24px;
-    margin: -10px 0 10px 0;
-    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000;
-    text-transform: uppercase;
-    font-weight: 900;
-    z-index: 2;
-}
-/* --- СТИЛИ ДЛЯ ВКЛАДОК МАГАЗИНА (TABS) --- */
-.shop-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    width: 100%;
-    margin-bottom: 20px; /* Отступ до контента */
-}
-
-.shop-tab-btn {
-    background: rgba(0, 0, 0, 0.6); /* Темный фон неактивной вкладки */
-    border: 2px solid #5c4d32;
-    color: #aaa; /* Серый текст */
-    padding: 10px 25px;
-    border-radius: 25px; /* Овальные кнопки */
-    font-weight: 900;
-    font-size: 14px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1; /* Чтобы кнопки занимали всю ширину */
-    max-width: 140px;
-}
-
-/* Активная вкладка (Золотая) */
-.shop-tab-btn.active {
-    background: #f7d51d;
-    color: #000;
-    border-color: #fff;
-    box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
-    transform: scale(1.05);
-}
-
-/* Скрытие/Показ контента */
-.shop-tab-content {
-    display: none;
-    width: 100%;
-    animation: fadeTab 0.3s ease;
-}
-
-.shop-tab-content.active-view {
-    display: flex;
-    flex-direction: column;
-}
-
-@keyframes fadeTab {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
 }
