@@ -122,12 +122,15 @@ function showRoom(roomName) {
         const isGameUI = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
         header.style.display = isGameUI ? 'none' : 'flex';
     }
+     /*
     const topBtn = document.getElementById('top-btn');
     const dailyBtn = document.getElementById('daily-btn');
     const isGameActive = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
 
     if (topBtn) isGameActive ? topBtn.classList.add('hidden') : topBtn.classList.remove('hidden');
     if (dailyBtn) isGameActive ? dailyBtn.classList.add('hidden') : dailyBtn.classList.remove('hidden');
+     */
+    
     // Кнопка Паузы (только внутри геймплея)
     const pauseBtn = document.getElementById('btn-pause-trigger');
     if (pauseBtn) pauseBtn.classList.toggle('hidden', roomName !== 'game');

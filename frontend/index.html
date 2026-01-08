@@ -2,19 +2,21 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="format-detection" content="telephone=no"> <title>Flappy Bird TON</title>
+    <title>Flappy TON Bird</title>
     
+    <!-- ПОДКЛЮЧАЕМ ВСЕ СТИЛИ НАПРЯМУЮ (БЫСТРЕЕ) -->
     <link rel="stylesheet" href="/css/base.css"> 
-    <link rel="stylesheet" href="/frontend/style.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/rooms.css"> <!-- Тут твои новые фоны и рамки -->
+    <link rel="stylesheet" href="/css/game.css">
     
+    <!-- Скрипты -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
+
 <body>
 
     <div id="clouds-container" class="sky-container">
@@ -28,13 +30,7 @@
 
     <div id="app">
         
-        <button id="top-btn" class="ui-corner-btn menu-only">
-            <img src="/frontend/assets/top.png" alt="Top" style="width: 100%;">
-        </button>
-
-        <button id="daily-btn" class="ui-corner-btn menu-only">
-            <img src="/frontend/assets/daily.png" alt="Daily" style="width: 100%;">
-        </button>
+        
 
         <button id="pause-btn" class="ui-corner-btn">
             <span style="font-size: 30px;">⏸️</span>
@@ -54,6 +50,14 @@
         </div>
 
         <div id="scene-home" class="screen">
+
+            <button id="top-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/top.png" alt="Top" style="width: 100%;">
+        </button>
+
+        <button id="daily-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/daily.png" alt="Daily" style="width: 100%;">
+        </button>
             <div class="game-logo-container">
                 <img src="/frontend/assets/flappyname.png" class="main-logo-img" alt="FLAPPY TON">
             </div>
