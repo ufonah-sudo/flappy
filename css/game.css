@@ -1,5 +1,5 @@
 /* ==========================================================================
-   game.css - ИГРОВОЙ ПРОЦЕСС И РЕЗУЛЬТАТЫ
+   game.css - ИГРОВОЙ ПРОЦЕСС И РЕЗУЛЬТАТЫ (FIXED)
    ========================================================================== */
 
 /* --- 1. ИГРОВОЙ КОНТЕЙНЕР И ХОЛСТ --- */
@@ -9,11 +9,15 @@
     left: 0;
     width: 100%;
     height: 100%;
+    /* ВАЖНО: background должен быть строго none или transparent, 
+       иначе он перекроет фон из base.css (облака и небо) */
     background: transparent !important; 
     display: flex;
     justify-content: center; 
     overflow: hidden;
-    z-index: 5; /* Ниже основного UI, но выше фона */
+    /* z-index 5 позволяет игре быть выше фонового неба (z-index 1), 
+       но ниже интерфейса (z-index 20+) */
+    z-index: 5; 
 }
 
 #game-canvas { 
@@ -21,62 +25,60 @@
     width: 100vw; 
     height: 100vh; 
     object-fit: cover;
-    touch-action: none; /* Критично для мобилок: отключает системный скролл при игре */
+    touch-action: none; /* Запрещает скролл страницы пальцем во время игры */
 }
 
 /* --- 2. ТЕКУЩИЙ СЧЕТ (ИНГЕЙМ) --- */
 #score-overlay {
     position: absolute; 
-    top: 15%; /* Смещено чуть ниже, чтобы не перекрывать баланс в хедере */
+    top: 15%; /* Расположение счета в верхней части экрана */
     width: 100%; 
     text-align: center;
     font-size: 80px; 
     font-weight: 900; 
     color: white;
-    /* Фирменный "толстый" контур текста */
+    /* Жирный черный контур для читаемости на любом фоне */
     text-shadow: 
         3px 3px 0 #000, 
         -3px -3px 0 #000, 
         3px -3px 0 #000, 
         -3px 3px 0 #000,
         0 8px 15px rgba(0,0,0,0.4);
-    z-index: 100; 
-    pointer-events: none;
+    z-index: 100; /* Поверх игры */
+    pointer-events: none; /* Чтобы счет не мешал кликать по экрану */
     user-select: none;
     letter-spacing: 2px;
-    transition: transform 0.1s ease-out; /* Для эффекта пульсации при начислении очка */
+    transition: transform 0.1s ease-out;
 }
 
-/* Эффект пульсации (добавлять через JS при начислении очка: element.classList.add('pulse')) */
+/* Эффект увеличения счета при начислении очка */
 .score-pulse {
     transform: scale(1.2);
 }
 
-/* --- 3. ИНТЕРФЕЙС СПОСОБНОСТЕЙ (СЛЕВА) --- */
 /* --- 3. ИНТЕРФЕЙС СПОСОБНОСТЕЙ (АРКАДА) --- */
 #ingame-inventory {
     position: absolute;
-    /* Уменьшаем отступ, если они слишком высоко. 
-       85px (высота меню) + 15px (зазор) = 100px. */
-    bottom: calc(1px + env(safe-area-inset-bottom, 15px)); 
+    /* Располагаем над нижней панелью навигации */
+    bottom: calc(100px + env(safe-area-inset-bottom, 15px)); 
     left: 50%;
     transform: translateX(-50%); 
-    z-index: 150;
+    z-index: 150; /* Поверх игрового поля */
     display: flex; 
     flex-direction: row; 
     gap: 12px;
-    pointer-events: none;
+    pointer-events: none; /* Контейнер прозрачен для кликов */
     width: auto;
     justify-content: center;
 }
 
-/* Сами кнопки */
+/* Ячейка способности */
 .powerup-slot {
-    pointer-events: auto;
-    width: 65px; /* Чуть увеличим для удобства нажатия пальцем */
+    pointer-events: auto; /* Сами кнопки кликабельны */
+    width: 65px;
     height: 65px;
-    background: rgba(0, 0, 0, 0.75); /* Сделаем чуть темнее для контраста */
-    border: 3px solid #f7d51d; /* Цвет золота из твоего UI вместо белого */
+    background: rgba(0, 0, 0, 0.75); 
+    border: 3px solid #f7d51d; /* Золотая рамка */
     border-radius: 18px;
     display: flex;
     align-items: center;
@@ -85,21 +87,19 @@
     transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     padding: 0;
     position: relative;
-    backdrop-filter: blur(4px); /* Эффект стекла */
+    backdrop-filter: blur(4px);
 }
 
-/* Эффект нажатия */
 .powerup-slot:active {
-    transform: scale(0.9);
-    background: rgba(255, 255, 255, 0.2);
+    transform: scale(0.9); /* Анимация нажатия */
 }
 
-/* Счётчик предметов (Badge) */
+/* Счетчик количества предметов на кнопке */
 .powerup-slot .badge {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: #f7d51d; /* Желтый как в оригинале */
+    background: #f7d51d;
     color: #000;
     font-size: 13px;
     font-weight: 900;
@@ -110,18 +110,15 @@
     align-items: center;
     justify-content: center;
     border: 2px solid #000;
-    z-index: 2;
-}
-
-/* Иконка внутри (emoji или картинка) */
-.p-icon, .powerup-slot span[style] {
-    font-size: 28px !important;
-    line-height: 1;
 }
 
 /* --- 4. ЭКРАН GAME OVER (РЕЗУЛЬТАТЫ) --- */
 #game-over { 
-    background: rgba(0, 0, 0, 0.85); 
+    /* По умолчанию скрыт в HTML через class="hidden" */
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); /* Затемнение фона при смерти */
     backdrop-filter: blur(12px); 
     -webkit-backdrop-filter: blur(12px);
     display: flex;
@@ -129,33 +126,13 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    z-index: 5000;
+    z-index: 5000; /* Выше всех элементов интерфейса */
 }
 
-/* Анимация появления экрана смерти */
-.game-over-animate {
-    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes popIn {
-    0% { opacity: 0; transform: scale(0.8); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-.status-title { 
-    font-size: 48px; 
-    color: #fff; 
-    text-shadow: 4px 4px 0 #e67e22; 
-    margin-bottom: 20px; 
-    text-transform: uppercase;
-    font-weight: 900;
-    letter-spacing: -1px;
-}
-
-/* Табличка с результатами (стиль оригинального Flappy) */
+/* Табличка с результатами */
 .result-box {
-    background: #ded895; /* "Бумажный" желтый цвет */
-    border: 5px solid #543847; /* Темно-коричневая рамка */
+    background: #ded895; /* Фирменный "песочный" цвет */
+    border: 5px solid #543847; /* Коричневая обводка */
     border-radius: 20px; 
     padding: 20px 40px; 
     width: 100%;
@@ -163,41 +140,18 @@
     color: #543847;
     text-align: center;
     box-shadow: 0 10px 0 rgba(0,0,0,0.3);
-    position: relative;
-}
-
-.result-box .label {
-    font-size: 14px;
-    text-transform: uppercase;
-    font-weight: 800;
-    margin-bottom: 5px;
-    color: #e67e22;
 }
 
 #final-score {
     font-size: 64px;
     font-weight: 900;
-    display: block;
     color: white;
     text-shadow: 4px 4px 0 #543847;
-    margin-bottom: 10px;
 }
 
-.best-score-container {
-    border-top: 2px solid rgba(84, 56, 71, 0.2);
-    padding-top: 10px;
-    margin-top: 5px;
-}
-
-#best-score {
-    font-size: 24px;
-    font-weight: 800;
-    color: #543847;
-}
-
-/* Контейнер кнопок рестарта/выхода */
+/* Кнопки на экране проигрыша */
 .game-over-buttons {
-    margin-top: 40px;
+    margin-top: 30px;
     width: 100%;
     max-width: 280px;
     display: flex;
@@ -205,43 +159,16 @@
     gap: 15px;
 }
 
-/* Кнопка "Играть снова" */
+/* Яркая кнопка Рестарта */
 .btn-restart {
     background: #f7941d !important;
     color: white !important;
     border: 3px solid #fff !important;
     box-shadow: 0 6px 0 #b36b15 !important;
-    font-size: 22px !important;
-    height: 65px;
 }
 
-/* Кнопка "В меню" */
-.btn-menu {
-    background: #fff !important;
-    color: #543847 !important;
-    border: 3px solid #543847 !important;
-    box-shadow: 0 6px 0 #999 !important;
-    font-size: 18px !important;
-    height: 55px;
-}
-
-/* --- 5. СПЕЦИФИКАЦИЯ РЕЖИМА АРКАДА --- */
-/* Контейнер выбора мода (classic/arcade.png) */
-.mode-selection-screen {
-    background: rgba(0,0,0,0.8);
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
-
-.mode-card {
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    filter: grayscale(0.4);
-    border: 4px solid rgba(255,255,255,0.3);
-}
-
+/* --- 5. ВЫБОР РЕЖИМА (ДЛЯ СПРАВКИ) --- */
 .mode-card.active {
-    filter: grayscale(0);
     border: 5px solid #f7d51d !important;
     transform: scale(1.05);
     box-shadow: 0 0 30px rgba(247, 213, 29, 0.4);
