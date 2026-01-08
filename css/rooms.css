@@ -242,48 +242,48 @@
 
 /* --- СТИЛИ ДЛЯ ВКЛАДОК МАГАЗИНА (TABS) --- */
 
-/* --- УНИВЕРСАЛЬНЫЕ ВКЛАДКИ (TABS) --- */
-.ui-tabs {
+.shop-tabs {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 15px;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Отступ до контента */
 }
 
-.ui-tab-btn {
-    background: rgba(0, 0, 0, 0.6);
+.shop-tab-btn {
+    background: rgba(0, 0, 0, 0.6); /* Темный фон неактивной вкладки */
     border: 2px solid #5c4d32;
-    color: #aaa;
-    padding: 8px 16px;
-    border-radius: 20px;
+    color: #aaa; /* Серый текст */
+    padding: 10px 25px;
+    border-radius: 25px; /* Овальные кнопки */
     font-weight: 900;
-    font-size: 12px;
+    font-size: 14px;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex: 1; /* Растягиваем равномерно */
-    max-width: 100px;
 }
 
-.ui-tab-btn.active {
+/* Активная вкладка (Золотая) */
+.shop-tab-btn.active {
     background: #f7d51d;
     color: #000;
     border-color: #fff;
-    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
+    transform: scale(1.05); /* Чуть увеличивается */
 }
 
-.ui-tab-content {
+/* Скрытие неактивных разделов */
+.shop-tab-content {
     display: none;
     width: 100%;
-    animation: fadeTab 0.3s ease;
+    animation: fadeTab 0.3s ease; /* Плавное появление */
 }
 
-.ui-tab-content.active-view {
+/* Показ активного раздела */
+.shop-tab-content.active-view {
     display: flex;
     flex-direction: column;
 }
-
 
 @keyframes fadeTab {
     from { opacity: 0; transform: translateY(10px); }
