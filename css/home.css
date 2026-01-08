@@ -110,3 +110,10 @@ body:has(#scene-home:not(.hidden)) .menu-buttons-panel {
         3px -3px 0 #000, 
         -3px 3px 0 #000;
 }
+/* Фон для кнопки карьеры */
+#btn-mode-career { 
+    background-image: url('/frontend/assets/career.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
