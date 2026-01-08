@@ -345,8 +345,14 @@ function updateGlobalUI() {
     const cEl = document.getElementById('header-coins');
     if (cEl) cEl.innerText = Number(state.coins).toLocaleString();
     
+      // ЭНЕРГИЯ (Бывшие кристаллы)
     const crEl = document.getElementById('header-crystals');
-    if (crEl) crEl.innerText = state.crystals;
+    if (crEl) {
+        // Находим иконку рядом (span с классом icon) и меняем её
+        const iconSpan = crEl.previousElementSibling;
+        if (iconSpan) iconSpan.innerText = "⚡"; // Меняем 💎 на ⚡
+        crEl.innerText = state.crystals;
+    }
 
     // Обновляем жизни (сердечки)
     document.querySelectorAll('.stat-lives, #header-lives').forEach(el => {
