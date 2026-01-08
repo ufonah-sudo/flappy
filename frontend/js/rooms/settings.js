@@ -2,7 +2,6 @@ import * as api from '../../api.js';
 
 export function initSettings() {
     const container = document.querySelector('#scene-settings #settings-content');
-    
     if (!container) return;
 
     const settings = {
@@ -10,33 +9,36 @@ export function initSettings() {
         music: localStorage.getItem('music') !== 'off'
     };
 
-    // 1. HTML СТРУКТУРА
+    // 1. HTML: Добавили красную кнопку #btn-disconnect-ton (скрытую по умолчанию)
     container.innerHTML = `
         <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: flex-start; padding-top: 10px;">
             
-            <!-- МЕСТО ДЛЯ КНОПКИ -->
-            <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 25px; min-height: 50px; position: relative;">
+            <!-- БЛОК КОШЕЛЬКА -->
+            <div style="width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 25px;">
                 
-                <!-- 1. Сюда встанет Оригинальная кнопка -->
-                <div id="settings-wallet-root-unique"></div>
+                <!-- 1. Синяя кнопка (TON Connect) -->
+                <div id="settings-wallet-root-unique" style="width: 100%; display: flex; justify-content: center; min-height: 50px;"></div>
 
-                <!-- 2. Запасная кнопка (на случай, если оригинал не прогрузится) -->
-                <!-- Стиль точь-в-точь как у TON Connect (Синий овал) -->
-                <button id="manual-wallet-btn" style="
-                    display: none; /* Скрыта по умолчанию */
-                    background-color: #0098EA; 
-                    color: white; 
-                    border: none; 
-                    padding: 10px 20px; 
-                    border-radius: 20px; 
-                    font-weight: 600; 
-                    font-size: 15px; 
-                    cursor: pointer;
-                    box-shadow: 0 4px 10px rgba(0, 152, 234, 0.3);
-                    align-items: center;
-                    gap: 8px;
-                ">
+                <!-- 2. Запасная кнопка "Connect" (если синяя сломалась) -->
+                <button id="manual-wallet-btn" style="display: none; background: #0098EA; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px;">
                     💎 Connect Wallet
+                </button>
+
+                <!-- 3. Кнопка ОТКЛЮЧИТЬ (Появляется только если подключен) -->
+                <button id="btn-disconnect-ton" style="
+                    display: none; /* Скрыта */
+                    margin-top: 15px;
+                    background: transparent;
+                    border: 1px solid #ff4f4f;
+                    color: #ff4f4f;
+                    padding: 8px 16px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    font-weight: 900;
+                    cursor: pointer;
+                    text-transform: uppercase;
+                ">
+                    ❌ ОТКЛЮЧИТЬ КОШЕЛЕК
                 </button>
             </div>
 
@@ -64,58 +66,77 @@ export function initSettings() {
             </div>
             
             <div class="version-info" style="margin-top: auto; padding-bottom: 10px; font-size: 10px; opacity: 0.4; color: #fff; text-align: center;">
-                v1.1.0
+                v1.1.1
             </div>
         </div>
     `;
 
-    // 2. УМНАЯ ЛОГИКА ОТРИСОВКИ КОШЕЛЬКА
-    const attemptRender = (retries = 0) => {
-        const root = document.getElementById('settings-wallet-root-unique');
+    // 2. ФУНКЦИЯ ОБНОВЛЕНИЯ СТАТУСА (Показать/Скрыть кнопки)
+    const updateWalletState = () => {
+        const discBtn = document.getElementById('btn-disconnect-ton');
         const manualBtn = document.getElementById('manual-wallet-btn');
-        
-        // Если контейнера уже нет (ушли со страницы), стоп
-        if (!root) return;
+        const root = document.getElementById('settings-wallet-root-unique');
 
-        if (window.wallet && window.wallet.tonConnectUI) {
-            try {
-                // Пробуем нарисовать родную кнопку
-                window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
-                if (manualBtn) manualBtn.style.display = 'none'; // Скрываем запасную
-                console.log("Кнопка TON отрисована успешно.");
-            } catch (e) {
-                console.warn("Ошибка TON UI, включаем запасную кнопку:", e);
-                if (manualBtn) manualBtn.style.display = 'flex';
-            }
+        if (!window.wallet || !discBtn) return;
+
+        if (window.wallet.isConnected) {
+            // Если подключен: Показываем "Отключить", скрываем "Manual"
+            discBtn.style.display = 'block';
+            if (manualBtn) manualBtn.style.display = 'none';
         } else {
-            // Если кошелек еще не загрузился...
-            if (retries < 10) {
-                // ...ждем еще 200мс и пробуем снова (до 10 раз)
-                setTimeout(() => attemptRender(retries + 1), 200);
-            } else {
-                // ...если совсем не грузится, показываем запасную кнопку
-                console.warn("TON не загрузился, показываем Manual Button");
-                if (manualBtn) manualBtn.style.display = 'flex';
-            }
+            // Если отключен: Скрываем "Отключить"
+            discBtn.style.display = 'none';
         }
     };
 
-    // Запускаем попытки
+    // 3. ОТРИСОВКА И ПОДПИСКА НА СОБЫТИЯ
+    const attemptRender = (retries = 0) => {
+        if (window.wallet && window.wallet.tonConnectUI) {
+            try {
+                // Рисуем основную кнопку
+                window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
+                
+                // Обновляем состояние кнопок
+                updateWalletState();
+                
+                // Подписываемся на изменения (чтобы кнопка "Отключить" появлялась/исчезала сама)
+                // Важно: отписываемся от старых, чтобы не дублировать (упрощенно)
+                window.wallet.tonConnectUI.onStatusChange(() => {
+                    updateWalletState();
+                });
+
+            } catch (e) {
+                console.warn("TON UI Error:", e);
+                document.getElementById('manual-wallet-btn').style.display = 'block';
+            }
+        } else {
+            if (retries < 10) setTimeout(() => attemptRender(retries + 1), 200);
+            else document.getElementById('manual-wallet-btn').style.display = 'block';
+        }
+    };
     attemptRender();
 
-    // Логика нажатия на ЗАПАСНУЮ кнопку
-    const manualBtn = document.getElementById('manual-wallet-btn');
-    if (manualBtn) {
-        manualBtn.onclick = () => {
-            if (window.wallet && window.wallet.tonConnectUI) {
-                window.wallet.tonConnectUI.openModal();
-            } else {
-                alert("Кошелек загружается... Попробуй через пару секунд.");
+    // 4. ОБРАБОТЧИК КНОПКИ "ОТКЛЮЧИТЬ"
+    const discBtn = document.getElementById('btn-disconnect-ton');
+    if (discBtn) {
+        discBtn.onclick = async () => {
+            if (window.wallet) {
+                await window.wallet.disconnect();
+                // Принудительно обновляем UI
+                updateWalletState();
+                // Перезагружаем страницу для чистоты (опционально, но надежно)
+                // window.location.reload(); 
             }
         };
     }
 
-    // 3. ОБРАБОТЧИКИ ОСТАЛЬНЫХ КНОПОК
+    // Обработчик Manual Connect
+    const manualBtn = document.getElementById('manual-wallet-btn');
+    if (manualBtn) {
+        manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
+    }
+
+    // 5. ОСТАЛЬНЫЕ КНОПКИ (Звук, Музыка...)
     const soundBtn = document.getElementById('toggle-sound');
     if (soundBtn) {
         soundBtn.onclick = () => {
