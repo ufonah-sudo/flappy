@@ -122,7 +122,7 @@ function showRoom(roomName) {
         const isGameUI = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
         header.style.display = isGameUI ? 'none' : 'flex';
     }
-const topBtn = document.getElementById('top-btn');
+    const topBtn = document.getElementById('top-btn');
     const dailyBtn = document.getElementById('daily-btn');
     const isGameActive = ['game', 'pauseMenu', 'gameOver'].includes(roomName);
 

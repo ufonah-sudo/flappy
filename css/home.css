@@ -1,46 +1,45 @@
 /* =========================================
-   home.css - ГЛАВНЫЙ ЭКРАН (ОБНОВЛЕННЫЙ)
+   home.css - ГЛАВНЫЙ ЭКРАН (МЕНЮ СТАРТА)
    ========================================= */
 
+/* 1. КОНТЕЙНЕР ГЛАВНОЙ СЦЕНЫ */
 #scene-home {
-    background: transparent;
-    backdrop-filter: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: center; 
-    align-items: center;    
-    padding: 20px;
-    overflow: hidden;
-    background: none !important; 
-    position: absolute; /* Используем absolute для перекрытия */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 100;
+    display: flex; /* Используем гибкую верстку */
+    flex-direction: column; /* Элементы (лого, кнопка) встают друг под другом */
+    justify-content: center; /* Центрируем содержимое по вертикали */
+    align-items: center; /* Центрируем содержимое по горизонтали */
+    padding: 20px; /* Безопасный отступ от краев экрана */
+    overflow: hidden; /* Запрещаем случайную прокрутку на главном экране */
+    
+    position: absolute; /* Накладываем поверх игры */
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 100; /* Слой на уровне других экранов (комнат) */
+    
+    background: transparent !important; /* Прозрачный фон, чтобы видеть облака и фон из base.css */
+    backdrop-filter: none; /* Убираем размытие, чтобы главный экран был четким */
 }
-
-
 
 /* 2. ЛОГОТИП В ЦЕНТРЕ */
 .game-logo-container {
-    width: 90%;
-    max-width: 340px;
+    width: 90%; /* Ширина логотипа относительно экрана */
+    max-width: 340px; /* Ограничение для планшетов */
     display: flex;
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: 30px; /* Отступ снизу до кнопки Play */
     z-index: 10;
-    will-change: transform;
+    will-change: transform; /* Оптимизация для плавной анимации */
 }
 
 .main-logo-img {
     width: 100%;
     height: auto;
     object-fit: contain;
-    animation: floatTitle 3s ease-in-out infinite;
-    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+    animation: floatTitle 3s ease-in-out infinite; /* Запуск покачивания логотипа */
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); /* Мягкая тень под лого */
 }
 
+/* Анимация "левитации" логотипа */
 @keyframes floatTitle {
     0%, 100% { transform: translateY(0) rotate(-1deg); }
     50% { transform: translateY(-20px) rotate(1deg); }
@@ -50,47 +49,51 @@
 #btn-start {
     width: 180px; 
     height: 180px;
-    background: url('../assets/knopka.png') no-repeat center center;
-    background-size: contain;
+    background: url('../assets/knopka.png') no-repeat center center; /* Твоя картинка кнопки */
+    background-size: contain; /* Вписываем картинку в размеры */
     border: none; 
     cursor: pointer; 
-    margin-bottom: 50px;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
-    transition: transform 0.15s;
+    margin-bottom: 50px; /* Отступ снизу */
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); /* Глубокая тень */
+    transition: transform 0.15s; /* Плавность при клике */
     z-index: 11;
     
-    /* Убираем текст */
+    /* Скрываем текст "Start" внутри кнопки, оставляем только картинку */
     text-indent: -9999px;
     overflow: hidden;
     
-    /* Анимация пульсации, чтобы игрок нажал */
+    /* Анимация пульсации, чтобы привлечь внимание игрока */
     animation: pulsePlay 2s infinite;
 }
 
+/* Анимация пульсации кнопки */
 @keyframes pulsePlay {
     0% { transform: scale(1); filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); }
     50% { transform: scale(1.05); filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6)); }
     100% { transform: scale(1); filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); }
 }
 
+/* Эффект при нажатии на кнопку старта */
 #btn-start:active { 
-    transform: scale(0.9) !important;
-    animation: none; /* Прерываем пульсацию при нажатии */
+    transform: scale(0.9) !important; /* Уменьшаем кнопку */
+    animation: none; /* Останавливаем пульсацию в момент клика */
 }
 
 /* 4. ДОПОЛНИТЕЛЬНЫЕ ЭЛЕМЕНТЫ */
 .promo-text {
     position: absolute;
-    bottom: 100px; /* Над местом, где была бы панель меню */
+    bottom: 100px; /* Располагаем над нижней панелью меню */
     color: rgba(255,255,255,0.9);
     font-weight: 800;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     font-size: 13px;
     letter-spacing: 1px;
     text-transform: uppercase;
+    pointer-events: none; /* Текст не мешает кликам */
 }
 
-/* ФИКС: Скрытие нижней панели именно когда открыт экран Home */
+/* 5. ФИКС: Скрытие нижней навигации, когда мы в главном меню */
+/* Это нужно, чтобы кнопки "Магазин/Друзья" не мешали кнопке Start */
 body:has(#scene-home:not(.hidden)) .menu-buttons-panel {
     display: none !important;
 }

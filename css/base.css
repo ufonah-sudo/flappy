@@ -1,387 +1,264 @@
 /* ==========================================================================
-   base.css - ГЛОБАЛЬНЫЕ СТИЛИ, НАВИГАЦИЯ И ИНТЕРФЕЙС (FIXED & POLISHED)
+   base.css - ГЛОБАЛЬНЫЙ ФУНДАМЕНТ И НАВИГАЦИЯ
    ========================================================================== */
 
 /* --- 1. ГЛОБАЛЬНЫЕ СБРОСЫ И МОБИЛЬНАЯ ОПТИМИЗАЦИЯ --- */
 * {
-    box-sizing: border-box; /* Учитываем отступы и границы в размере элемента */
-    -webkit-tap-highlight-color: transparent !important; /* Убираем синюю подсветку при клике на мобильных */
-    -webkit-touch-callout: none; /* Отключаем меню при долгом нажатии (iOS) */
-    user-select: none; /* Запрещаем выделение текста пользователем */
-    outline: none; /* Убираем обводку браузера при фокусе */
+    box-sizing: border-box; /* Считаем размер элемента вместе с отступами и границами */
+    -webkit-tap-highlight-color: transparent !important; /* Убираем синий квадрат при клике на смартфонах */
+    -webkit-touch-callout: none; /* Запрещаем контекстное меню при долгом нажатии на iOS */
+    user-select: none; /* Запрещаем пользователю выделять текст (как в нативном приложении) */
+    outline: none; /* Убираем стандартную обводку браузера при фокусе на кнопках */
 }
 
 body, html {
-    margin: 0; /* Убираем все внешние отступы страницы */
-    padding: 0; /* Убираем все внутренние отступы страницы */
-    width: 100%; /* Устанавливаем ширину на весь экран */
-    height: 100vh; /* Устанавливаем высоту на весь экран устройства */
-    height: -webkit-fill-available; /* Фикс высоты для мобильных браузеров (Safari) */
-    overflow: hidden; /* Скрываем полосы прокрутки, чтобы не было скролла */
-    position: fixed; /* Жестко фиксируем страницу, предотвращая "резинку" */
-    top: 0; /* Прижимаем контент к верхней границе */
-    left: 0; /* Прижимаем контент к левой границе */
-    /* Основной фон (самый нижний слой 0) */
-    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center; /* Цвет фона и картинка по центру */
-    background-size: cover; /* Растягиваем картинку фона на весь экран без искажений */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* Системные шрифты для быстрой отрисовки */
-    color: white; /* Белый цвет текста по умолчанию для всего приложения */
-    touch-action: none; /* Отключаем стандартные жесты браузера (зум, свайп назад) */
+    margin: 0; /* Убираем внешние отступы страницы */
+    padding: 0; /* Убираем внутренние отступы страницы */
+    width: 100%; /* Ширина на весь экран */
+    height: 100vh; /* Высота на весь экран */
+    height: -webkit-fill-available; /* Исправляем баг высоты в Safari на iPhone */
+    overflow: hidden; /* Запрещаем прокрутку всей страницы (скролл будет только внутри окон) */
+    position: fixed; /* Фиксируем страницу, чтобы она не "прыгала" при свайпах */
+    top: 0; /* Прижимаем к верху */
+    left: 0; /* Прижимаем к левому краю */
+    background: #4ec0ca url('/frontend/assets/fon.png') no-repeat center center; /* Основной фоновый цвет и картинка */
+    background-size: cover; /* Растягиваем фон без искажений на любой экран */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* Системные шрифты для скорости */
+    color: white; /* Белый цвет текста для всех элементов по умолчанию */
+    touch-action: none; /* Отключаем встроенные жесты браузера (зум, свайп назад) */
 }
 
-/* --- 2. СЛОИ (LAYERS) И КАНВАС --- */
+/* --- 2. СЛОИ (LAYERS) --- */
 
-/* Контейнер для облаков (Слой 1 - ФОН) */
+/* Контейнер для облаков (Слой 1) */
 .sky-container {
-    position: absolute; /* Абсолютное позиционирование поверх body */
-    top: 0; /* От самого верха */
-    left: 0; /* От самого левого края */
-    width: 100%; /* На всю ширину экрана */
-    height: 100%; /* На всю высоту экрана */
-    z-index: 1; /* Слой 1: Находится ПОД игрой, но поверх фона */
-    pointer-events: none; /* Пропускает клики сквозь себя на игру */
-    overflow: hidden; /* Обрезает облака, вылетающие за пределы экрана */
+    position: absolute; /* Позиционируем поверх body */
+    top: 0; left: 0; /* На весь экран */
+    width: 100%; height: 100%; /* На весь экран */
+    z-index: 1; /* Слой выше фона, но ниже игры */
+    pointer-events: none; /* Клики проходят сквозь облака на игру */
+    overflow: hidden; /* Обрезаем облака, когда они вылетают за край */
 }
 
-/* Общий стиль для всех облаков */
+/* Базовый стиль облака */
 .cloud {
-    position: absolute; /* Позиционируем каждое облако вручную координатами */
-    opacity: 0.8; /* Легкая прозрачность для красоты */
-    width: 90px; /* Фиксированная ширина (оптимально для мобильных) */
-    height: auto; /* Высота подстраивается пропорционально ширине */
-    will-change: transform; /* Сообщаем браузеру, что элемент будет двигаться (оптимизация) */
-    /* Анимация: имя, длительность, линейность, бесконечность */
-    animation: floatClouds 25s linear infinite; 
+    position: absolute; /* Каждое облако летает само по себе */
+    opacity: 0.8; /* Делаем облака чуть прозрачными */
+    width: 90px; /* Ширина одного облака */
+    height: auto; /* Высота подбирается автоматически */
+    will-change: transform; /* Подсказка браузеру для плавной анимации */
+    animation: floatClouds 25s linear infinite; /* Запуск анимации движения */
 }
 
-/* Ключевые кадры для анимации движения облаков */
+/* Анимация движения облака слева направо */
 @keyframes floatClouds {
-    0% { transform: translateX(-150px); } /* Начало: за левым краем экрана */
-    100% { transform: translateX(120vw); } /* Конец: за правым краем экрана */
+    0% { transform: translateX(-150px); } /* Старт: полностью за левым краем */
+    100% { transform: translateX(120vw); } /* Финиш: полностью за правым краем */
 }
 
-/* Индивидуальные настройки для каждого из 6 облаков (разная скорость и позиция) */
-.cloud1 { top: 10%; animation-duration: 35s; animation-delay: 0s; }   /* Облако 1: Медленное, сразу */
-.cloud2 { top: 20%; animation-duration: 45s; animation-delay: -15s; } /* Облако 2: Очень медленное, начало с середины */
-.cloud3 { top: 35%; animation-duration: 30s; animation-delay: -5s; }  /* Облако 3: Среднее */
-.cloud4 { top: 50%; animation-duration: 40s; animation-delay: -25s; } /* Облако 4: Медленное */
-.cloud5 { top: 65%; animation-duration: 32s; animation-delay: -10s; } /* Облако 5: Среднее */
-.cloud6 { bottom: 15%; animation-duration: 38s; animation-delay: -2s; } /* Облако 6: Медленное, внизу */
+/* Настройки для 6 разных облаков (разная высота и скорость) */
+.cloud1 { top: 10%; animation-duration: 35s; animation-delay: 0s; } /* Облако 1 */
+.cloud2 { top: 20%; animation-duration: 45s; animation-delay: -15s; } /* Облако 2 */
+.cloud3 { top: 35%; animation-duration: 30s; animation-delay: -5s; } /* Облако 3 */
+.cloud4 { top: 50%; animation-duration: 40s; animation-delay: -25s; } /* Облако 4 */
+.cloud5 { top: 65%; animation-duration: 32s; animation-delay: -10s; } /* Облако 5 */
+.cloud6 { bottom: 15%; animation-duration: 38s; animation-delay: -2s; } /* Облако 6 */
 
-/* Игровой холст (Слой 2 - ИГРА) */
+/* Игровой холст (Слой 10) */
 canvas {
-    position: absolute; /* Абсолютное позиционирование */
-    top: 0; /* От верха */
-    left: 0; /* От левого края */
-    display: block; /* Убираем отступы строчных элементов */
-    z-index: 10; /* Слой 10: ПОВЕРХ облаков, но ПОД интерфейсом */
+    position: absolute; /* Фиксируем холст */
+    top: 0; left: 0; /* На весь экран */
+    display: block; /* Убираем лишние зазоры */
+    z-index: 10; /* Слой игры поверх облаков */
 }
 
-/* Контейнер UI (Слой 3 - ИНТЕРФЕЙС) */
+/* Контейнер UI (Слой 20) */
 #app {
-    position: relative; /* Относительное позиционирование для вложенных элементов */
-    width: 100%; /* На всю ширину */
-    height: 100%; /* На всю высоту */
-    display: flex; /* Используем Flexbox для верстки */
-    flex-direction: column; /* Элементы располагаются вертикально */
-    z-index: 20; /* Слой 20: Поверх canvas */
-    pointer-events: none; /* Важно: клики проходят сквозь пустые места контейнера */
+    position: relative; /* Относительная позиция для вложенных элементов */
+    width: 100%; height: 100%; /* На всю ширину/высоту */
+    z-index: 20; /* Поверх канваса */
+    display: flex; /* Используем flex для расположения элементов */
+    flex-direction: column; /* Элементы идут сверху вниз */
+    pointer-events: none; /* Важно: клики летят сквозь пустое #app в игру */
 }
 
-/* --- 3. UI КНОПКИ (ТОП, ДЕЙЛИ, ПАУЗА) --- */
-
-/* Общий класс для угловых кнопок */
-.ui-corner-btn {
-    position: absolute; /* Фиксируем кнопки в углах экрана */
-    width: 50px;       /* Ширина кликабельной зоны */
-    height: 50px;      /* Высота кликабельной зоны */
-    z-index: 2000;     /* Слой 2000: Поверх всего интерфейса (ФИКС КЛИКАБЕЛЬНОСТИ) */
-    cursor: pointer;   /* Курсор в виде руки */
-    background: transparent !important; /* Прозрачный фон (ФИКС ФОНА) */
-    border: none !important;            /* Убираем любые рамки */
-    padding: 0;                         /* Убираем внутренние отступы */
-    pointer-events: auto; /* Разрешаем клики по кнопке */
-    display: block; /* Убеждаемся, что элемент блочный */
-}
-
-/* Стили картинки внутри кнопки */
-.ui-corner-btn img {
-    width: 100%;       /* Картинка на всю ширину кнопки */
-    height: 100%;      /* Картинка на всю высоту кнопки */
-    object-fit: contain; /* Сохраняем пропорции картинки */
-    display: block;    /* Убираем отступы картинки */
-}
-
-/* Позиция кнопки ТОП (Слева вверху) */
-#top-btn { 
-    top: 60px; /* Отступ сверху */
-    left: 20px; /* Отступ слева */
-}
-
-/* Позиция кнопки ДЕЙЛИ (Справа вверху) */
-#daily-btn {
-    top: 60px; /* Отступ сверху */
-    right: 20px; /* Отступ справа */
-}
-
-/* Кнопка ПАУЗЫ (Справа вверху в игре) */
-#pause-btn {
-    position: absolute; /* Абсолютное позиционирование */
-    top: 20px; /* Отступ сверху */
-    right: 20px; /* Отступ справа (на месте дейли) */
-    z-index: 2100; /* Выше чем обычные кнопки, чтобы нажималась в игре */
-    cursor: pointer; /* Курсор-рука */
-    pointer-events: auto; /* Разрешаем клик */
-    background: transparent; /* Без фона */
-    border: none; /* Без рамки */
-    display: none; /* Скрыта по умолчанию (показывается JS) */
-}
-
-/* --- 4. ВЕРХНЯЯ ПАНЕЛЬ (БАЛАНСЫ) --- */
+/* --- 3. ВЕРХНЯЯ ПАНЕЛЬ (БАЛАНСЫ) --- */
 #header {
-    position: fixed; /* Фиксируем панель при скролле */
+    position: fixed; /* Прижимаем к экрану */
     top: env(safe-area-inset-top, 15px); /* Учитываем "челку" iPhone или ставим 15px */
     width: 100%; /* На всю ширину */
     display: flex; /* Flexbox */
-    justify-content: center; /* Центрируем содержимое по горизонтали */
-    z-index: 1000; /* Слой 1000: Поверх игры */
-    pointer-events: none; /* Сам контейнер пропускает клики */
+    justify-content: center; /* Центрируем плашку с балансом */
+    z-index: 1000; /* Очень высокий слой, чтобы баланс был виден всегда */
+    pointer-events: none; /* Пропускаем клики сквозь контейнер */
 }
 
+/* Плашка с балансами */
 .header-balances {
     display: flex; /* Элементы в ряд */
-    gap: 15px; /* Расстояние между монетами и кристаллами */
+    gap: 15px; /* Расстояние между монетами и алмазами */
     background: rgba(0, 0, 0, 0.65); /* Темный полупрозрачный фон */
-    padding: 8px 22px; /* Внутренние отступы плашки */
+    padding: 8px 22px; /* Внутренние отступы */
     border-radius: 30px; /* Закругленные края */
-    backdrop-filter: blur(12px); /* Эффект размытия фона (glassmorphism) */
+    backdrop-filter: blur(12px); /* Размытие фона под плашкой */
     -webkit-backdrop-filter: blur(12px); /* Размытие для Safari */
-    border: 1.5px solid rgba(255, 255, 255, 0.15); /* Тонкая светлая обводка */
-    pointer-events: auto; /* Плашка ловит клики (если нужно) */
+    border: 1.5px solid rgba(255, 255, 255, 0.15); /* Тонкая рамка */
+    pointer-events: auto; /* Разрешаем кликать на баланс (например, для покупки) */
     box-shadow: 0 4px 15px rgba(0,0,0,0.4); /* Тень под плашкой */
 }
 
+/* Текст внутри баланса */
 .balance-item {
     color: #f7d51d; /* Золотой цвет цифр */
-    font-weight: 800; /* Жирный шрифт */
-    font-size: 18px; /* Размер шрифта */
-    display: flex; /* Flexbox */
-    align-items: center; /* Выравнивание по центру вертикально */
-    gap: 6px; /* Расстояние между иконкой и цифрой */
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Тень текста */
+    font-weight: 800; /* Жирный текст */
+    font-size: 18px; /* Размер цифр */
+    display: flex; /* Иконка + текст в ряд */
+    align-items: center; /* Центруем по вертикали */
+    gap: 6px; /* Расстояние от иконки до цифр */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Тень текста для читаемости */
 }
 
-.balance-item img {
-    width: 20px; /* Ширина иконки */
-    height: 20px; /* Высота иконки */
+.balance-item img { width: 20px; height: 20px; } /* Размер иконок валют */
+
+/* --- 4. УГЛОВЫЕ КНОПКИ (ТОП, ДЕЙЛИ) --- */
+.ui-corner-btn {
+    position: absolute; /* Свободное позиционирование */
+    width: 50px; height: 50px; /* Размер кнопок */
+    z-index: 2000; /* Высокий слой, чтобы кнопки нажимались поверх игры */
+    cursor: pointer; /* Указатель руки при наведении */
+    background: transparent !important; /* Убираем любой фон */
+    border: none !important; /* Убираем любые рамки */
+    padding: 0; /* Убираем отступы */
+    pointer-events: auto; /* Разрешаем клики */
+    display: block; /* Отображаем как блоки */
+}
+
+.ui-corner-btn img { width: 100%; height: 100%; object-fit: contain; } /* Картинка на всю кнопку */
+
+#top-btn { top: 85px; left: 20px; } /* Позиция ТОП (слева) */
+#daily-btn { top: 85px; right: 20px; } /* Позиция ДЕЙЛИ (справа) */
+
+#pause-btn {
+    position: absolute; /* Позиция паузы */
+    top: 20px; right: 20px; /* Справа вверху */
+    z-index: 2100; /* Выше всех в игре */
+    cursor: pointer; /* Рука */
+    pointer-events: auto; /* Разрешаем клик */
+    background: transparent; border: none; /* Без оформления */
+    display: none; /* Скрыта по умолчанию (включается в игре) */
 }
 
 /* --- 5. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ --- */
 .menu-buttons-panel {
-    position: fixed !important; /* Жестко фиксируем внизу */
-    bottom: 0 !important; /* Прижимаем к самому низу */
-    padding-bottom: env(safe-area-inset-bottom, 15px) !important; /* Отступ для полоски iOS */
-    left: 50% !important; /* Центрируем по левому краю */
-    transform: translateX(-50%) !important; /* Сдвигаем на 50% влево для точного центра */
-    width: 100% !important; /* Ширина на весь экран */
-    max-width: 500px !important; /* Не шире 500px на планшетах */
-    height: calc(85px + env(safe-area-inset-bottom, 0px)) !important; /* Высота панели */
-    display: flex; /* Flexbox для кнопок */
-    justify-content: space-around; /* Равномерное распределение кнопок */
-    align-items: center; /* Центровка кнопок по вертикали */
-    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent) !important; /* Градиент фона */
-    z-index: 3000 !important; /* Слой 3000: Поверх всего (ФИКС ПРОПАЖИ КНОПОК) */
-    pointer-events: auto !important; /* Обязательно разрешаем клики */
+    position: fixed !important; /* Жестко снизу */
+    bottom: 0 !important; /* В самом низу */
+    padding-bottom: env(safe-area-inset-bottom, 15px) !important; /* Отступ для полоски на iPhone */
+    left: 50% !important; /* В центр по горизонтали */
+    transform: translateX(-50%) !important; /* Сдвиг на половину ширины назад для центра */
+    width: 100% !important; /* На всю ширину */
+    max-width: 500px !important; /* Ограничение ширины на планшетах */
+    height: calc(85px + env(safe-area-inset-bottom, 0px)) !important; /* Высота с учетом отступов */
+    display: flex; /* Кнопки в ряд */
+    justify-content: space-around; /* Распределяем кнопки равномерно */
+    align-items: center; /* Центр по вертикали */
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent) !important; /* Затемнение снизу */
+    z-index: 3000 !important; /* Поверх всего */
+    pointer-events: auto !important; /* Разрешаем клики */
 }
 
 .nav-btn {
-    background: transparent; /* Прозрачный фон кнопки */
-    border: none; /* Без границ */
-    width: 65px; /* Ширина области нажатия */
-    height: 65px; /* Высота области нажатия */
-    cursor: pointer; /* Курсор-рука */
-    padding: 0; /* Убираем отступы */
-    transition: transform 0.1s ease; /* Анимация нажатия */
+    background: transparent; /* Без фона */
+    border: none; /* Без рамки */
+    width: 65px; height: 65px; /* Размер кнопок меню */
+    cursor: pointer; /* Рука */
+    padding: 0; /* Без отступов */
+    transition: transform 0.1s ease; /* Эффект нажатия */
 }
 
-.nav-btn:active {
-    transform: scale(0.9); /* Уменьшение при нажатии */
-}
-
-.nav-btn img {
-    width: 100%; /* Картинка на всю ширину */
-    height: 100%; /* Картинка на всю высоту */
-    object-fit: contain; /* Вписываем картинку */
-}
-
-#btn-home-panel {
-    width: 90px; /* Центральная кнопка больше */
-    height: 90px; /* Центральная кнопка больше */
-    transform: translateY(-20px); /* Приподнимаем её над остальными */
-}
+.nav-btn:active { transform: scale(0.9); } /* Уменьшение при клике */
+.nav-btn img { width: 100%; height: 100%; object-fit: contain; } /* Картинка иконки */
+#btn-home-panel { width: 90px; height: 90px; transform: translateY(-20px); } /* Центральная кнопка больше и выше */
 
 /* --- 6. ВЫБОР РЕЖИМА (ГЛАВНОЕ МЕНЮ) --- */
 .modes-container {
-    display: flex; /* Flexbox */
+    display: flex; /* Флекс для кнопок */
     flex-direction: column; /* Кнопки друг под другом */
-    gap: 20px; /* Расстояние между кнопками */
-    width: 100%; /* Ширина контейнера */
-    align-items: center; /* Центровка */
-    margin-top: 80px; /* Отступ сверху */
+    gap: 20px; /* Расстояние между ними */
+    width: 100%; /* Во всю ширину */
+    align-items: center; /* Центрируем кнопки */
+    margin-top: 80px; /* Отступ от хедера */
     pointer-events: auto; /* Разрешаем клики */
 }
 
 .mode-card {
-    width: 280px; /* Ширина кнопки режима */
-    height: 85px; /* Высота кнопки режима */
-    background-size: contain; /* Картинка вписывается */
-    background-position: center; /* Картинка по центру */
-    background-repeat: no-repeat; /* Не повторять */
-    cursor: pointer; /* Курсор-рука */
-    border: none !important; /* Без рамки */
-    background-color: transparent !important; /* Прозрачный фон */
-    box-shadow: none !important; /* Без тени */
-    text-indent: -9999px; /* Скрываем текст */
+    width: 280px; height: 85px; /* Размер кнопок выбора режима */
+    background-size: contain; /* Картинка влезает целиком */
+    background-position: center; /* По центру */
+    background-repeat: no-repeat; /* Без повторов */
+    cursor: pointer; /* Рука */
+    border: none !important; /* Без границ */
+    background-color: transparent !important; /* Без цвета */
+    text-indent: -9999px; /* Скрываем текст, оставляем только картинку */
 }
 
-/* Фоны для кнопок режимов */
-#btn-mode-classic { background-image: url('/frontend/assets/classic.png'); }
-#btn-mode-arcade { background-image: url('/frontend/assets/arcade.png'); }
+#btn-mode-classic { background-image: url('/frontend/assets/classic.png'); } /* Картинка Классики */
+#btn-mode-arcade { background-image: url('/frontend/assets/arcade.png'); } /* Картинка Аркады */
 
-.mode-card:active { 
-    transform: scale(0.96); /* Анимация клика */
-    filter: brightness(0.9); /* Затемнение при клике */
-}
+.mode-card:active { transform: scale(0.96); filter: brightness(0.9); } /* Анимация клика по режиму */
 
-/* --- 7. ЭКРАНЫ И МОДАЛКИ --- */
-.screen {
-    position: absolute; /* Абсолютное позиционирование */
-    top: 0; /* От верха */
-    left: 0; /* От левого края */
-    width: 100%; /* На всю ширину */
-    height: 100%; /* На всю высоту */
-    display: flex; /* Flexbox */
-    flex-direction: column; /* Колонка */
-    align-items: center; /* Центр по горизонтали */
-    justify-content: center; /* Центр по вертикали */
-    padding: 20px; /* Отступы внутри */
-    z-index: 100; /* Слой экранов */
-    pointer-events: auto; /* Экран перехватывает клики */
-}
-
-/* Специфичный стиль для Game Over (ФИКС КЛИКАБЕЛЬНОСТИ ПОСЛЕ СМЕРТИ) */
+/* --- 7. МОДАЛКИ И ЭКРАН СМЕРТИ --- */
 #game-over {
-    z-index: 5000 !important; /* Самый высокий слой, выше всего */
-    background: rgba(0, 0, 0, 0.85); /* Затемненный фон */
-    pointer-events: auto !important; /* Разрешаем клики по кнопкам */
+    z-index: 5000 !important; /* Самый высокий слой в игре */
+    background: rgba(0, 0, 0, 0.85); /* Затемнение при проигрыше */
+    pointer-events: auto !important; /* Разрешаем клик по кнопке "Рестарт" */
 }
 
 .modal-bg {
-    background: rgba(0, 0, 0, 0.75); /* Полупрозрачный черный фон */
-    backdrop-filter: blur(8px); /* Размытие заднего плана */
-    -webkit-backdrop-filter: blur(8px); /* Размытие для Safari */
+    background: rgba(0, 0, 0, 0.75); /* Фон для модальных окон */
+    backdrop-filter: blur(8px); /* Размытие фона */
+    -webkit-backdrop-filter: blur(8px); /* Размытие Safari */
 }
 
-
-
-/* --- 9. КНОПКИ И ТИПОГРАФИКА (ОБЩИЕ) --- */
+/* --- 8. ОБЩИЕ КНОПКИ (PRIMARY / SECONDARY) --- */
 .primary-btn {
     background: #f7d51d; /* Желтый фон */
     color: #222; /* Темный текст */
-    padding: 16px 30px; /* Отступы внутри */
-    border-radius: 20px; /* Закругление */
-    font-weight: 900; /* Жирный шрифт */
+    padding: 16px 30px; /* Отступы */
+    border-radius: 20px; /* Скругление */
+    font-weight: 900; /* Очень жирный */
     font-size: 18px; /* Размер текста */
     border: none; /* Без рамки */
-    width: 100%; /* Ширина на весь контейнер */
-    max-width: 260px; /* Максимальная ширина */
-    cursor: pointer; /* Курсор */
+    width: 100%; max-width: 260px; /* Ширина */
+    cursor: pointer; /* Рука */
     text-transform: uppercase; /* Заглавные буквы */
-    margin-bottom: 10px; /* Отступ снизу */
+    pointer-events: auto; /* Кликабельно */
 }
 
-.primary-btn:active {
-    transform: scale(0.98); /* Эффект нажатия */
-}
+.primary-btn:active { transform: scale(0.98); } /* Эффект нажатия */
 
 .secondary-btn {
-    background: rgba(255, 255, 255, 0.1); /* Прозрачный белый */
+    background: rgba(255, 255, 255, 0.1); /* Полупрозрачный белый */
     color: white; /* Белый текст */
     padding: 12px 24px; /* Отступы */
-    border-radius: 18px; /* Закругление */
-    border: 1px solid rgba(255, 255, 255, 0.3); /* Рамка */
-    cursor: pointer; /* Курсор */
-    font-weight: 600; /* Полужирный */
+    border-radius: 18px; /* Скругление */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Тонкая рамка */
+    cursor: pointer; /* Рука */
+    font-weight: 600; /* Жирный */
     text-transform: uppercase; /* Заглавные */
+    pointer-events: auto; /* Кликабельно */
 }
 
-/* Утилитарные классы */
-.hidden { display: none !important; } /* Класс для скрытия элементов */
-.blur-overlay { backdrop-filter: blur(5px); } /* Класс для блюра */
-
-
-.streak-grid {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-.daily-card {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid #555;
-    border-radius: 10px;
-    padding: 10px;
-    width: 65px;
-    text-align: center;
-}
-.daily-card.current { border-color: #f7d51d; background: rgba(247, 213, 29, 0.1); }
-.daily-card.claimed { opacity: 0.6; }
-.primary-btn-mini {
-    background: #f7d51d;
-    border: none;
-    border-radius: 5px;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 4px 8px;
-}
-.challenge-item {
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 10px;
-    margin-bottom: 8px;
-    width: 280px;
-}
-.ch-progress-bar {
-    height: 6px;
-    background: #333;
-    border-radius: 3px;
-    margin: 8px 0;
-    overflow: hidden;
-}
-.ch-fill { height: 100%; background: #f7d51d; transition: width 0.3s; }
-.ch-info { display: flex; justify-content: space-between; font-size: 12px; }
-
-/* Разрешаем клики по всем важным элементам интерфейса */
-.ui-corner-btn, 
-.nav-btn, 
-.primary-btn, 
-.secondary-btn, 
-.mode-card, 
-.powerup-slot {
-    pointer-events: auto !important;
-}
-/* Принудительное скрытие, которое перебьет z-index и display */
+/* --- 9. УТИЛИТЫ --- */
 .hidden { 
-    display: none !important; 
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    display: none !important; /* Прячем элемент полностью */
+    visibility: hidden !important; /* Делаем невидимым */
+    opacity: 0 !important; /* Прозрачность 0 */
+    pointer-events: none !important; /* Запрещаем клики сквозь скрытый объект */
 }
 
-/* Настраиваем высоту кнопок, чтобы они были чуть ниже */
-#top-btn, #daily-btn {
-    position: absolute;
-    top: 85px; /* Регулируй высоту здесь */
-    z-index: 2000;
-    display: block; /* По умолчанию видны */
+.blur-overlay { backdrop-filter: blur(5px); } /* Наложение блюра */
+
+/* Разрешаем клики по всем важным элементам интерфейса принудительно */
+.ui-corner-btn, .nav-btn, .primary-btn, .secondary-btn, .mode-card {
+    pointer-events: auto !important;
 }
