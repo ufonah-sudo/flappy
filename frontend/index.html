@@ -2,12 +2,14 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="format-detection" content="telephone=no"> 
-    <title>Flappy Bird TON</title>
+    <meta name="format-detection" content="telephone=no"> <title>Flappy Bird TON</title>
     
+    <link rel="stylesheet" href="/css/base.css"> 
     <link rel="stylesheet" href="/frontend/style.css">
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -26,6 +28,18 @@
 
     <div id="app">
         
+        <button id="top-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/top.png" alt="Top" style="width: 100%;">
+        </button>
+
+        <button id="daily-btn" class="ui-corner-btn menu-only">
+            <img src="/frontend/assets/daily.png" alt="Daily" style="width: 100%;">
+        </button>
+
+        <button id="pause-btn" class="ui-corner-btn">
+            <span style="font-size: 30px;">⏸️</span>
+        </button>
+
         <div id="header"> 
             <div class="header-balances">
                 <div class="balance-item">
@@ -38,18 +52,6 @@
                 </div>
             </div>
         </div>
-
-        <button id="top-btn" class="ui-corner-btn menu-only">
-            <img src="/frontend/assets/top.png" alt="Top">
-        </button>
-
-        <button id="daily-btn" class="ui-corner-btn menu-only">
-            <img src="/frontend/assets/daily.png" alt="Daily">
-        </button>
-
-        <button id="pause-btn" class="ui-corner-btn hidden">
-            <span style="font-size: 30px;">⏸️</span>
-        </button>
 
         <div id="scene-home" class="screen">
             <div class="game-logo-container">
@@ -71,24 +73,29 @@
             <canvas id="game-canvas"></canvas>
 
             <div id="ingame-inventory" class="arcade-powers-layout">
+                
                 <button class="powerup-slot" data-ability="shield">
                     <span class="p-icon">🛡️</span>
                     <span class="badge" data-powerup="shield">0</span>
                 </button>
+
                 <button class="powerup-slot" data-ability="gap">
                     <span class="p-icon">↔️</span>
                     <span class="badge" data-powerup="gap">0</span>
                 </button>
+
                 <button class="powerup-slot" data-ability="ghost">
                     <span class="p-icon">👻</span>
                     <span class="badge" data-powerup="ghost">0</span>
                 </button>
+
                 <button class="powerup-slot" data-ability="magnet">
                     <span class="p-icon">🧲</span>
                     <span class="badge" data-powerup="magnet">0</span>
                 </button>
             </div>
-            <div id="score-overlay">0</div>
+
+            <div id="score-overlay" style="position: absolute; top: 80px; font-size: 40px; font-weight: 900;">0</div>
         </div>
 
         <div id="pause-menu" class="screen hidden modal-bg blur-overlay">
@@ -102,7 +109,7 @@
         <div id="game-over" class="screen hidden modal-bg">
             <h2 class="status-title">GAME OVER</h2>
             <div class="result-box">
-                <p class="label">Score</p>
+                <p>Score</p>
                 <span id="final-score">0</span>
             </div>
             <div id="revive-section">
@@ -115,65 +122,50 @@
             <button id="btn-share" class="secondary-btn" style="margin-top: 15px;">SHARE RESULT</button>
         </div>
 
-        <div id="scene-shop" class="screen hidden room-bg-shop">
-            <div class="vision-window">
-                <h3>SHOP</h3>
-                <div id="shop-ton-wallet"></div> 
-                <div class="room-content" id="shop-content"></div>
-                <button class="secondary-btn btn-back-node">BACK TO MENU</button>
-            </div>
+        <div id="scene-shop" class="screen hidden">
+            <h3>SHOP</h3>
+            <div id="shop-ton-wallet"></div> <div class="room-content" id="shop-content"></div> </div>
+
+        <div id="scene-leaderboard" class="screen hidden">
+            <h3>TOP PLAYERS</h3>
+            <div class="room-content" id="leaderboard-list"></div>
         </div>
 
-        <div id="scene-leaderboard" class="screen hidden room-bg-top">
-            <div class="vision-window">
-                <h3>TOP PLAYERS</h3>
-                <div class="room-content" id="leaderboard-list"></div>
-                <button class="secondary-btn btn-back-node">BACK TO MENU</button>
-            </div>
+        <div id="scene-friends" class="screen hidden">
+            <h3>FRIENDS</h3>
+            <div class="room-content" id="friends-content"></div>
+            <button class="primary-btn" id="btn-invite-real">INVITE FRIEND</button>
         </div>
 
-        <div id="scene-friends" class="screen hidden room-bg-friends">
-            <div class="vision-window">
-                <h3>FRIENDS</h3>
-                <div class="room-content" id="friends-content"></div>
-                <button class="primary-btn" id="btn-invite-real" style="margin-bottom: 10px;">INVITE FRIEND</button>
-                <button class="secondary-btn btn-back-node">BACK TO MENU</button>
-            </div>
+        <div id="scene-inventory" class="screen hidden">
+            <h3>INVENTORY</h3>
+            <div class="room-content" id="inventory-content"></div>
         </div>
 
-        <div id="scene-inventory" class="screen hidden room-bg-inventory">
-            <div class="vision-window">
-                <h3>INVENTORY</h3>
-                <div class="room-content" id="inventory-content"></div>
-                <button class="secondary-btn btn-back-node">BACK TO MENU</button>
-            </div>
-        </div>
+        <section id="scene-daily" class="screen hidden">
+            <button id="btn-back-to-home" class="ui-corner-btn" style="top:20px; left:20px;">
+                <img src="/frontend/assets/back.png">
+            </button>
+            
+            <h2>DAILY HUB</h2>
 
-        <div id="scene-daily" class="screen hidden room-bg-daily">
-            <div class="vision-window">
-                <h2>DAILY HUB</h2>
-                <div class="room-content">
-                    <div class="daily-section">
-                        <h3>Daily Rewards</h3>
-                        <div id="daily-streak-content" class="streak-grid"></div>
-                    </div>
-                    <div class="daily-section">
-                        <h3>Daily Challenges</h3>
-                        <div id="daily-challenges-content"></div>
-                    </div>
-                    <div id="daily-bonus-content" style="margin-top: 10px;"></div>
-                </div>
-                <button class="secondary-btn btn-back-node">BACK TO MENU</button>
+            <div class="daily-section">
+                <h3>Daily Rewards</h3>
+                <div id="daily-streak-content" class="streak-grid"></div>
             </div>
-        </div>
 
-        <div id="scene-settings" class="screen hidden room-bg-settings">
-            <div class="vision-window">
-                <h3>SETTINGS</h3>
-                <div id="settings-ton-wallet"></div>
-                <div class="room-content" id="settings-content"></div>
-                <button class="secondary-btn btn-back-node">BACK TO MENU</button>
+            <div class="daily-section">
+                <h3>Daily Challenges</h3>
+                <div id="daily-challenges-content"></div>
             </div>
+
+            <div id="daily-bonus-content" style="margin-top: 20px; width: 100%; display: flex; justify-content: center;"></div>
+        </section>
+
+        <div id="scene-settings" class="screen hidden">
+            <h3>SETTINGS</h3>
+            <div id="settings-ton-wallet"></div>
+            <div class="room-content" id="settings-content"></div>
         </div>
 
         <div class="menu-buttons-panel">
@@ -194,6 +186,8 @@
             </button>
         </div>
 
-    </div> <script type="module" src="/main.js"></script>
+    </div> 
+    
+    <script type="module" src="/main.js"></script>
 </body>
 </html>
