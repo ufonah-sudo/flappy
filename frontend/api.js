@@ -206,4 +206,17 @@ export async function getFriends() {
     const data = await apiRequest('auth', 'POST', { action: 'get_friends' });
     // Гарантируем возврат массива
     return (data && Array.isArray(data.friends)) ? data.friends : [];
+
+    
+}
+
+/**
+ * Запрос на получение награды за приглашенного друга
+ */
+export async function claimFriendReward(friendUsername) {
+    // Отправляем запрос на auth.js с действием claim_friend
+    return await apiRequest('auth', 'POST', { 
+        action: 'claim_friend', 
+        friend_username: friendUsername 
+    });
 }

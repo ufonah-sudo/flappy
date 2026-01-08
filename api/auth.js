@@ -31,6 +31,41 @@ const handler = async (req, res) => {
             return res.status(200).json({ friends: friends || [] });
         }
 
+                // --- ОБРАБОТКА ACTION: CLAIM_FRIEND (ЗАБРАТЬ НАГРАДУ) ---
+        if (action === 'claim_friend') {
+            const { friend_username } = req.body;
+            
+            // 1. Находим ID друга по юзернейму
+            const { data: friendUser, error: findError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('username', friend_username)
+                .single();
+                
+            if (findError || !friendUser) throw new Error('Friend not found');
+
+            // 2. Обновляем статус в таблице рефералов
+            const { data, error: updateError } = await supabase
+                .from('referrals')
+                .update({ status: 'claimed' })
+                .eq('referrer_id', user.id)
+                .eq('referred_id', friendUser.id)
+                .eq('status', 'pending') // Обновляем только если еще не забрали
+                .select();
+
+            if (updateError) throw updateError;
+            if (!data || data.length === 0) throw new Error('Reward already claimed or invalid');
+
+            // 3. Начисляем монеты себе (5 монет)
+            await supabase.rpc('increment_coins', { 
+                user_id_param: user.id, 
+                amount: 5 
+            });
+
+            return res.status(200).json({ success: true });
+        }
+
+
         // --- ОБРАБОТКА ACTION: SYNC_STATE (СОХРАНЕНИЕ) ---
         if (action === 'sync_state') {
             const { data: updated, error: syncError } = await supabase

@@ -44,7 +44,7 @@ export function verifyTelegramData(initData) {
         console.error("[Verify] Hash mismatch!");
         // ВАЖНО: На продакшене тут должен быть return null;
         // Пока ты тестируешь, можешь оставить лог, но не забудь закрыть дыру!
-        // return null; 
+        return null; 
     }
     
     try {
