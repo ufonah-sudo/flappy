@@ -1,44 +1,32 @@
 /* =========================================
-   rooms.css - ФОНЫ КОМНАТ И ИНТЕРФЕЙС (FINAL)
+   rooms.css - ФИНАЛЬНЫЙ СТИЛЬ
    ========================================= */
 
-/* --- 1. БАЗОВЫЙ ЭКРАН (КОНТЕЙНЕР) --- */
+/* --- 1. БАЗОВЫЕ ФОНЫ --- */
 .screen {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
     z-index: 50;
-
-    /* Настройки для фоновых картинок (JPG) */
     background-repeat: no-repeat;
     background-position: center center;
     background-size: cover; 
-
-    /* Центрируем рамку Vision */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
-    /* Анимация появления */
     opacity: 0; 
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     transform: scale(1.08);
-
-    /* Отступ снизу, чтобы не перекрывать нижнее меню навигации */
     padding-bottom: 85px; 
 }
 
-/* Состояние, когда экран активен */
 .screen:not(.hidden) {
-    opacity: 1; 
-    pointer-events: auto;
-    transform: scale(1); 
-    z-index: 100;
+    opacity: 1; pointer-events: auto;
+    transform: scale(1); z-index: 100;
 }
 
-/* --- 2. ПРИВЯЗКА ФОНОВ (JPG) К КОМНАТАМ --- */
 #scene-daily { background-image: url('/frontend/assets/dailyroom.jpg'); }
 #scene-shop { background-image: url('/frontend/assets/shoproom.jpg'); }
 #scene-friends { background-image: url('/frontend/assets/froom.jpg'); }
@@ -46,124 +34,132 @@
 #scene-settings { background-image: url('/frontend/assets/setroom.jpg'); }
 #scene-inventory { background-image: url('/frontend/assets/inventroom.jpg'); }
 
-/* --- 3. НАСТРОЙКА РАМКИ VISION (UI) --- */
+/* --- 2. РАМКА VISION (УМЕНЬШЕННАЯ) --- */
 .vision-window {
     background: url('/frontend/assets/vision.png') no-repeat center center;
     background-size: 100% 100%;
+    display: flex; flex-direction: column; align-items: center;
     
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    /* Вернули компактные размеры */
+    width: 92%;           
+    max-width: 400px;     
+    height: 70vh;         
+    max-height: 620px;
     
-    /* === УВЕЛИЧЕННЫЕ РАЗМЕРЫ (КАК ТЫ ПРОСИЛ) === */
-    width: 96%;           /* Было 92% */
-    max-width: 450px;     /* Было 400px */
-    height: 82vh;         /* Было 70vh */
-    max-height: 750px;
-    
-    /* === ВНУТРЕННИЕ ОТСТУПЫ === 
-       Вверх: 65px (под заголовок)
-       Бока: 30px (чтобы не липло к краям рамки)
-       Низ: 45px */
-    padding: 65px 30px 45px 30px; 
+    /* Отступы, чтобы текст не лез на рамку */
+    padding: 60px 30px 40px 30px; 
     
     position: relative;
-    /* Тень под самой рамкой для объема */
     filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
     box-sizing: border-box;
 }
 
-/* Заголовки (SHOP, FRIENDS...) */
+/* Заголовки */
 .vision-window h3, .vision-window h2 {
     color: #f7d51d; 
-    font-size: 26px; 
-    margin: -15px 0 15px 0; /* Подтянули вверх */
+    font-size: 24px; 
+    margin: -10px 0 15px 0;
     text-transform: uppercase; 
     font-weight: 900;
     letter-spacing: 1px;
-    /* Жирная обводка для читаемости на любом фоне */
+    /* Жирная обводка текста */
     text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
     text-align: center;
     flex-shrink: 0;
     z-index: 2;
 }
 
-/* --- 4. СКРОЛЛИНГ КОНТЕНТА --- */
-.room-content {
+/* --- 3. ЗОЛОТАЯ МОНЕТКА (CSS) --- */
+/* Рисуем монетку кодом, чтобы она везде была одинаковой */
+.gold-coin {
+    display: inline-block;
+    width: 18px; height: 18px;
+    background: #FFD700; /* Золотой */
+    border: 2px solid #b36b15; /* Медная обводка (как в игре) */
+    border-radius: 50%;
+    box-shadow: inset -3px -3px 0 rgba(0,0,0,0.2); /* Блик внутри */
+    vertical-align: middle;
+    margin-right: 4px;
+    position: relative;
+    top: -1px;
+}
+.gold-coin.large { width: 32px; height: 32px; border-width: 3px; }
+
+/* --- 4. ДЕРЕВЯННАЯ КНОПКА (Invite) --- */
+.btn-wooden {
+    background: #5c4d32; /* Цвет дерева */
+    color: #fff;
+    border: 2px solid #3e3320; /* Темная рамка */
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #3e3320, 0 5px 10px rgba(0,0,0,0.4); /* Объем */
+    text-shadow: 1px 1px 0 #000;
+    transition: transform 0.1s, box-shadow 0.1s;
     width: 100%;
-    flex-grow: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    padding-right: 4px;
-    padding-left: 2px;
+}
+.btn-wooden:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #3e3320;
 }
 
-/* Скроллбар */
+/* --- 5. КОНТЕНТ И КАРТОЧКИ --- */
+.room-content {
+    width: 100%; flex-grow: 1; overflow-y: auto; overflow-x: hidden;
+    padding-right: 4px; padding-left: 2px;
+}
 .room-content::-webkit-scrollbar { width: 5px; }
-.room-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+.room-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
 .room-content::-webkit-scrollbar-thumb { background: #f7d51d; border-radius: 4px; border: 1px solid #000; }
 
-/* --- 5. СТИЛИ КАРТОЧЕК (FIX ЧИТАЕМОСТИ) --- */
-
-/* Сетки */
 #shop-content { display: flex; flex-direction: column; }
 .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 20px; }
-.streak-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .list-container { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 
-/* Общий стиль всех карточек */
+/* ОБЩИЙ СТИЛЬ КАРТОЧЕК (НЕ ПРОЗРАЧНЫЙ!) */
 .shop-card, .leader-item, .friend-card, .inventory-card, .daily-card {
-    /* Плотный темный фон (вместо прозрачного), чтобы текст читался на фоне vision.png */
-    background: #1e2329; 
-    border: 2px solid #5c4d32; /* Коричневато-золотая рамка */
+    background: #1e2329; /* Плотный темный фон */
+    border: 2px solid #5c4d32; /* Рамка в цвет Vision */
     border-radius: 14px;
     padding: 10px;
     margin-bottom: 8px;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.4); /* Объем снизу */
+    box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+}
+
+/* Текст внутри карточек */
+.item-name, .shop-card p, .friend-card div {
+    color: #fff;
+    text-shadow: 1px 1px 0 #000; /* Обводка текста для читаемости */
+}
+.item-val, .shop-card .price {
+    font-weight: 900; color: #f7d51d; text-shadow: 1px 1px 0 #000;
 }
 
 /* Карточка магазина */
-.shop-card {
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-}
-.shop-card:active { transform: scale(0.96); border-color: #f7d51d; }
-.shop-card img { width: 55px; height: 55px; margin-bottom: 6px; object-fit: contain; }
+.shop-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.shop-card img { width: 50px; height: 50px; margin-bottom: 6px; object-fit: contain; }
 .shop-card .price {
     margin-top: 5px; background: #f7d51d; color: #000; padding: 5px 10px;
-    border-radius: 8px; font-weight: 800; font-size: 13px;
-    border: 1px solid #000;
+    border-radius: 8px; font-weight: 800; font-size: 13px; text-shadow: none; border: 1px solid #000;
 }
 
-/* Списки (Лидеры, Друзья) */
-.leader-item, .friend-card, .inventory-card {
-    display: flex; align-items: center; width: 100%;
-}
-.item-rank { 
-    font-weight: 900; color: #f7d51d; width: 30px; font-size: 18px; 
-    text-shadow: 1px 1px 0 #000;
-}
-.item-icon-wrapper, .item-icon {
-    width: 42px; height: 42px; margin-right: 12px; border-radius: 50%;
+/* Списки */
+.leader-item, .friend-card, .inventory-card { display: flex; align-items: center; width: 100%; }
+.item-rank { font-weight: 900; color: #f7d51d; width: 30px; font-size: 18px; text-shadow: 1px 1px 0 #000; }
+.item-icon-wrapper {
+    width: 40px; height: 40px; margin-right: 12px; border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.1); background: #2a3038;
     display: flex; align-items: center; justify-content: center;
 }
-.item-info { text-align: left; flex-grow: 1; }
-.item-name { 
-    font-weight: 700; color: #fff; font-size: 14px; 
-    text-shadow: 1px 1px 0 #000;
-}
-.item-val { font-weight: 900; color: #f7d51d; font-size: 13px; }
 
 /* Дейли */
 .daily-section { margin-bottom: 15px; width: 100%; }
-.daily-section h3 { 
-    font-size: 16px; text-align: left; margin-bottom: 8px; color: #f7d51d; 
-    text-shadow: 1px 1px 0 #000;
-}
+.daily-section h3 { font-size: 16px; margin-bottom: 8px; color: #f7d51d; text-shadow: 1px 1px 0 #000; }
+.streak-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .daily-card { flex-direction: column; align-items: center; justify-content: center; height: 95px; }
 .daily-card.active { border-color: #f7d51d; background: rgba(247, 213, 29, 0.1); }
-.daily-card.claimed { opacity: 0.6; filter: grayscale(1); }
 
-/* Кнопка назад внутри дейли */
 .btn-back-node { margin-top: 15px; flex-shrink: 0; }
