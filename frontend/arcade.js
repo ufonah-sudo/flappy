@@ -97,27 +97,22 @@ this.ground.img.src = '/frontend/assets/ground.png';
     }
 
     // Подстройка холста под разрешение экрана (с учетом Retina-дисплеев)
-       resize() {
-        const dpr = window.devicePixelRatio || 1;
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        this.canvas.width = w * dpr;
+    resize() {
+        const dpr = window.devicePixelRatio || 1; // Коэффициент пикселей
+        const w = window.innerWidth; // Ширина окна
+        const h = window.innerHeight; // Высота окна
+        this.canvas.width = w * dpr; // Установка реального размера холста
         this.canvas.height = h * dpr;
-        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        this.canvas.style.width = w + 'px';
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // Масштабирование контекста
+        this.canvas.style.width = w + 'px'; // Установка отображаемого размера
         this.canvas.style.height = h + 'px';
 
-        const isDesktop = h > 800;
-        this.bird.x = w / 4; 
-        if (!this.isRunning) this.bird.y = h / 2;
-
-        // Физика (как в Game.js)
-        this.gravity = isDesktop ? 0.45 : h * 0.0006;
-        this.jump = isDesktop ? -9 : -h * 0.013; // Сильный прыжок
-        this.pipeSpeed = isDesktop ? 4 : w * 0.008;
-        this.pipeSpawnThreshold = Math.max(80, Math.floor(100 * (w / 375)));
+        this.bird.x = w / 4; // Птица всегда на 1/4 ширины слева
+        this.gravity = h * 0.00055; // Динамическая гравитация от высоты экрана
+        this.jump = -h * 0.014; // Сила прыжка (отрицательная, так как Y растет вниз)
+        this.pipeSpeed = w * 0.008; // Скорость движения труб от ширины экрана
+        this.pipeSpawnThreshold = Math.max(80, Math.floor(100 * (w / 375))); // Частота появления труб
     }
-
 
     // Сброс всех параметров и начало новой игры
     start() {
@@ -134,23 +129,14 @@ this.ground.img.src = '/frontend/assets/ground.png';
     }
 
     // Оживление после смерти (использование сердечка)
-       revive() {
-        this.isRunning = true;
-        this.reviveUsed = true;
-        
-        // Подброс
-        this.bird.velocity = -4; 
-        
-        // Удаляем трубы рядом
-        this.pipes = this.pipes.filter(p => p.x < this.bird.x - 100 || p.x > this.bird.x + 300);
-        
-        // Неуязвимость
-        this.isGhost = true;
-        setTimeout(() => { this.isGhost = false; }, 2000);
-        
-        this.loop();
+    revive() {
+        this.isRunning = true; // Снова в игре
+        this.bird.velocity = -5; // Небольшой толчок вверх
+        this.activePowerups.ghost = 120; // 2 секунды неуязвимости (проход сквозь трубы)
+        // Удаляем трубы вокруг птицы, чтобы не умереть сразу снова
+        this.pipes = this.pipes.filter(p => p.x < this.bird.x - 100 || p.x > this.bird.x + 200);
+        this.loop(); // Продолжаем цикл
     }
-
 
     // Создание новой трубы и пачки монет
     spawnPipe() {
