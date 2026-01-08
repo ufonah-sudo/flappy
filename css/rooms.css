@@ -138,13 +138,89 @@
     font-weight: 900; color: #f7d51d; text-shadow: 1px 1px 0 #000;
 }
 
-/* Карточка магазина */
-.shop-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.shop-card img { width: 50px; height: 50px; margin-bottom: 6px; object-fit: contain; }
-.shop-card .price {
-    margin-top: 5px; background: #f7d51d; color: #000; padding: 5px 10px;
-    border-radius: 8px; font-weight: 800; font-size: 13px; text-shadow: none; border: 1px solid #000;
+/* --- СТИЛИ ДЛЯ МАГАЗИНА (НОВЫЕ) --- */
+
+/* Заголовки разделов */
+.shop-separator {
+    width: 100%;
+    margin: 20px 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    text-align: left;
 }
+
+.shop-separator h4 {
+    color: #f7d51d;
+    font-size: 14px;
+    text-transform: uppercase;
+    margin: 0;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* 1. КАРТОЧКИ МОНЕТ (TON) - Оставляем темными и богатыми */
+.shop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+}
+
+/* 2. КАРТОЧКИ СПОСОБНОСТЕЙ (Белые овалы) */
+.shop-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    padding-bottom: 20px;
+}
+
+.powerup-card {
+    /* Тот самый "белый овал" */
+    background: #e3e3e3; /* Светло-серый, почти белый */
+    border: 3px solid #fff; /* Белая обводка */
+    border-radius: 30px; /* Сильное закругление */
+    
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 15px; /* Внутренние отступы */
+    
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3); /* Тень снизу */
+    transform: translateZ(0); /* Оптимизация */
+}
+
+/* Текст внутри белых карточек должен быть ТЕМНЫМ */
+.powerup-card .name {
+    color: #333; /* Темный текст */
+    font-weight: 900;
+    font-size: 14px;
+    margin: 0;
+    text-shadow: none; /* Убираем тень, на белом она не нужна */
+    text-align: left;
+}
+
+.powerup-card .desc {
+    color: #666;
+    font-size: 10px;
+    margin: 0;
+    text-shadow: none;
+    text-align: left;
+}
+
+.powerup-card .icon {
+    font-size: 28px;
+    margin-right: 10px;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+}
+
+/* Цена на белой карточке */
+.powerup-price {
+    font-weight: 900;
+    color: #d35400; /* Темно-оранжевый */
+    font-size: 13px;
+    text-shadow: none;
+}
+
 
 /* Списки */
 .leader-item, .friend-card, .inventory-card { display: flex; align-items: center; width: 100%; }
@@ -163,3 +239,53 @@
 .daily-card.active { border-color: #f7d51d; background: rgba(247, 213, 29, 0.1); }
 
 .btn-back-node { margin-top: 15px; flex-shrink: 0; }
+
+/* --- СТИЛИ ДЛЯ ВКЛАДОК МАГАЗИНА (TABS) --- */
+
+.shop-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 20px; /* Отступ до контента */
+}
+
+.shop-tab-btn {
+    background: rgba(0, 0, 0, 0.6); /* Темный фон неактивной вкладки */
+    border: 2px solid #5c4d32;
+    color: #aaa; /* Серый текст */
+    padding: 10px 25px;
+    border-radius: 25px; /* Овальные кнопки */
+    font-weight: 900;
+    font-size: 14px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Активная вкладка (Золотая) */
+.shop-tab-btn.active {
+    background: #f7d51d;
+    color: #000;
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
+    transform: scale(1.05); /* Чуть увеличивается */
+}
+
+/* Скрытие неактивных разделов */
+.shop-tab-content {
+    display: none;
+    width: 100%;
+    animation: fadeTab 0.3s ease; /* Плавное появление */
+}
+
+/* Показ активного раздела */
+.shop-tab-content.active-view {
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeTab {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

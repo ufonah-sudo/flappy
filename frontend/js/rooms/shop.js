@@ -16,22 +16,24 @@ export function initShop() {
         { id: 'ghost',  name: 'ПРИЗРАК', price: 25, icon: '👻', desc: 'Сквозь стены' }
     ];
 
+    // --- HTML СТРУКТУРА С ВКЛАДКАМИ ---
     container.innerHTML = `
-        <!-- РАЗДЕЛ 1: МОНЕТЫ (TON) -->
-        <div class="shop-section">
-            <div class="shop-separator">
-                <h4>💎 Монеты (TON)</h4>
-            </div>
-            
-            <!-- Место для кнопки кошелька -->
-            <div id="shop-ton-wallet" style="margin-bottom: 10px; display: flex; justify-content: center;"></div>
+        <!-- 1. КНОПКИ ПЕРЕКЛЮЧЕНИЯ (TABS) -->
+        <div class="shop-tabs">
+            <button class="shop-tab-btn active" data-target="tab-coins">МОНЕТЫ</button>
+            <button class="shop-tab-btn" data-target="tab-powers">СИЛЫ</button>
+        </div>
+
+        <!-- 2. РАЗДЕЛ: МОНЕТЫ (TON) -->
+        <div id="tab-coins" class="shop-tab-content active-view">
+            <div id="shop-ton-wallet" style="margin-bottom: 15px; display: flex; justify-content: center;"></div>
             
             <div class="shop-grid">
                 <!-- Пакет 1 -->
                 <div class="shop-card">
                     <div style="font-size: 32px; margin-bottom: 5px;">🟡</div>
                     <div style="font-weight: 800; font-size: 15px; color: #fff; text-shadow: 1px 1px 0 #000;">10 Монет</div>
-                    <div style="font-size: 10px; color: #aaa;">Стартовый пак</div>
+                    <div style="font-size: 10px; color: #aaa;">Старт</div>
                     <button class="buy-ton-btn primary-btn" data-amount="1" data-coins="10" style="width: 100%; margin-top: 8px; font-size: 12px; padding: 8px;">1 TON</button>
                 </div>
 
@@ -45,15 +47,10 @@ export function initShop() {
             </div>
         </div>
         
-        <!-- РАЗДЕЛ 2: СПОСОБНОСТИ (ЗА ИГРОВЫЕ МОНЕТЫ) -->
-        <div class="shop-section">
-            <div class="shop-separator" style="margin-top: 25px;">
-                <h4>⚡ Способности</h4>
-            </div>
-
+        <!-- 3. РАЗДЕЛ: СПОСОБНОСТИ (Powers) -->
+        <div id="tab-powers" class="shop-tab-content">
             <div class="shop-list">
                 ${powerups.map(p => `
-                    <!-- Используем новый класс powerup-card -->
                     <div class="powerup-card">
                         <div style="display: flex; align-items: center;">
                             <div class="icon">${p.icon}</div>
@@ -85,19 +82,36 @@ export function initShop() {
                 `).join('')}
             </div>
         </div>
-        
-        <!-- Пустой блок, чтобы скролл не обрезал низ -->
-        <div style="height: 40px;"></div>
     `;
 
-    // --- ЛОГИКА (Остается прежней) ---
-    
-    // 1. Кнопка кошелька
+    // --- ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ---
+    const tabs = container.querySelectorAll('.shop-tab-btn');
+    const contents = container.querySelectorAll('.shop-tab-content');
+
+    tabs.forEach(tab => {
+        tab.onclick = () => {
+            // 1. Убираем активность со всех
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active-view'));
+
+            // 2. Активируем нажатую
+            tab.classList.add('active');
+            
+            // 3. Показываем нужный контент
+            const targetId = tab.dataset.target;
+            document.getElementById(targetId).classList.add('active-view');
+            
+            // Вибрация при переключении
+            if(tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        };
+    });
+
+    // --- ЛОГИКА КОШЕЛЬКА ---
     if (window.wallet?.tonConnectUI) {
         try { window.wallet.tonConnectUI.setConnectButtonRoot('#shop-ton-wallet'); } catch (e) {}
     }
 
-    // 2. Обработчики TON
+    // --- ОБРАБОТЧИКИ (TON) ---
     container.querySelectorAll('.buy-ton-btn').forEach(btn => {
         btn.onclick = async (e) => {
             const button = e.currentTarget;
@@ -135,7 +149,7 @@ export function initShop() {
         };
     });
 
-    // 3. Обработчики покупок за монеты
+    // --- ОБРАБОТЧИКИ (Способности) ---
     container.querySelectorAll('.buy-ingame-btn').forEach(btn => {
         btn.onclick = async (e) => {
             const button = e.currentTarget;
@@ -144,7 +158,6 @@ export function initShop() {
 
             if (state.coins < cost) {
                 tg?.HapticFeedback.notificationOccurred('error');
-                // Визуально показываем ошибку на кнопке
                 const oldColor = button.style.background;
                 button.style.background = "#ff4f4f";
                 button.innerText = "НЕТ 🟡";
@@ -162,15 +175,21 @@ export function initShop() {
                 const res = await api.buyItem(id);
                 
                 if (res && !res.error) {
-                    // Событие покупки
                     window.dispatchEvent(new CustomEvent('buy_item', {
                         detail: { id, price: cost, type: 'powerup', powerupType: id }
                     }));
                     
-                    button.style.background = "#2ecc71"; // Зеленый
+                    button.style.background = "#2ecc71"; 
                     button.innerText = "✅";
                     
-                    setTimeout(() => { initShop(); }, 1000);
+                    // Обновляем магазин через секунду (с сохранением открытой вкладки можно, но пока просто реинит)
+                    setTimeout(() => { 
+                       // Если хочешь, чтобы оставалась та же вкладка, тут нужна доп логика.
+                       // Пока просто обновим UI:
+                       button.style.background = "#4ec0ca";
+                       button.innerText = "КУПИТЬ";
+                       button.disabled = false;
+                    }, 1000);
                 } else {
                     throw new Error("Ошибка");
                 }
