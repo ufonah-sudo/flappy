@@ -1,11 +1,10 @@
 /**
- * js/rooms/shop.js - ЛОГИКА МАГАЗИНА (FINAL)
- * Включает: Вкладки, Покупку за TON, Обмен валют, Покупку способностей.
+ * js/rooms/shop.js - ЛОГИКА МАГАЗИНА (BEAUTIFUL VERSION)
  */
 
 import * as api from '../../api.js';
 
-// Переменная для запоминания активной вкладки при обновлении
+// Запоминаем вкладку, чтобы не сбрасывалась при покупке
 let currentActiveTab = 'tab-bank';
 
 export function initShop() {
@@ -24,7 +23,7 @@ export function initShop() {
         { id: 'ghost',  name: 'ПРИЗРАК', price: 25, icon: '👻', desc: 'Сквозь стены' }
     ];
 
-    // --- 1. HTML РАЗМЕТКА ---
+    // --- 1. HTML РАЗМЕТКА (С Вкладками) ---
     container.innerHTML = `
         <!-- Вкладки -->
         <div class="shop-tabs">
@@ -42,7 +41,8 @@ export function initShop() {
             
             <div class="shop-list">
                 <!-- 1. КРИСТАЛЛЫ ЗА TON -->
-                <div class="powerup-card" style="border-color: #4ec0ca;">
+                <!-- Используем стиль powerup-card (белый овал), но с синей рамкой для TON -->
+                <div class="powerup-card" style="border-color: #0098ea;">
                     <div style="display: flex; align-items: center;">
                         <div class="icon">💎</div>
                         <div>
@@ -57,7 +57,7 @@ export function initShop() {
                 </div>
 
                 <!-- 2. МОНЕТЫ ЗА TON -->
-                <div class="powerup-card">
+                <div class="powerup-card" style="border-color: #ffd700;">
                     <div style="display: flex; align-items: center;">
                         <div class="icon">🟡</div>
                         <div>
@@ -72,7 +72,8 @@ export function initShop() {
                 </div>
 
                 <!-- 3. ОБМЕН (Кристаллы -> Энергия) -->
-                <div class="powerup-card" style="background: #fff8e1 !important; border-color: #f7d51d !important;">
+                <!-- Желтоватый фон для выделения -->
+                <div class="powerup-card" style="background: #fffbe6 !important; border-color: #f7d51d !important;">
                     <div style="display: flex; align-items: center;">
                         <div class="icon">⚡</div>
                         <div>
@@ -81,7 +82,7 @@ export function initShop() {
                         </div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 10px; color: #666; margin-bottom: 2px;">Цена:</div>
+                        <div style="font-size: 9px; color: #666; margin-bottom: 3px;">Цена:</div>
                         <button class="exchange-btn" 
                             style="background: #9b59b6; color: #fff; border: none; border-radius: 15px; padding: 6px 15px; font-size: 11px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 0 #8e44ad;">
                             1 💎
@@ -95,6 +96,7 @@ export function initShop() {
         <div id="tab-powers" class="shop-tab-content ${currentActiveTab === 'tab-powers' ? 'active-view' : ''}">
             <div class="shop-list">
                 ${powerups.map(p => `
+                    <!-- Белые овалы для способностей -->
                     <div class="powerup-card">
                         <div style="display: flex; align-items: center;">
                             <div class="icon">${p.icon}</div>
@@ -119,7 +121,7 @@ export function initShop() {
 
     // --- 2. ЛОГИКА ---
 
-    // А) Переключение вкладок (с запоминанием)
+    // А) Переключение вкладок
     const tabs = container.querySelectorAll('.shop-tab-btn');
     const contents = container.querySelectorAll('.shop-tab-content');
     tabs.forEach(tab => {
@@ -130,19 +132,16 @@ export function initShop() {
             tab.classList.add('active');
             const targetId = tab.dataset.target;
             document.getElementById(targetId).classList.add('active-view');
-            
-            currentActiveTab = targetId; // Запоминаем выбор
+            currentActiveTab = targetId; // Запоминаем
         };
     });
 
-    // Б) Кошелек (с задержкой для надежности)
+    // Б) Кошелек
     setTimeout(() => {
         if (window.wallet && window.wallet.tonConnectUI) {
             try { 
                 window.wallet.tonConnectUI.setConnectButtonRoot('shop-ton-wallet'); 
-            } catch (e) { 
-                console.warn("Ошибка кнопки кошелька:", e); 
-            }
+            } catch (e) { console.warn("Wallet UI error:", e); }
         }
     }, 100);
 
@@ -153,7 +152,7 @@ export function initShop() {
             const { amount, type } = button.dataset;
             
             if (!window.wallet?.isConnected) {
-                tg?.showAlert("Сначала подключи кошелек!");
+                tg?.showAlert("Подключи кошелек!");
                 return;
             }
             try {
@@ -171,7 +170,7 @@ export function initShop() {
                         state.coins = res.newCoins ?? state.coins;
                         state.crystals = res.newCrystals ?? state.crystals;
                         window.updateGlobalUI?.();
-                        tg?.showAlert("Покупка успешна!");
+                        tg?.showAlert("Успешно!");
                     }
                 }
                 button.innerText = amount + " TON";
@@ -215,7 +214,7 @@ export function initShop() {
         };
     });
 
-    // Д) Покупка Способностей (за монеты)
+    // Д) Покупка Способностей
     container.querySelectorAll('.buy-ingame-btn').forEach(btn => {
         btn.onclick = async (e) => {
             const button = e.currentTarget;
@@ -241,7 +240,7 @@ export function initShop() {
                         detail: { id, price: cost, type: 'powerup', powerupType: id } 
                     }));
                     button.innerText = "✅";
-                    setTimeout(() => initShop(), 1000); // Реинит (обновит вкладку по currentActiveTab)
+                    setTimeout(() => initShop(), 1000); // Реинит (вкладка сохранится)
                 }
             } catch (err) { 
                 button.disabled = false; 
