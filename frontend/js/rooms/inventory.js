@@ -1,6 +1,7 @@
 /**
  * ЛОГИКА ИНВЕНТАРЯ (inventory.js)
- * Отображает текущие запасы игрока в стиле "белых овалов".
+ * Показывает купленные способности.
+ * Энергия (⚡) здесь НЕ показывается — она в шапке игры.
  */
 
 import * as api from '../../api.js';
@@ -11,21 +12,21 @@ export function initInventory() {
     
     if (!container) return;
 
-    // 1. Список предметов
+    // 1. Список предметов (Только способности!)
     const items = [
         { 
-            id: 'lives', 
-            name: 'СЕРДЕЧКО', 
+            id: 'heart', // ВАЖНО: Это способность из powerups, а не жизни из lives
+            name: 'СЕРДЦЕ', 
             icon: '❤️', 
-            count: state.lives || 0, 
-            description: 'Второй шанс'
+            count: state.powerups?.heart || 0, 
+            description: 'Возрождение после смерти'
         },
         { 
             id: 'shield', 
             name: 'ЩИТ', 
             icon: '🛡️', 
             count: state.powerups?.shield || 0, 
-            description: 'Защита от удара'
+            description: 'Защита от одного удара'
         },
         { 
             id: 'gap', 
@@ -39,22 +40,22 @@ export function initInventory() {
             name: 'МАГНИТ', 
             icon: '🧲', 
             count: state.powerups?.magnet || 0, 
-            description: 'Ловит монеты'
+            description: 'Притягивает монеты'
         },
         { 
             id: 'ghost', 
             name: 'ПРИЗРАК', 
             icon: '👻', 
             count: state.powerups?.ghost || 0, 
-            description: 'Сквозь стены'
+            description: 'Полет сквозь стены'
         }
     ];
 
-    // 2. Отрисовка
+    // 2. Отрисовка карточек
     container.innerHTML = items.map(item => {
         const isEmpty = item.count <= 0;
         
-        // Логика правой части: если 0 -> кнопка "КУПИТЬ", иначе -> "x5"
+        // Кнопка "КУПИТЬ" или счетчик
         const actionHtml = isEmpty 
             ? `<button class="go-to-shop-btn" style="
                     background: #4ec0ca; 
@@ -87,7 +88,7 @@ export function initInventory() {
         `;
     }).join('');
 
-    // 3. Обработчик кнопки "КУПИТЬ" -> Ведет в магазин
+    // 3. Обработчик перехода в магазин
     container.querySelectorAll('.go-to-shop-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.preventDefault();

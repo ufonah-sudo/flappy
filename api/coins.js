@@ -1,5 +1,5 @@
 /**
- * api/coins.js - Обработка покупок (Монеты и Энергия)
+ * api/coins.js - ЭКОНОМИКА (TON -> Кристаллы -> Энергия/Монеты)
  */
 import { supabase, verifyTelegramData, cors } from './_utils.js';
 
@@ -10,73 +10,81 @@ const handler = async (req, res) => {
     if (!user) return res.status(403).json({ error: 'Invalid auth' });
 
     try {
-        // --- ПОКУПКА ЗА TON (НОВАЯ ЛОГИКА) ---
+        // --- 1. ПОКУПКА ЗА TON (TON -> КРИСТАЛЛЫ / МОНЕТЫ) ---
         if (action === 'buy_package') {
-            let coinsToAdd = 0;
-            let energyToAdd = 0;
+            let coinsAdd = 0;
+            let crystalsAdd = 0;
 
-            // Определяем, что начислить
             if (packageType === 'coins_10k') {
-                coinsToAdd = 10000;
-            } else if (packageType === 'energy_10') {
-                energyToAdd = 10;
+                coinsAdd = 10000;
+            } else if (packageType === 'crystals_10') { // Новое: 10 Кристаллов
+                crystalsAdd = 10;
+            } else if (packageType === 'crystals_50') { // Пример: Пакет больше
+                crystalsAdd = 50; 
             } else {
                 return res.status(400).json({ error: 'Invalid package' });
             }
 
-            // Начисляем через атомарный SQL запрос (чтобы не было гонок)
-            // Мы обновляем сразу два поля: coins и crystals (которое у нас Энергия)
-            const { data: updatedUser, error } = await supabase
-                .from('users')
-                .update({ 
-                    last_sync: new Date() // Просто триггер обновления, значения считаем ниже
-                })
-                .eq('id', user.id)
-                .select('coins, crystals')
-                .single();
-
-            // В Supabase лучше использовать RPC для инкремента, но для простоты
-            // мы можем сначала получить юзера, а потом обновить.
-            // Или используем RPC increment_coins (у нас уже есть), создадим increment_resources.
-            
-            // ВАРИАНТ 2: Прямое обновление (чуть менее безопасно при дикой нагрузке, но работает)
-            // Сначала получаем текущие данные
+            // Получаем текущие данные
             const { data: current, error: fetchErr } = await supabase
                 .from('users').select('coins, crystals').eq('id', user.id).single();
-                
             if (fetchErr) throw fetchErr;
 
-            const newCoins = (current.coins || 0) + coinsToAdd;
-            const newEnergy = (current.crystals || 0) + energyToAdd;
+            const newCoins = (current.coins || 0) + coinsAdd;
+            const newCrystals = (current.crystals || 0) + crystalsAdd;
 
+            // Сохраняем
             const { error: updateErr } = await supabase
                 .from('users')
-                .update({ coins: newCoins, crystals: newEnergy })
+                .update({ coins: newCoins, crystals: newCrystals, last_sync: new Date() })
                 .eq('id', user.id);
 
             if (updateErr) throw updateErr;
 
+            return res.status(200).json({ success: true, newCoins, newCrystals });
+        }
+
+        // --- 2. ОБМЕН КРИСТАЛЛОВ (КРИСТАЛЛЫ -> ЭНЕРГИЯ) ---
+        if (action === 'exchange_crystals') {
+            // Конфиг обмена: 1 Кристалл = 5 Энергии
+            // В базе данных "lives" это энергия
+            const COST_CRYSTALS = 1;
+            const ENERGY_REWARD = 5;
+
+            const { data: dbUser } = await supabase
+                .from('users').select('crystals, lives').eq('id', user.id).single();
+
+            if (!dbUser || dbUser.crystals < COST_CRYSTALS) {
+                return res.status(400).json({ error: 'Недостаточно кристаллов 💎' });
+            }
+
+            const newCrystals = dbUser.crystals - COST_CRYSTALS;
+            const newLives = (dbUser.lives || 0) + ENERGY_REWARD;
+
+            const { error: exError } = await supabase
+                .from('users')
+                .update({ crystals: newCrystals, lives: newLives })
+                .eq('id', user.id);
+
+            if (exError) throw exError;
+
             return res.status(200).json({ 
                 success: true, 
-                newCoins: newCoins, 
-                newCrystals: newEnergy 
+                newCrystals: newCrystals, 
+                newLives: newLives 
             });
         }
 
-        // --- ПОКУПКА СПОСОБНОСТЕЙ (ОСТАВЛЯЕМ КАК БЫЛО) ---
+        // --- 3. ПОКУПКА СПОСОБНОСТЕЙ ЗА МОНЕТЫ (КАК БЫЛО) ---
         if (action === 'buy_item') {
-            const prices = {
-                heart: 50, shield: 20, gap: 20, magnet: 30, ghost: 25
-            };
+            const prices = { heart: 50, shield: 20, gap: 20, magnet: 30, ghost: 25 };
             const cost = prices[item];
             if (!cost) return res.status(400).json({ error: 'Item not found' });
 
             const { data: dbUser } = await supabase
                 .from('users').select('coins, powerups').eq('id', user.id).single();
 
-            if (dbUser.coins < cost) {
-                return res.status(400).json({ error: 'Недостаточно монет' });
-            }
+            if (dbUser.coins < cost) return res.status(400).json({ error: 'Недостаточно монет' });
 
             const currentPowerups = dbUser.powerups || {};
             const newCount = (currentPowerups[item] || 0) + 1;
@@ -88,17 +96,9 @@ const handler = async (req, res) => {
                     powerups: { ...currentPowerups, [item]: newCount }
                 })
                 .eq('id', user.id)
-                .select()
-                .single();
+                .select().single();
 
             return res.status(200).json({ success: true, newBalance: updatedUser.coins });
-        }
-
-        // --- СПИСАНИЕ ЗА ЖИЗНЬ/РЕВАЙВ ---
-        if (action === 'spend_revive') {
-             // ... старая логика ...
-             // (Для краткости не пишу, но она должна тут быть, если ты её используешь)
-             return res.status(200).json({ success: true }); 
         }
 
         return res.status(400).json({ error: `Unknown action: ${action}` });
