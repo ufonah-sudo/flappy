@@ -91,9 +91,10 @@
 }
 
 /* ФИКС: Скрытие нижней панели именно когда открыт экран Home */
-body:has(#scene-home:not(.hidden)) .menu-buttons-panel {
+/*  body:has(#scene-home:not(.hidden)) .menu-buttons-panel {
     display: none !important;
-}
+} */
+
 
 /* Заголовок выбора режима */
 .menu-title {
