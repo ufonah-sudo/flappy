@@ -193,7 +193,7 @@
 .powerup-card .name {
     color: #333; /* Темный текст */
     font-weight: 900;
-    font-size: 14px;
+    font-size: 12px;
     margin: 0;
     text-shadow: none; /* Убираем тень, на белом она не нужна */
     text-align: left;
