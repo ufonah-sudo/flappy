@@ -69,7 +69,7 @@ export function initShop() {
                     </button>
                 </div>
 
-                <!-- 3. ОБМЕН (Кристаллы -> Энергия) -->
+               // --- ОБМЕН: 5 ЭНЕРГИИ ЗА 1 КРИСТАЛЛ (ИСПРАВЛЕНО) ---
                 <div class="powerup-card" style="background: #fffbe6 !important; border-color: #f7d51d !important;">
                     <div style="display: flex; align-items: center;">
                         <div class="icon">⚡</div>
@@ -78,8 +78,9 @@ export function initShop() {
                             <div class="desc">Зарядись!</div>
                         </div>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 9px; color: #666; margin-bottom: 3px;"></div>
+                    
+                    <!-- Этот div центрирует кнопку -->
+                    <div style="display: flex; align-items: center; justify-content: center;">
                         <button class="exchange-btn action-btn btn-purple">
                             1 💎
                         </button>

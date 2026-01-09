@@ -39,7 +39,7 @@
     background: url('/frontend/assets/vision.png') no-repeat center center;
     background-size: 100% 100%;
     display: flex; flex-direction: column; align-items: center;
-    
+    margin-top: 40px
     width: 92%;           
     max-width: 400px;     
     height: 70vh;         
