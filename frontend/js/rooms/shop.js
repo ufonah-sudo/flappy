@@ -79,7 +79,7 @@ export function initShop() {
                         </div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 9px; color: #666; margin-bottom: 3px;">Цена:</div>
+                        <div style="font-size: 9px; color: #666; margin-bottom: 3px;"></div>
                         <button class="exchange-btn action-btn btn-purple">
                             1 💎
                         </button>

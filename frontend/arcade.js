@@ -208,8 +208,12 @@ export class ArcadeGame {
 
     // --- МЕТОД: СОЗДАНИЕ ТРУБЫ И МОНЕТ ---
     spawnPipe() {
-        // Рассчитываем размер проема
-        const gapBase = window.innerHeight * 0.18;
+          if (this.pipes.length > 0) {
+            const lastPipe = this.pipes[this.pipes.length - 1];
+            if (window.innerWidth - lastPipe.x < 220) return; // Минимум 220px между трубами
+        }
+
+        const gapBase = window.innerHeight * 0.22; // Чуть больше проем (было 0.18)
         const gapLarge = window.innerHeight * 0.35; // Если активен бонус GAP, проем больше
         
         // Выбираем текущий размер проема
@@ -244,198 +248,187 @@ export class ArcadeGame {
     }
 
     // --- МЕТОД: ОБНОВЛЕНИЕ СОСТОЯНИЯ (UPDATE) ---
-    update() {
-        // Если игра не идет или на паузе — ничего не делаем
+        update() {
         if (!this.isRunning || this.isPaused) return;
 
         // 1. Физика птицы
-        this.bird.velocity += this.gravity; // Прибавляем гравитацию к скорости
-        this.bird.y += this.bird.velocity;  // Двигаем птицу по Y
-        
-        // Рассчитываем угол наклона (клювом вниз или вверх)
+        this.bird.velocity += this.gravity;
+        this.bird.y += this.bird.velocity;
         const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.2)));
-        this.bird.rotation += (targetRot - this.bird.rotation) * 0.15; // Плавный поворот
+        this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
 
-        // 2. Анимация спрайтов
-               // Проверка: пора ли создавать новую трубу?
-        this.pipeSpawnTimer++; // Используем отдельный таймер!
+        // 2. Анимация крыльев
+        this.tickCount++;
+        if (this.tickCount > this.ticksPerFrame) {
+            this.tickCount = 0;
+            this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
+        }
+
+        // 3. Спавн труб
+        this.pipeSpawnTimer = (this.pipeSpawnTimer || 0) + 1;
         if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
-            this.spawnPipe(); 
+            this.spawnPipe();
             this.pipeSpawnTimer = 0;
         }
 
-
-        // 3. Обновляем таймеры активных способностей
+        // 4. Таймеры способностей
         Object.keys(this.activePowerups).forEach(key => {
             if (this.activePowerups[key] > 0) this.activePowerups[key]--;
         });
 
-        // 4. Логика спавна бонусов (Items)
-        this.itemTimer++;
-        if (this.itemTimer > 600) { // Раз в ~10 секунд
+        // 5. Спавн бонусов
+        this.itemTimer = (this.itemTimer || 0) + 1;
+        if (this.itemTimer > 300) {
             const types = ['shield', 'magnet', 'ghost', 'gap'];
-            // Создаем бонус
             this.items.push({
                 x: window.innerWidth + 50,
                 y: Math.random() * (window.innerHeight - 300) + 100,
                 type: types[Math.floor(Math.random() * types.length)],
-                osc: 0 // Для анимации покачивания
+                osc: 0
             });
             this.itemTimer = 0;
         }
+        
+        // 6. Спавн монет в небе
+        if (this.pipeSpawnTimer === 50 && Math.random() > 0.5) {
+            const minSpawnY = window.innerHeight / 5;
+            const maxSpawnY = window.innerHeight - this.ground.h - 50;
+            const startY = Math.random() * (maxSpawnY - minSpawnY) + minSpawnY;
+            for (let i = 0; i < 5; i++) {
+                this.coins.push({
+                    x: window.innerWidth + 50 + (i * 30),
+                    y: startY + (Math.sin(i) * 20),
+                    collected: false,
+                    angle: 0
+                });
+            }
+        }
 
-        // 5. Движение земли
+        // 7. Движение земли
         this.ground.offsetX -= this.pipeSpeed;
         if (this.ground.offsetX <= -this.ground.realWidth) this.ground.offsetX = 0;
 
-        // 6. Проверка смерти об пол
+        // 8. Смерть об пол
         const groundTop = window.innerHeight - this.ground.h;
         if (this.bird.y + this.bird.size > groundTop) {
-            this.bird.y = groundTop - this.bird.size; // Прижимаем к полу
-            this.gameOver(); // Конец игры
+            this.bird.y = groundTop - this.bird.size;
+            this.gameOver();
             return;
         }
 
-        // 7. Проверка: пора ли создавать новую трубу?
-        if (++this.tickCount > this.pipeSpawnThreshold) {
-            this.spawnPipe();
-            this.tickCount = 0;
-        }
-
+        // 9. Движение и коллизии
         const speed = this.pipeSpeed;
-
-        // 8. ЦИКЛ ОБНОВЛЕНИЯ ТРУБ
+        
         for (let i = this.pipes.length - 1; i >= 0; i--) {
             const p = this.pipes[i];
-            p.x -= speed; // Двигаем трубу влево
-
-            // Проверка коллизии (Столкновения)
-            const pad = 10; // Отступ (чтобы хитбокс был чуть меньше спрайта)
-            // Попадание по X
+            p.x -= speed;
+            const pad = 10;
             const hitX = this.bird.x + this.bird.size - pad > p.x && this.bird.x + pad < p.x + p.width;
-            // Попадание по Y (верхняя или нижняя труба)
             const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
 
             if (hitX && hitY) {
-                // Если активен Призрак (от предмета) ИЛИ временная неуязвимость (isGhost)
-                if (this.activePowerups.ghost > 0 || this.isGhost) {
-                    // Игнорируем удар (пролетаем сквозь)
-                } 
-                // Если активен Щит
-                else if (this.activePowerups.shield > 0) {
-                    this.activePowerups.shield = 0; // Ломаем щит
-                    this.pipes.splice(i, 1); // Удаляем трубу, в которую врезались
-                    // Обновляем UI (чтобы щит исчез с экрана)
+                if (this.activePowerups.ghost > 0 || this.isGhost) continue;
+                if (this.activePowerups.shield > 0) {
+                    this.activePowerups.shield = 0;
+                    this.pipes.splice(i, 1);
                     if(window.updateGlobalUI) window.updateGlobalUI();
-                    continue; // Продолжаем цикл, не вызываем gameOver
+                    continue;
                 } else {
-                    // Иначе — смерть
                     this.gameOver();
                     return;
                 }
             }
-
-            // Проверка прохождения (начисление очков)
             if (!p.passed && p.x + p.width < this.bird.x) {
                 p.passed = true;
                 this.score++;
-                // Обновляем счетчик на экране
                 const scoreEl = document.getElementById('score-overlay');
                 if(scoreEl) scoreEl.innerText = this.score;
             }
-
-            // Удаляем трубы, ушедшие за левый край
             if (p.x < -p.width) this.pipes.splice(i, 1);
         }
 
-        // 9. ЦИКЛ ОБНОВЛЕНИЯ МОНЕТ
         this.coins.forEach(c => {
             c.x -= speed;
-            c.angle += 0.1; // Вращаем монетку
-            
-            // Если активен Магнит — притягиваем монетку
+            c.angle += 0.1;
             if (this.activePowerups.magnet > 0) {
                 const dist = Math.hypot(this.bird.x - c.x, this.bird.y - c.y);
-                // Если монетка в радиусе действия
                 if (dist < this.config.magnetRadius) {
-                    // Двигаем монетку к птице (плавно)
                     c.x += (this.bird.x - c.x) * 0.15;
                     c.y += (this.bird.y - c.y) * 0.15;
                 }
             }
         });
         
-        // Проверка сбора монет
         const bX = this.bird.x + this.bird.size/2;
         const bY = this.bird.y + this.bird.size/2;
         
-        // Фильтруем массив: оставляем только не собранные
         this.coins = this.coins.filter(c => {
-            // Если расстояние до центра птицы меньше 40px
             if (Math.hypot(bX - c.x, bY - c.y) < 40) {
-                // Добавляем монету в глобальный стейт
                 if(window.state) {
                     window.state.coins++;
                     if(window.updateGlobalUI) window.updateGlobalUI();
                 }
-                return false; // Удаляем из массива (собрана)
+                return false;
             }
-            return c.x > -50; // Удаляем, если ушла за экран
+            return c.x > -50;
         });
 
-        // 10. ЦИКЛ ОБНОВЛЕНИЯ БОНУСОВ (ITEMS)
         this.items.forEach(it => {
             it.x -= speed;
-            it.osc += 0.05; // Увеличиваем фазу колебания
-            it.y += Math.sin(it.osc) * 1.5; // Двигаем вверх-вниз по синусоиде
+            it.osc += 0.05;
+            it.y += Math.sin(it.osc) * 1.5;
         });
         
-        // Проверка сбора бонусов
         this.items = this.items.filter(it => {
             if (Math.hypot(bX - it.x, bY - it.y) < 45) {
-                // Активируем эффект
                 this.activatePowerupEffect(it.type);
                 if(window.updateGlobalUI) window.updateGlobalUI();
-                return false; // Удаляем (собран)
+                return false;
             }
             return it.x > -50;
         });
     }
 
+
     // --- МЕТОД: ОТРИСОВКА (DRAW) ---
-    draw() {
-        // Очищаем холст
+     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Настройки цветов для Аркады
-        const pipeColor = '#d35400'; // Оранжевый
-        const capColor = '#e67e22';  // Светло-оранжевый
-        const strokeColor = '#6e2c00'; // Коричневый контур
+        // --- ЦВЕТА (КЛАССИЧЕСКИЕ ЗЕЛЕНЫЕ) ---
+        const pipeColor = '#556b2f';    // Темный хаки
+        const capColor = '#6b8e23';     // Оливковый
+        const strokeColor = '#2d3419';  // Темный контур
 
-        // 1. Рисуем трубы
         this.pipes.forEach(p => {
             this.ctx.lineWidth = 2;
             this.ctx.strokeStyle = strokeColor;
             
-            // Верхняя труба
+            // ВЕРХНЯЯ ТРУБА
             this.ctx.fillStyle = pipeColor;
             this.ctx.fillRect(p.x, 0, p.width, p.top);
-            // Шапка верхней трубы
-            this.ctx.fillStyle = capColor;
-            this.ctx.fillRect(p.x - 5, p.top - 25, p.width + 10, 25);
-            this.ctx.strokeRect(p.x - 5, p.top - 25, p.width + 10, 25);
+            // Блик
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            this.ctx.fillRect(p.x + 8, 0, 10, p.top);
             this.ctx.strokeRect(p.x, 0, p.width, p.top);
+            
+            // ШАПКА ВЕРХНЕЙ
+            this.ctx.fillStyle = capColor;
+            this.ctx.fillRect(p.x - 5, p.top - 20, p.width + 10, 20);
+            this.ctx.strokeRect(p.x - 5, p.top - 20, p.width + 10, 20);
 
-            // Нижняя труба
+            // НИЖНЯЯ ТРУБА
             this.ctx.fillStyle = pipeColor;
             this.ctx.fillRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom);
-            // Шапка нижней трубы
-            this.ctx.fillStyle = capColor;
-            this.ctx.fillRect(p.x - 5, p.bottom, p.width + 10, 25);
-            this.ctx.strokeRect(p.x - 5, p.bottom, p.width + 10, 25);
+            // Блик
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            this.ctx.fillRect(p.x + 8, p.bottom, 10, window.innerHeight - p.bottom);
             this.ctx.strokeRect(p.x, p.bottom, p.width, window.innerHeight - p.bottom);
+            
+            // ШАПКА НИЖНЕЙ
+            this.ctx.fillStyle = capColor;
+            this.ctx.fillRect(p.x - 5, p.bottom, p.width + 10, 20);
+            this.ctx.strokeRect(p.x - 5, p.bottom, p.width + 10, 20);
         });
-
         // 2. Рисуем землю
         this.drawGround();
 
