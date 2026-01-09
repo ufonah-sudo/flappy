@@ -395,9 +395,9 @@ export class ArcadeGame {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // --- ЦВЕТА (КЛАССИЧЕСКИЕ ЗЕЛЕНЫЕ) ---
-        const pipeColor = '#556b2f';    // Темный хаки
-        const capColor = '#6b8e23';     // Оливковый
-        const strokeColor = '#2d3419';  // Темный контур
+        const pipeColor = '#ab5d04';    // Темный хаки
+        const capColor = '#f6bb88';     // Оливковый
+        const strokeColor = '#67462d';  // Темный контур
 
         this.pipes.forEach(p => {
             this.ctx.lineWidth = 2;
