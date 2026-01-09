@@ -69,7 +69,7 @@ export function initShop() {
                     </button>
                 </div>
 
-               // --- ОБМЕН: 5 ЭНЕРГИИ ЗА 1 КРИСТАЛЛ (ИСПРАВЛЕНО) ---
+             
                 <div class="powerup-card" style="background: #fffbe6 !important; border-color: #f7d51d !important;">
                     <div style="display: flex; align-items: center;">
                         <div class="icon">⚡</div>
