@@ -50,6 +50,8 @@
     position: relative;
     filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
     box-sizing: border-box;
+     position: relative; /* Включаем относительное позиционирование */
+    top: 30px;          /* Сдвигаем на 30px вниз от центра */
 }
 
 /* Заголовки */

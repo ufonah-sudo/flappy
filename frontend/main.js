@@ -164,6 +164,8 @@ function showRoom(roomName) {
 
     // --- ЛОГИКА ЗАПУСКА ИГРЫ ---
     if (roomName === 'game') {
+
+        document.getElementById('score-overlay').innerText = '0';
         // Останавливаем все движки перед сменой
         if (window.game) window.game.isRunning = false;
         if (window.arcadeGame) window.arcadeGame.isRunning = false;
