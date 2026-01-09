@@ -475,6 +475,7 @@
     text-shadow: none;
 }
 
+
 .white-oval-btn:active {
     transform: scale(0.96);
     background: #d1d1d1;

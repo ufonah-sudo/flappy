@@ -95,4 +95,5 @@ export function initInventory() {
             window.showRoom('shop');
         };
     });
+    
 }

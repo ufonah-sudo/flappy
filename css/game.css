@@ -240,6 +240,7 @@
     border: 4px solid rgba(255,255,255,0.3);
 }
 
+
 .mode-card.active {
     filter: grayscale(0);
     border: 5px solid #f7d51d !important;

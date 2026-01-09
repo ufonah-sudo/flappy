@@ -112,6 +112,7 @@
         -3px 3px 0 #000;
 }
 /* Фон для кнопки карьеры */
+
 #btn-mode-career { 
     background-image: url('/frontend/assets/career.png'); 
     background-size: contain;

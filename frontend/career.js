@@ -279,4 +279,5 @@ export class CareerGame {
         this.draw();
         this.animationId = requestAnimationFrame(this.loop);
     }
+    
 }

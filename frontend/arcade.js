@@ -508,4 +508,5 @@ if (this.tickCount % 600 === 0) {
         if (!this.isRunning || this.isPaused) return; // Прыгаем только в активной игре
         this.bird.velocity = this.jump; // Устанавливаем вертикальную скорость равной силе прыжка
     }
+    
 }

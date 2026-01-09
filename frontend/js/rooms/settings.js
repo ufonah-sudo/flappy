@@ -165,6 +165,7 @@ export function initSettings() {
             window.open(url, '_blank');
         }
     };
+    
 
     document.getElementById('btn-channel').onclick = () => openLink('https://t.me/your_channel');
     document.getElementById('btn-support').onclick = () => openLink('https://t.me/your_support');

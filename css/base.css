@@ -391,6 +391,7 @@ canvas {
     pointer-events: none !important;
 }
 
+
 /* Настраиваем высоту кнопок, чтобы они были чуть ниже */
 #top-btn, #daily-btn {
     position: absolute;

@@ -305,4 +305,5 @@ export class Game {
         this.canvas.removeEventListener('mousedown', this.handleInput);
         this.canvas.removeEventListener('touchstart', this.handleInput);
     }
+    
 }
