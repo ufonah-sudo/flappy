@@ -1,5 +1,5 @@
 /* =========================================
-   rooms.css - ФИНАЛЬНЫЙ СТИЛЬ
+   rooms.css - ФИНАЛЬНЫЙ СТИЛЬ (ПОЛНЫЙ)
    ========================================= */
 
 /* --- 1. БАЗОВЫЕ ФОНЫ --- */
@@ -40,13 +40,11 @@
     background-size: 100% 100%;
     display: flex; flex-direction: column; align-items: center;
     
-    /* Вернули компактные размеры */
     width: 92%;           
     max-width: 400px;     
     height: 70vh;         
     max-height: 620px;
     
-    /* Отступы, чтобы текст не лез на рамку */
     padding: 60px 30px 40px 30px; 
     
     position: relative;
@@ -62,7 +60,6 @@
     text-transform: uppercase; 
     font-weight: 900;
     letter-spacing: 1px;
-    /* Жирная обводка текста */
     text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
     text-align: center;
     flex-shrink: 0;
@@ -70,14 +67,13 @@
 }
 
 /* --- 3. ЗОЛОТАЯ МОНЕТКА (CSS) --- */
-/* Рисуем монетку кодом, чтобы она везде была одинаковой */
 .gold-coin {
     display: inline-block;
     width: 18px; height: 18px;
-    background: #FFD700; /* Золотой */
-    border: 2px solid #b36b15; /* Медная обводка (как в игре) */
+    background: #FFD700; 
+    border: 2px solid #b36b15; 
     border-radius: 50%;
-    box-shadow: inset -3px -3px 0 rgba(0,0,0,0.2); /* Блик внутри */
+    box-shadow: inset -3px -3px 0 rgba(0,0,0,0.2); 
     vertical-align: middle;
     margin-right: 4px;
     position: relative;
@@ -87,16 +83,16 @@
 
 /* --- 4. ДЕРЕВЯННАЯ КНОПКА (Invite) --- */
 .btn-wooden {
-    background: #5c4d32; /* Цвет дерева */
+    background: #5c4d32; 
     color: #fff;
-    border: 2px solid #3e3320; /* Темная рамка */
+    border: 2px solid #3e3320; 
     border-radius: 12px;
     padding: 12px 20px;
     font-weight: 900;
     text-transform: uppercase;
     font-size: 14px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #3e3320, 0 5px 10px rgba(0,0,0,0.4); /* Объем */
+    box-shadow: 0 4px 0 #3e3320, 0 5px 10px rgba(0,0,0,0.4); 
     text-shadow: 1px 1px 0 #000;
     transition: transform 0.1s, box-shadow 0.1s;
     width: 100%;
@@ -121,8 +117,8 @@
 
 /* ОБЩИЙ СТИЛЬ КАРТОЧЕК (НЕ ПРОЗРАЧНЫЙ!) */
 .shop-card, .leader-item, .friend-card, .inventory-card, .daily-card {
-    background: #1e2329; /* Плотный темный фон */
-    border: 2px solid #5c4d32; /* Рамка в цвет Vision */
+    background: #1e2329; 
+    border: 2px solid #5c4d32; 
     border-radius: 14px;
     padding: 10px;
     margin-bottom: 8px;
@@ -132,15 +128,13 @@
 /* Текст внутри карточек */
 .item-name, .shop-card p, .friend-card div {
     color: #fff;
-    text-shadow: 1px 1px 0 #000; /* Обводка текста для читаемости */
+    text-shadow: 1px 1px 0 #000; 
 }
 .item-val, .shop-card .price {
     font-weight: 900; color: #f7d51d; text-shadow: 1px 1px 0 #000;
 }
 
 /* --- СТИЛИ ДЛЯ МАГАЗИНА (НОВЫЕ) --- */
-
-/* Заголовки разделов */
 .shop-separator {
     width: 100%;
     margin: 20px 0 10px 0;
@@ -148,7 +142,6 @@
     border-bottom: 2px solid rgba(255, 255, 255, 0.2);
     text-align: left;
 }
-
 .shop-separator h4 {
     color: #f7d51d;
     font-size: 14px;
@@ -175,30 +168,28 @@
 }
 
 .powerup-card {
-    /* Тот самый "белый овал" */
-    background: #e3e3e3; /* Светло-серый, почти белый */
-    border: 3px solid #fff; /* Белая обводка */
-    border-radius: 30px; /* Сильное закругление */
+    background: #e3e3e3; 
+    border: 3px solid #fff; 
+    border-radius: 30px; 
     
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 15px; /* Внутренние отступы */
+    padding: 8px 15px; 
     
-    box-shadow: 0 4px 0 rgba(0,0,0,0.3); /* Тень снизу */
-    transform: translateZ(0); /* Оптимизация */
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3); 
+    transform: translateZ(0); 
 }
 
 /* Текст внутри белых карточек должен быть ТЕМНЫМ */
 .powerup-card .name {
-    color: #333; /* Темный текст */
+    color: #333; 
     font-weight: 900;
     font-size: 12px;
     margin: 0;
-    text-shadow: none; /* Убираем тень, на белом она не нужна */
+    text-shadow: none; 
     text-align: left;
 }
-
 .powerup-card .desc {
     color: #666;
     font-size: 10px;
@@ -206,21 +197,17 @@
     text-shadow: none;
     text-align: left;
 }
-
 .powerup-card .icon {
     font-size: 28px;
     margin-right: 10px;
     filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
 }
-
-/* Цена на белой карточке */
 .powerup-price {
     font-weight: 900;
-    color: #d35400; /* Темно-оранжевый */
+    color: #d35400; 
     font-size: 13px;
     text-shadow: none;
 }
-
 
 /* Списки */
 .leader-item, .friend-card, .inventory-card { display: flex; align-items: center; width: 100%; }
@@ -237,66 +224,56 @@
 .streak-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .daily-card { flex-direction: column; align-items: center; justify-content: center; height: 95px; }
 .daily-card.active { border-color: #f7d51d; background: rgba(247, 213, 29, 0.1); }
-
 .btn-back-node { margin-top: 15px; flex-shrink: 0; }
 
 /* --- СТИЛИ ДЛЯ ВКЛАДОК МАГАЗИНА (TABS) --- */
-
 .shop-tabs {
     display: flex;
     justify-content: center;
     gap: 15px;
     width: 100%;
-    margin-bottom: 20px; /* Отступ до контента */
+    margin-bottom: 20px;
 }
-
 .shop-tab-btn {
-    background: rgba(0, 0, 0, 0.6); /* Темный фон неактивной вкладки */
+    background: rgba(0, 0, 0, 0.6); 
     border: 2px solid #5c4d32;
-    color: #aaa; /* Серый текст */
+    color: #aaa; 
     padding: 10px 25px;
-    border-radius: 25px; /* Овальные кнопки */
+    border-radius: 25px; 
     font-weight: 900;
     font-size: 14px;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex: 1; 
+    max-width: 140px;
 }
-
-/* Активная вкладка (Золотая) */
 .shop-tab-btn.active {
     background: #f7d51d;
     color: #000;
     border-color: #fff;
     box-shadow: 0 0 15px rgba(247, 213, 29, 0.4);
-    transform: scale(1.05); /* Чуть увеличивается */
+    transform: scale(1.05);
 }
-
-/* Скрытие неактивных разделов */
 .shop-tab-content {
     display: none;
     width: 100%;
-    animation: fadeTab 0.3s ease; /* Плавное появление */
+    animation: fadeTab 0.3s ease;
 }
-
-/* Показ активного раздела */
 .shop-tab-content.active-view {
     display: flex;
     flex-direction: column;
 }
-
 @keyframes fadeTab {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 /* --- СТИЛИ ИНВЕНТАРЯ (FIX) --- */
-
-/* Делаем карточку инвентаря такой же, как в магазине (Белый овал) */
 .inventory-card {
-    background: #e3e3e3 !important; /* Светлый фон */
-    border: 3px solid #fff !important; /* Белая обводка */
-    border-radius: 30px !important; /* Овал */
+    background: #e3e3e3 !important; 
+    border: 3px solid #fff !important; 
+    border-radius: 30px !important; 
     
     display: flex;
     align-items: center;
@@ -306,17 +283,14 @@
     box-shadow: 0 4px 0 rgba(0,0,0,0.3) !important;
     margin-bottom: 10px;
 }
-
-/* Текст внутри инвентаря (делаем темным, чтобы читался на белом) */
 .inventory-card .name {
     color: #333 !important;
     font-weight: 900;
     font-size: 14px;
     margin: 0;
-    text-shadow: none !important; /* Убираем тень */
+    text-shadow: none !important; 
     text-align: left;
 }
-
 .inventory-card .desc {
     color: #666;
     font-size: 10px;
@@ -325,14 +299,11 @@
     text-align: left;
     line-height: 1.2;
 }
-
 .inventory-card .icon {
     font-size: 28px;
     margin-right: 12px;
     filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
 }
-
-/* Бейдж с количеством (x5) */
 .inventory-count {
     background: #333;
     color: #fff;
@@ -343,27 +314,58 @@
     min-width: 35px;
     text-align: center;
 }
-
-/* Если предметов 0 */
 .inventory-card.empty {
     opacity: 0.7;
     background: #d1d1d1 !important;
 }
 
-/* --- КАРТА КАРЬЕРЫ (ДОРОГА) --- */
+/* --- КАРТА КАРЬЕРЫ (ДОРОГА + ОКНО) --- */
+
+/* 1. Добавил стиль для ОКНА карты (career-window) */
+.career-window {
+    /* Фон карты */
+    background: url('/frontend/assets/careermap.png') no-repeat center center;
+    background-size: 100% 100%;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    width: 96%;           
+    max-width: 450px;     
+    height: 82vh;         
+    max-height: 750px;
+    
+    padding: 70px 20px 40px 20px; 
+    
+    position: relative;
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
+    box-sizing: border-box;
+}
+
+/* Заголовок внутри карты */
+.career-window h3 {
+    color: #f7d51d;
+    font-size: 24px;
+    margin: -10px 0 10px 0;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000;
+    text-transform: uppercase;
+    font-weight: 900;
+    z-index: 2;
+}
 
 /* Контейнер для уровней */
 .career-road {
     display: flex;
-    flex-direction: column-reverse; /* Уровень 1 внизу, 10 вверху (как гора) */
+    flex-direction: column-reverse; 
     align-items: center;
-    gap: 40px; /* Расстояние между уровнями */
+    gap: 40px; 
     padding: 20px 0;
     width: 100%;
     position: relative;
 }
 
-/* Вертикальная пунктирная линия (Тропинка) */
+/* Вертикальная пунктирная линия */
 .career-road::before {
     content: '';
     position: absolute;
@@ -377,7 +379,6 @@
     z-index: 0;
 }
 
-/* Ряд с уровнем (чтобы двигать влево-вправо) */
 .level-row {
     width: 100%;
     display: flex;
@@ -386,14 +387,9 @@
     position: relative;
 }
 
-/* Змейка: сдвигаем четные/нечетные ряды */
-/* Центр (по дефолту) */
-/* Сдвиг влево */
 .level-row.pos-left { justify-content: flex-start; padding-left: 20%; }
-/* Сдвиг вправо */
 .level-row.pos-right { justify-content: flex-end; padding-right: 20%; }
 
-/* Кнопка Уровня (Кружок) */
 .level-node {
     width: 65px;
     height: 65px;
@@ -401,12 +397,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
     font-weight: 900;
     font-size: 24px;
     color: #fff;
     text-shadow: 1px 1px 0 #000;
-    
     border: 3px solid #fff;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     cursor: pointer;
@@ -414,12 +408,8 @@
     background-size: cover;
     background-position: center;
 }
-
 .level-node:active { transform: scale(0.9); }
 
-/* --- СОСТОЯНИЯ УРОВНЯ --- */
-
-/* 1. ЗАБЛОКИРОВАН 🔒 */
 .level-node.locked {
     background: #555;
     border-color: #888;
@@ -428,7 +418,6 @@
     filter: grayscale(1);
 }
 
-/* 2. ТЕКУЩИЙ (Пульсирует) 🔥 */
 .level-node.current {
     background: radial-gradient(circle, #f1c40f 0%, #f39c12 100%);
     border-color: #fff;
@@ -443,40 +432,56 @@
     100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
 }
 
-/* 3. ПРОЙДЕН ✅ */
 .level-node.completed {
     background: radial-gradient(circle, #2ecc71 0%, #27ae60 100%);
     border-color: #fff;
-    font-size: 0; /* Скрываем цифру */
+    font-size: 0; 
 }
 .level-node.completed::after {
-    content: '★'; /* Звезда */
+    content: '★'; 
     font-size: 24px;
 }
 
 /* --- СТИЛЬ БЕЛЫХ ОВАЛЬНЫХ КНОПОК (GAME OVER) --- */
 .white-oval-btn {
-    background: #e3e3e3; /* Белый фон */
-    border: 3px solid #fff; /* Белая обводка */
-    border-radius: 30px; /* Овал */
-    
-    color: #333; /* Темный текст */
+    background: #e3e3e3; 
+    border: 3px solid #fff; 
+    border-radius: 30px; 
+    color: #333; 
     font-weight: 900;
     font-size: 14px;
     text-transform: uppercase;
-    
     width: 100%;
     padding: 12px 20px;
     cursor: pointer;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* Легкая тень */
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2); 
     transition: transform 0.1s;
-    
-    /* Убираем дефолтные стили */
     text-shadow: none;
 }
-
-
 .white-oval-btn:active {
     transform: scale(0.96);
     background: #d1d1d1;
 }
+
+/* --- КНОПКИ ПОКУПКИ --- */
+.action-btn {
+    border: none;
+    border-radius: 15px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+    text-transform: uppercase;
+    color: #fff;
+    transition: transform 0.1s, filter 0.1s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.2); 
+    margin-top: 5px;
+}
+.action-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+.btn-blue { background-color: #0098ea; }
+.btn-green { background-color: #4ec0ca; }
+.btn-purple { background-color: #9b59b6; }
