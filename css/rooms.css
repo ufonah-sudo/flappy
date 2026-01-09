@@ -50,7 +50,6 @@
     position: relative;
     filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
     box-sizing: border-box;
-     position: relative; /* Включаем относительное позиционирование */
     top: 30px;          /* Сдвигаем на 30px вниз от центра */
 }
 
@@ -487,3 +486,186 @@
 .btn-blue { background-color: #0098ea; }
 .btn-green { background-color: #4ec0ca; }
 .btn-purple { background-color: #9b59b6; }
+
+/* =========================================
+   СТИЛИ ДЛЯ DAILY HUB
+   ========================================= */
+
+/* --- 1. ОБЩАЯ СТРУКТУРА --- */
+
+/* Контейнер для всего контента Daily */
+#daily-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 25px; /* Расстояние между блоками */
+    width: 100%;
+}
+
+/* Секция (Награды, Задания, Сундук) */
+.daily-hub-section {
+    width: 100%;
+}
+
+.daily-hub-section h4 {
+    color: #f7d51d;
+    font-size: 14px;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0 #000;
+    margin: 0 0 10px 0;
+    text-align: left;
+}
+
+/* --- 2. НАГРАДЫ ЗА ВХОД (STREAK) --- */
+
+/* Сетка для шахматного порядка */
+.daily-streak-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Сами карточки (белые овалы) */
+.daily-reward-card {
+    background: #e3e3e3;
+    border: 3px solid #fff;
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    min-height: 110px;
+}
+
+.daily-reward-card .day {
+    font-size: 11px;
+    font-weight: 800;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.daily-reward-card .icon {
+    font-size: 32px;
+    margin: 5px 0;
+}
+
+.daily-reward-card .reward {
+    font-weight: 900;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Состояния карточек */
+.daily-reward-card.claimed {
+    opacity: 0.6;
+    filter: grayscale(1);
+}
+.daily-reward-card.current {
+    border-color: #f7d51d;
+    animation: pulseBorder 1.5s infinite;
+}
+
+/* --- 3. ЕЖЕДНЕВНЫЕ ЗАДАНИЯ (CHALLENGES) --- */
+.challenge-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.challenge-card {
+    background: #1e2329;
+    border: 2px solid #5c4d32;
+    border-radius: 12px;
+    padding: 10px 15px;
+}
+
+.challenge-card .info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.challenge-card .text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+.challenge-card .reward {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 800;
+    font-size: 14px;
+    color: #ffd700;
+}
+
+/* Прогресс-бар задания */
+.challenge-progress {
+    height: 8px;
+    background: #444;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.challenge-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f7d51d, #f39c12);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* --- 4. СУНДУК (BONUS CHEST) --- */
+.bonus-chest-container {
+    width: 100%;
+    text-align: center;
+}
+
+/* Общий прогресс-бар (0/3, 1/3 ...) */
+.total-progress-bar {
+    width: 100%;
+    height: 10px;
+    background: #444;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    overflow: hidden;
+}
+.total-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    transition: width 0.3s;
+}
+
+/* Сам сундук */
+.bonus-chest {
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    font-size: 80px; /* Размер эмодзи */
+    line-height: 1;
+    transition: transform 0.2s;
+}
+
+/* Анимация тряски, если готов к открытию */
+.bonus-chest.ready {
+    animation: shakeChest 0.8s infinite;
+}
+
+.bonus-chest:active {
+    transform: scale(0.9);
+}
+
+/* Анимация тряски */
+@keyframes shakeChest {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) rotate(-3deg); }
+    20%, 40%, 60%, 80% { transform: translateX(5px) rotate(3deg); }
+}
+
+/* Таймер до сброса */
+.daily-timer {
+    text-align: center;
+    font-size: 11px;
+    color: #999;
+    margin-top: 15px;
+}
