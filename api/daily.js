@@ -83,6 +83,7 @@ const handler = async (req, res) => {
             await supabase.from('users').update({ bonus_claimed: true }).eq('id', user.id);
             
             return res.status(200).json({ success: true, reward: '200 coins, 1 crystal' });
+            
         }
         
         // Если действий не было, просто возвращаем текущего юзера

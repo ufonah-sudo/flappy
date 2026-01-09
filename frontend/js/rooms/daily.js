@@ -16,12 +16,18 @@ export async function initDaily() {
     // Показываем заглушку-загрузку
     container.innerHTML = `<div style="text-align:center; color:#aaa; padding: 40px;">Загрузка ежедневных наград...</div>`;
 
-    try {
+     try {
         // --- ЗАПРОС СВЕЖИХ ДАННЫХ С СЕРВЕРА ---
         const dailyData = await api.apiRequest('daily', 'POST');
 
-        // Если сервер обновил данные, обновляем и локальный стейт
+        // ЕСЛИ ЕСТЬ ОШИБКА - ПОКАЗЫВАЕМ
+        if (dailyData && dailyData.error) {
+            throw new Error(dailyData.error);
+        }
+
+        // Если сервер прислал обновленного юзера (т.е. день сбросился)
         if (dailyData && dailyData.refreshedUser) {
+            // Обновляем локальный стейт
             const user = dailyData.refreshedUser;
             state.user.daily_step = user.daily_step;
             state.user.daily_claimed = user.daily_claimed;
