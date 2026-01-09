@@ -211,28 +211,22 @@
 </div>
 
 
-       <section id="scene-daily" class="screen hidden">
-    <!-- Кнопка назад висит поверх фона (вне рамки), как и раньше -->
-    <button id="btn-back-to-home" class="ui-corner-btn" style="top:20px; left:20px;">
-        <img src="/frontend/assets/back.png" style="width:100%;">
-    </button>
-    
+   <!-- ВСТАВЬ ЭТО ВМЕСТО СТАРОЙ СЕКЦИИ DAILY -->
+
+<section id="scene-daily" class="screen hidden">
     <div class="vision-window">
         <!-- Заголовок -->
         <h2>DAILY HUB</h2>
 
-        <!-- 👇 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ 👇 -->
-        <!-- Один контейнер, куда JS вставит ВЕСЬ интерфейс -->
+        <!-- Единый контейнер, куда JS вставит ВЕСЬ интерфейс -->
         <div class="room-content" id="daily-content-wrapper">
             <!-- Сюда JS вставит награды, задания и сундук -->
         </div>
 
-        <!-- Кнопка назад (опционально, если нужна) -->
-        <button id="btn-back-to-home" class="ui-corner-btn" style="position:absolute; top:20px; left:20px; width:40px;">
-            <img src="/frontend/assets/back.png" style="width:100%;">
-        </button>
+        <!-- Кнопку "назад" убрали, так как есть нижнее меню -->
     </div>
 </section>
+
 
 
      <div id="scene-settings" class="screen hidden">
