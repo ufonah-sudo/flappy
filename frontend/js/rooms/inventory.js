@@ -1,11 +1,9 @@
 /**
- * js/rooms/inventory.js - ИНВЕНТАРЬ
- * Показывает купленные способности и скины.
+ * js/rooms/inventory.js - ИНВЕНТАРЬ (FINAL FIXED)
  */
 
 import * as api from '../../api.js';
 
-// Запоминаем вкладку
 let currentInvTab = 'inv-powers';
 
 export function initInventory() {
@@ -16,15 +14,17 @@ export function initInventory() {
 
     // База предметов
     const allItems = [
-        // Powers
+        // Способности (Powers)
         { id: 'heart', name: 'СЕРДЦЕ', icon: '❤️', cat: 'power', count: state.powerups?.heart, desc: 'Возрождение' },
         { id: 'shield', name: 'ЩИТ', icon: '🛡️', cat: 'power', count: state.powerups?.shield, desc: 'Защита' },
         { id: 'gap', name: 'ПРОЕМЫ', icon: '↔️', cat: 'power', count: state.powerups?.gap, desc: 'Широкие трубы' },
         { id: 'magnet', name: 'МАГНИТ', icon: '🧲', cat: 'power', count: state.powerups?.magnet, desc: 'Ловит монеты' },
         { id: 'ghost', name: 'ПРИЗРАК', icon: '👻', cat: 'power', count: state.powerups?.ghost, desc: 'Сквозь стены' },
         
-        // Skins (пример)
-        { id: 'skin_default', name: 'КЛАССИК', icon: '🐦', cat: 'skin', count: 1, desc: 'Обычная птица' }
+        // Скины (Skins)
+        { id: 'skin_default', name: 'КЛАССИК', icon: '🐦', cat: 'skin', count: 1, desc: 'Обычная птица' },
+        // Пример закрытого скина (если его нет в инвентаре, count будет 0)
+        { id: 'skin_robot', name: 'КИБОРГ', icon: '🤖', cat: 'skin', count: state.inventory.includes('skin_robot') ? 1 : 0, desc: 'Железный клюв' }
     ];
 
     // --- HTML СТРУКТУРА ---
@@ -54,8 +54,9 @@ export function initInventory() {
             const isEmpty = count <= 0;
             
             let actionHtml = '';
+            
             if (isEmpty) {
-                // Если нет -> Кнопка "Купить" (для сил)
+                // Если нет -> Кнопка "Купить" (для сил) или Замок (для скинов)
                 if (category === 'power') {
                     actionHtml = `<button class="go-shop-btn action-btn btn-green">КУПИТЬ</button>`;
                 } else {
@@ -63,9 +64,12 @@ export function initInventory() {
                 }
             } else {
                 if (category === 'power') {
+                    // Для сил просто показываем количество
                     actionHtml = `<div class="inventory-count">x${count}</div>`;
                 } else {
-                    actionHtml = `<button class="equip-btn action-btn btn-blue">ВЗЯТЬ</button>`;
+                    // Для скинов кнопка "ВЗЯТЬ" (или "ВЫБРАНО")
+                    // Пока просто кнопка, логику выбора можно дописать позже
+                    actionHtml = `<button class="equip-btn action-btn btn-blue" data-id="${item.id}">ВЗЯТЬ</button>`;
                 }
             }
 
@@ -109,5 +113,15 @@ export function initInventory() {
     // Переход в магазин
     container.querySelectorAll('.go-shop-btn').forEach(btn => {
         btn.onclick = () => window.showRoom('shop');
+    });
+    
+    // Экипировка скина (Заглушка)
+    container.querySelectorAll('.equip-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            const id = e.target.dataset.id;
+            // Тут можно добавить логику смены спрайта птицы
+            // window.game.setSkin(id);
+            alert(`Скин ${id} выбран! (в разработке)`);
+        };
     });
 }

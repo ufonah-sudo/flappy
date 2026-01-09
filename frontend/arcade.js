@@ -74,6 +74,7 @@ export class ArcadeGame {
         this.frameIndex = 0; // Текущий кадр (0-2)
         this.tickCount = 0;  // Счетчик кадров игры
         this.ticksPerFrame = 6; // Скорость махания крыльями
+           this.pipeSpawnTimer = 0; // <--- ДОБАВИТЬ ВОТ ЭТО
         this.itemTimer = 0;  // Таймер спавна бонусов
 
         // Привязываем контекст `this` к методам, чтобы они не теряли доступ к классу
@@ -176,7 +177,7 @@ export class ArcadeGame {
         this.bird.y = window.innerHeight / 2;
         this.bird.velocity = 0;
         this.bird.rotation = 0;
-        
+        this.pipeSpawnTimer = 0; // <--- ДОБАВИТЬ ВОТ ЭТО
         // Запускаем флаг
         this.isRunning = true;
         
@@ -256,11 +257,13 @@ export class ArcadeGame {
         this.bird.rotation += (targetRot - this.bird.rotation) * 0.15; // Плавный поворот
 
         // 2. Анимация спрайтов
-        this.tickCount++;
-        if (this.tickCount > this.ticksPerFrame) {
-            this.tickCount = 0;
-            this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
+               // Проверка: пора ли создавать новую трубу?
+        this.pipeSpawnTimer++; // Используем отдельный таймер!
+        if (this.pipeSpawnTimer > this.pipeSpawnThreshold) {
+            this.spawnPipe(); 
+            this.pipeSpawnTimer = 0;
         }
+
 
         // 3. Обновляем таймеры активных способностей
         Object.keys(this.activePowerups).forEach(key => {
