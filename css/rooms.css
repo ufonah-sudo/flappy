@@ -512,7 +512,8 @@
     text-transform: uppercase;
     text-shadow: 1px 1px 0 #000;
     margin: 0 0 10px 0;
-    text-align: left;
+    text-align: center;
+     text-shadow: 2px 2px 0 #000, -1px -1px 0 #000; /* Обводка */
 }
 
 /* --- 2. НАГРАДЫ ЗА ВХОД (STREAK) --- */
@@ -537,7 +538,15 @@
     box-shadow: 0 4px 0 rgba(0,0,0,0.2);
     min-height: 110px;
 }
-
+/* Находим последнюю карточку в сетке */
+.daily-reward-card:last-child {
+    /* Растягиваем на 2 колонки (от начала до конца) */
+    grid-column: 1 / -1;
+    
+    /* Делаем её чуть больше, раз она одна */
+    justify-self: center; /* Центрируем */
+    width: 70%;
+}
 .daily-reward-card .day {
     font-size: 11px;
     font-weight: 800;
@@ -663,9 +672,18 @@
 }
 
 /* Таймер до сброса */
+/* Таймер до сброса */
 .daily-timer {
     text-align: center;
-    font-size: 11px;
-    color: #999;
+    font-size: 13px; /* Увеличил шрифт */
+    color: #fff;
+    
+    /* 👇 ДОБАВИЛ ЭТО 👇 */
+    background: rgba(0,0,0,0.5); /* Темная подложка */
+    border-radius: 12px;
+    padding: 8px 10px;
     margin-top: 15px;
+    font-weight: 600;
+    text-shadow: 1px 1px 0 #000;
+    border: 1px solid rgba(255,255,255,0.1);
 }
