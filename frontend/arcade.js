@@ -74,7 +74,7 @@ export class ArcadeGame {
         this.frameIndex = 0; // Текущий кадр (0-2)
         this.tickCount = 0;  // Счетчик кадров игры
         this.ticksPerFrame = 6; // Скорость махания крыльями
-           this.pipeSpawnTimer = 0; // <--- ДОБАВИТЬ ВОТ ЭТО
+        this.pipeSpawnTimer = 0;
         this.itemTimer = 0;  // Таймер спавна бонусов
 
         // Привязываем контекст `this` к методам, чтобы они не теряли доступ к классу
@@ -317,40 +317,51 @@ export class ArcadeGame {
         }
 
         // 9. Движение и коллизии
-        const speed = this.pipeSpeed;
+       const speed = this.pipeSpeed;
+    
+    for (let i = this.pipes.length - 1; i >= 0; i--) {
+        const p = this.pipes[i];
+        p.x -= speed;
         
-        for (let i = this.pipes.length - 1; i >= 0; i--) {
-            const p = this.pipes[i];
-            p.x -= speed;
-            const pad = 10;
-            const hitX = this.bird.x + this.bird.size - pad > p.x && this.bird.x + pad < p.x + p.width;
-            const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
+        // --- КОЛЛИЗИЯ ---
+        const pad = 10;
+        const hitX = this.bird.x + this.bird.size - pad > p.x && this.bird.x + pad < p.x + p.width;
+        const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
 
-            if (hitX && hitY) {
-                if (this.activePowerups.ghost > 0 || this.isGhost) continue;
-                if (this.activePowerups.shield > 0) {
-                    this.activePowerups.shield = 0;
-                    this.pipes.splice(i, 1);
-                    if(window.updateGlobalUI) window.updateGlobalUI();
-                    continue;
-                } else {
-                    this.gameOver();
-                    return;
-                }
+        if (hitX && hitY) {
+            // Если мы призрак — игнорируем удар
+            if (this.activePowerups.ghost > 0 || this.isGhost) {
+                // ничего не делаем, летим дальше
+            } 
+            // Если есть щит — ломаем его и трубу
+            else if (this.activePowerups.shield > 0) {
+                this.activePowerups.shield = 0;
+                this.pipes.splice(i, 1);
+                if(window.updateGlobalUI) window.updateGlobalUI();
+                continue; // Переходим к следующей трубе, эта удалена
+            } 
+            // Иначе смерть
+            else {
+                this.gameOver();
+                return;
             }
-                        if (!p.passed && p.x + p.width < this.bird.x) {
-                p.passed = true;
-                this.score++;
-                
-                // "КРИЧИМ" В ЭФИР
-                window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'pipe_passed' } }));
-
-                const scoreEl = document.getElementById('score-overlay');
-                if(scoreEl) scoreEl.innerText = this.score;
-            }
-
-            if (p.x < -p.width) this.pipes.splice(i, 1);
         }
+
+        // --- НАЧИСЛЕНИЕ ОЧКОВ (Вынесли из блока if(hitX...)!) ---
+        if (!p.passed && p.x + p.width < this.bird.x) {
+            p.passed = true;
+            this.score++;
+            
+            // "КРИЧИМ" В ЭФИР
+            window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'pipe_passed' } }));
+
+            const scoreEl = document.getElementById('score-overlay');
+            if(scoreEl) scoreEl.innerText = this.score;
+        }
+
+        // Удаление ушедшей трубы
+        if (p.x < -p.width) this.pipes.splice(i, 1);
+    }
 
         this.coins.forEach(c => {
             c.x -= speed;
@@ -543,6 +554,6 @@ export class ArcadeGame {
         cancelAnimationFrame(this.animationId);
         window.removeEventListener('resize', this.handleResize);
         this.canvas.removeEventListener('mousedown', this.handleInput);
-        this.canvas.removeEventListener('touchstart', this.handleInput);
-    }
+this.canvas.removeEventListener('touchstart', this.handleInput, { passive: false }); 
+}
 }
