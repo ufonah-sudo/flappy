@@ -338,12 +338,17 @@ export class ArcadeGame {
                     return;
                 }
             }
-            if (!p.passed && p.x + p.width < this.bird.x) {
+                        if (!p.passed && p.x + p.width < this.bird.x) {
                 p.passed = true;
                 this.score++;
+                
+                // "КРИЧИМ" В ЭФИР
+                window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'pipe_passed' } }));
+
                 const scoreEl = document.getElementById('score-overlay');
                 if(scoreEl) scoreEl.innerText = this.score;
             }
+
             if (p.x < -p.width) this.pipes.splice(i, 1);
         }
 
@@ -362,16 +367,21 @@ export class ArcadeGame {
         const bX = this.bird.x + this.bird.size/2;
         const bY = this.bird.y + this.bird.size/2;
         
-        this.coins = this.coins.filter(c => {
+                this.coins = this.coins.filter(c => {
             if (Math.hypot(bX - c.x, bY - c.y) < 40) {
                 if(window.state) {
                     window.state.coins++;
+                    
+                    // "КРИЧИМ" В ЭФИР
+                    window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'coin_collected' } }));
+
                     if(window.updateGlobalUI) window.updateGlobalUI();
                 }
                 return false;
             }
             return c.x > -50;
         });
+
 
         this.items.forEach(it => {
             it.x -= speed;
@@ -508,27 +518,16 @@ export class ArcadeGame {
     }
 
     // --- МЕТОД: КОНЕЦ ИГРЫ ---
-    gameOver() {
+       gameOver() {
         if (!this.isRunning) return;
         this.isRunning = false;
-         // 👇 ВОТ ЗДЕСЬ ОБНОВЛЯЕМ ПРОГРЕСС 👇
-        try {
-            const flyTask = window.state?.user?.daily_challenges?.find(c => c.id.startsWith('fly_'));
-            // Если такое задание есть, и мы побили старый рекорд
-            if (flyTask && this.score > (flyTask.progress || 0)) {
-                // Записываем наш итоговый счет как прогресс
-                flyTask.progress = this.score;
-            }
-        } catch(e) {
-            console.error("Ошибка обновления задания 'fly'", e);
-        }
-        // Скрываем панель способностей
+        
         const panel = document.querySelector('.arcade-powers-layout');
         if (panel) panel.style.display = 'none';
         
-        // Вызываем колбек (main.js покажет экран проигрыша)
         if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
     }
+
 
     // --- МЕТОД: ИГРОВОЙ ЦИКЛ (LOOP) ---
     loop() {

@@ -91,6 +91,10 @@ export class Game {
         this.isGhost = false;
         this.updateScoreUI();
         this.isRunning = true;
+        this.isRunning = true;
+    
+    // "КРИЧИМ", ЧТО НАЧАЛСЯ НОВЫЙ РАУНД
+    window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'round_started' } }));
         this.loop();
     }
 
@@ -210,7 +214,12 @@ export class Game {
             if (!p.passed && p.x + p.width < this.bird.x) {
                 p.passed = true;
                 this.score++;
-                this.updateScoreUI();
+                            // "КРИЧИМ" В ЭФИР, ЧТО ПРОЛЕТЕЛИ ТРУБУ
+            window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'pipe_passed' } }));
+            
+            // И обновляем счетчик
+            this.updateScoreUI();
+
             }
 
             if (p.x < -p.width) this.pipes.splice(i, 1);
@@ -284,24 +293,17 @@ export class Game {
         this.ctx.strokeRect(x - capW/2, capY, w + capW, capH);
     }
 
-    gameOver() {
+        gameOver() {
         if (!this.isRunning) return;
         this.isRunning = false;
 
-         // 👇 ВОТ ЗДЕСЬ ОБНОВЛЯЕМ ПРОГРЕСС 👇
-        try {
-            const flyTask = window.state?.user?.daily_challenges?.find(c => c.id.startsWith('fly_'));
-            // Если такое задание есть, и мы побили старый рекорд
-            if (flyTask && this.score > (flyTask.progress || 0)) {
-                // Записываем наш итоговый счет как прогресс
-                flyTask.progress = this.score;
-            }
-        } catch(e) {
-            console.error("Ошибка обновления задания 'fly'", e);
-        }
+        // "КРИЧИМ" О ПРОИГРЫШЕ (ВАЖНО ДЛЯ ЗАДАНИЙ НА ВРЕМЯ)
+        window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'round_ended' } }));
         
+        // Вызываем колбек конца игры ТОЛЬКО ОДИН РАЗ
         if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
     }
+
 
     loop() {
         if (!this.isRunning) return;

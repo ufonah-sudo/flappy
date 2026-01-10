@@ -15,6 +15,8 @@ import { ArcadeGame } from './arcade.js';
 import { CareerGame } from './career.js';
 // Импортируем менеджер кошелька TON
 import { WalletManager } from './wallet.js';
+import { DailyTracker } from './js/DailyTracker.js';
+
 
 // Импорт функций для инициализации каждой комнаты (экрана)
 import { initShop } from './js/rooms/shop.js';
@@ -112,7 +114,7 @@ async function activateAbility(id) {
             if (useTask && (useTask.progress || 0) < useTask.target) {
                 useTask.progress = (useTask.progress || 0) + 1;
             }
-            
+
             // Сохраняем
             saveData();
             
