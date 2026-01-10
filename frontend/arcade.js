@@ -329,22 +329,19 @@ export class ArcadeGame {
         const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
 
         if (hitX && hitY) {
-            // Если мы призрак — игнорируем удар
-            if (this.activePowerups.ghost > 0 || this.isGhost) {
-                // ничего не делаем, летим дальше
-            } 
-            // Если есть щит — ломаем его и трубу
-            else if (this.activePowerups.shield > 0) {
-                this.activePowerups.shield = 0;
-                this.pipes.splice(i, 1);
-                if(window.updateGlobalUI) window.updateGlobalUI();
-                continue; // Переходим к следующей трубе, эта удалена
-            } 
-            // Иначе смерть
-            else {
-                this.gameOver();
-                return;
-            }
+                if (this.activePowerups.ghost > 0 || this.isGhost) {
+                    // Игнорируем удар
+                } else if (this.activePowerups.shield > 0) {
+                    // Ломаем щит и трубу
+                    this.activePowerups.shield = 0;
+                    this.pipes.splice(i, 1);
+                    if(window.updateGlobalUI) window.updateGlobalUI();
+                    continue; 
+                } else {
+                    // Смерть
+                    this.gameOver();
+                    return;
+                }
         }
 
         // --- НАЧИСЛЕНИЕ ОЧКОВ (Вынесли из блока if(hitX...)!) ---
@@ -366,45 +363,47 @@ export class ArcadeGame {
         this.coins.forEach(c => {
             c.x -= speed;
             c.angle += 0.1;
-            if (this.activePowerups.magnet > 0) {
+            
+            // Магнит
+            if (this.activePowerups.magnet > 0 && !c.collected) {
                 const dist = Math.hypot(this.bird.x - c.x, this.bird.y - c.y);
                 if (dist < this.config.magnetRadius) {
                     c.x += (this.bird.x - c.x) * 0.15;
                     c.y += (this.bird.y - c.y) * 0.15;
                 }
             }
-        });
-        
-        const bX = this.bird.x + this.bird.size/2;
-        const bY = this.bird.y + this.bird.size/2;
-        
-                this.coins = this.coins.filter(c => {
-            if (Math.hypot(bX - c.x, bY - c.y) < 40) {
+
+            // Сбор монеты
+            const bX = this.bird.x + this.bird.size/2;
+            const bY = this.bird.y + this.bird.size/2;
+            if (!c.collected && Math.hypot(bX - c.x, bY - c.y) < 40) {
+                c.collected = true; // Помечаем как собранную
                 if(window.state) {
                     window.state.coins++;
-                    
-                    // "КРИЧИМ" В ЭФИР
                     window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'coin_collected' } }));
-
                     if(window.updateGlobalUI) window.updateGlobalUI();
                 }
-                return false;
             }
-            return c.x > -50;
         });
 
+        // Потом удаляем собранные и ушедшие (Чистая фильтрация)
+        this.coins = this.coins.filter(c => !c.collected && c.x > -50);
 
+        // Обработка бонусов
         this.items.forEach(it => {
             it.x -= speed;
             it.osc += 0.05;
             it.y += Math.sin(it.osc) * 1.5;
         });
         
+        // Сбор бонусов
+        const bX = this.bird.x + this.bird.size/2;
+        const bY = this.bird.y + this.bird.size/2;
         this.items = this.items.filter(it => {
             if (Math.hypot(bX - it.x, bY - it.y) < 45) {
                 this.activatePowerupEffect(it.type);
                 if(window.updateGlobalUI) window.updateGlobalUI();
-                return false;
+                return false; // Удаляем бонус
             }
             return it.x > -50;
         });
