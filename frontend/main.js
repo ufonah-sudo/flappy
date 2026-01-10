@@ -107,6 +107,12 @@ async function activateAbility(id) {
             updatePowerupsPanel();
             updateGlobalUI();
             
+             // 👇 ВСТАВЛЯЙ СЮДА (перед saveData) 👇
+            const useTask = state.user?.daily_challenges?.find(c => c.id.startsWith('use_'));
+            if (useTask && (useTask.progress || 0) < useTask.target) {
+                useTask.progress = (useTask.progress || 0) + 1;
+            }
+            
             // Сохраняем
             saveData();
             

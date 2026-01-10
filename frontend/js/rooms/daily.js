@@ -163,20 +163,56 @@ export async function initDaily() {
 
         // --- 4. КЛИКИ ---
         
-        // Клик по награде
-        const currentCard = streakGrid.querySelector('.daily-reward-card.current');
-        if(currentCard) {
-            currentCard.onclick = async () => {
-                try {
-                    const res = await api.apiRequest('daily', 'POST', { action: 'claim_streak' });
-                    if(res.success){
-                        // Тут надо будет обновить state по-хорошему, пока просто UI
-                        tg?.HapticFeedback.notificationOccurred('success');
-                        initDaily(); // Перерисовываем, чтобы показать галочку
+       // --- 4. КЛИКИ ---
+
+    // Клик по награде за вход
+    const currentCard = streakGrid.querySelector('.daily-reward-card.current');
+    if (currentCard) {
+        currentCard.onclick = async () => {
+            // Проверяем, не заблокирован ли 5-й день
+            if(currentCard.classList.contains('locked')) {
+                tg?.showAlert("Сначала собери все предыдущие награды!");
+                return;
+            }
+
+            try {
+                // 1. Отправляем запрос на сервер, чтобы он поставил флаг 'daily_claimed'
+                const res = await api.apiRequest('daily', 'POST', { action: 'claim_streak' });
+
+                if (res.success) {
+                    // 2. Выдаем награду на стороне клиента
+                    const rewardConfig = dailyRewards[userStep - 1]; // Находим конфиг награды
+                    const [value, type] = rewardConfig.reward.split(' ');
+                    const amount = parseInt(value);
+
+                    if (type === '🟡') {
+                        state.coins += amount;
+                    } else if (type === '⚡') {
+                        state.lives += amount;
+                    } else if (type === '💎') {
+                        state.crystals += amount;
+                    } else {
+                        // Для способностей (🛡️)
+                        const powerupId = rewardConfig.id || 'shield'; // Заглушка, нужно будет правильно прописать ID
+                        state.powerups[powerupId] = (state.powerups[powerupId] || 0) + amount;
                     }
-                } catch(e) { console.error(e); }
-            };
-        }
+
+                    // 3. Обновляем UI
+                    tg?.HapticFeedback.notificationOccurred('success');
+                    tg?.showAlert(`Получена награда: ${rewardConfig.reward}!`);
+                    updateGlobalUI(); // Обновляем баланс в хедере
+                    
+                    // 4. Перерисовываем, чтобы показать галочку
+                    initDaily(); 
+                } else {
+                    throw new Error(res.error || "Не удалось забрать награду");
+                }
+            } catch (e) {
+                console.error(e);
+                tg?.showAlert(e.message);
+            }
+        };
+    }
 
         // Клик по сундуку
         if (chest.classList.contains('ready')) {

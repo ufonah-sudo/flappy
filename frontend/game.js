@@ -287,6 +287,19 @@ export class Game {
     gameOver() {
         if (!this.isRunning) return;
         this.isRunning = false;
+
+         // 👇 ВОТ ЗДЕСЬ ОБНОВЛЯЕМ ПРОГРЕСС 👇
+        try {
+            const flyTask = window.state?.user?.daily_challenges?.find(c => c.id.startsWith('fly_'));
+            // Если такое задание есть, и мы побили старый рекорд
+            if (flyTask && this.score > (flyTask.progress || 0)) {
+                // Записываем наш итоговый счет как прогресс
+                flyTask.progress = this.score;
+            }
+        } catch(e) {
+            console.error("Ошибка обновления задания 'fly'", e);
+        }
+        
         if (this.onGameOver) this.onGameOver(this.score, this.reviveUsed);
     }
 
