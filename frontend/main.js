@@ -295,11 +295,17 @@ async function init() {
 
     // Выбор режима
     const btnCl = document.getElementById('btn-mode-classic');
-    if (btnCl) btnCl.onclick = () => { state.currentMode = 'classic'; showRoom('game'); };
-    
+    if (btnCl) btnCl.onclick = () => {
+        window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'round_started' } }));
+        state.currentMode = 'classic'; 
+        showRoom('game'); 
+    };
     const btnAr = document.getElementById('btn-mode-arcade');
-    if (btnAr) btnAr.onclick = () => { state.currentMode = 'arcade'; showRoom('game'); };
-    
+    if (btnCl) btnCl.onclick = () => {
+        window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'round_started' } }));
+        state.currentMode = 'classic'; 
+        showRoom('game'); 
+    };
     // Кнопка Карьеры (ВОССТАНОВЛЕНО)
     const btnCareer = document.getElementById('btn-mode-career');
     if (btnCareer) {

@@ -85,6 +85,24 @@ const handler = async (req, res) => {
             return res.status(200).json({ success: true, reward: '200 coins, 1 crystal' });
             
         }
+
+                // --- 4. ОБНОВЛЕНИЕ ПРОГРЕССА ЗАДАНИЙ ---
+        if (action === 'update_challenges') {
+            const { challenges } = req.body;
+            
+            // Проверяем, что challenges это массив
+            if (!Array.isArray(challenges)) {
+                return res.status(400).json({ error: 'Invalid challenges format' });
+            }
+
+            // Обновляем поле в базе
+            await supabase.from('users').update({
+                daily_challenges: challenges
+            }).eq('id', user.id);
+
+            return res.status(200).json({ success: true });
+        }
+
         
         // Если действий не было, просто возвращаем текущего юзера
         return res.status(200).json({ refreshedUser: dbUser });
