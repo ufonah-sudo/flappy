@@ -300,12 +300,18 @@ async function init() {
         state.currentMode = 'classic'; 
         showRoom('game'); 
     };
+    // Кнопки выбора режима
     const btnAr = document.getElementById('btn-mode-arcade');
-    if (btnCl) btnCl.onclick = () => {
-        window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'round_started' } }));
-        state.currentMode = 'classic'; 
-        showRoom('game'); 
-    };
+    if (btnAr) {
+        console.log("Кнопка Аркады найдена!"); // <--- Добавь это для проверки
+        btnAr.onclick = () => { 
+            console.log("Клик по Аркаде!"); // <--- И это
+            state.currentMode = 'arcade'; 
+            showRoom('game'); 
+        };
+    } else {
+        console.error("Кнопка Аркады НЕ НАЙДЕНА в HTML!");
+    }
     // Кнопка Карьеры (ВОССТАНОВЛЕНО)
     const btnCareer = document.getElementById('btn-mode-career');
     if (btnCareer) {
