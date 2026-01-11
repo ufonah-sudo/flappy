@@ -1,110 +1,131 @@
+/**
+ * js/rooms/friends.js - ДРУЗЬЯ (СТИЛЬ МАГАЗИНА)
+ */
 import * as api from '../../api.js';
 
-// Твой бот (убедись, что username совпадает без @)
-const BOT_USERNAME = 'FlappyTonBird_bot'; 
+const BOT_USERNAME = 'FlappyTonBird_bot'; // Убедись, что это твой реальный юзернейм бота
 
 export async function initFriends() {
     const state = window.state; 
     const tg = window.Telegram?.WebApp;
-    const updateGlobalUI = window.updateGlobalUI;
-    
-    const container = document.querySelector('#scene-friends #friends-content');
+    // Находим контейнер для списка друзей
+    const friendsListContainer = document.querySelector('#scene-friends #friends-content');
+    // Находим кнопку "Пригласить"
     const inviteBtn = document.getElementById('btn-invite-real');
     
-    // --- 1. ЛОГИКА КНОПКИ ПРИГЛАШЕНИЯ (Деревянная) ---
-    if (inviteBtn) {
-        // Добавляем класс стиля (если он не добавлен в HTML)
-        inviteBtn.className = 'wooden-btn'; 
-        
-        // Удаляем старые слушатели (клонируя элемент), чтобы не дублировать клики при перезаходе в комнату
-        const newBtn = inviteBtn.cloneNode(true);
-        inviteBtn.parentNode.replaceChild(newBtn, inviteBtn);
-        
-        newBtn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const userId = state?.user?.id || tg?.initDataUnsafe?.user?.id || '0';
-            const inviteLink = `https://t.me/${BOT_USERNAME}/game?startapp=${userId}`;
-            const text = "Залетай в Flappy TON! 🐦 Монеты за друзей!";
-            const shareLink = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(text)}`;
-            
-            if (tg && tg.openTelegramLink) {
-                tg.openTelegramLink(shareLink);
-                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            } else {
-                window.open(shareLink, '_blank');
-            }
-        };
-    }
+    // Если контейнеров нет, выходим
+    if (!friendsListContainer || !inviteBtn) return;
 
-    if (!container) return;
+    // --- 1. ЛОГИКА КНОПКИ "ПРИГЛАСИТЬ" ---
+    // Формируем реферальную ссылку
+    const userId = state?.user?.id || tg?.initDataUnsafe?.user?.id || '0';
+    const inviteLink = `https://t.me/${BOT_USERNAME}/game?startapp=${userId}`;
+    const shareText = "Лети со мной в Flappy TON! 🐦 Заработай реальные монеты! 💰";
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
+
+    // Присваиваем кнопке класс "деревянной" и вешаем обработчик
+    inviteBtn.className = 'btn-wooden'; // Используем наш общий стиль
+    inviteBtn.innerHTML = 'ПРИГЛАСИТЬ ДРУГА'; // Обновляем текст
+    
+    // Удаляем старые слушатели, чтобы избежать дублирования
+    const newInviteBtn = inviteBtn.cloneNode(true);
+    inviteBtn.parentNode.replaceChild(newInviteBtn, inviteBtn);
+
+    newInviteBtn.onclick = (e) => {
+        e.preventDefault();
+        tg?.HapticFeedback?.impactOccurred('medium');
+        if (tg && tg.openTelegramLink) {
+            tg.openTelegramLink(shareUrl);
+        } else {
+            window.open(shareUrl, '_blank');
+        }
+    };
 
     // --- 2. ОТРИСОВКА СПИСКА ДРУЗЕЙ ---
-    container.innerHTML = '<div class="loading-text" style="color:#aaa; margin-top:20px; text-align:center;">Загрузка списка...</div>';
+    friendsListContainer.innerHTML = '<div style="text-align:center; color:#aaa; padding: 20px;">Загрузка списка друзей...</div>';
 
     try {
-        // Здесь можно раскомментировать запрос к API, если он готов:
-        // const friends = await api.getFriends();
-        // Пока берем из стейта:
-        const friends = state.user?.friends || []; 
-        
+        // Получаем список друзей с сервера (или из state, если он уже там)
+        const friends = state.user?.friends || await api.getFriends(); // В ideal случае, getFriends() должен использоваться
+        state.user.friends = friends; // Обновляем стейт
+
         if (friends.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center; padding: 20px; color: #ccc;">
-                    <p>У тебя пока нет друзей.</p>
-                    <p style="font-size: 12px; margin-top: 5px;">Пригласи и получи +5 <span class="coin-icon-img">🟡</span></p>
+            friendsListContainer.innerHTML = `
+                <div class="powerup-card empty" style="border-color: #aaa; background: #f0f0f0; margin-top: 20px;">
+                    <div style="font-size: 50px; opacity: 0.3;">🤝</div>
+                    <p style="color: #666; font-size: 14px; margin-top: 10px;">Приглашай друзей и получай награды!</p>
                 </div>
             `;
         } else {
-            container.innerHTML = friends.map(friend => `
-                <div class="friend-card">
-                    <div class="item-icon-wrapper">👤</div>
-                    <div class="name-col" style="flex-grow: 1; overflow: hidden;">
-                        <div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${friend.username}</div>
-                        <div style="font-size: 10px; color: ${friend.status === 'claimed' ? '#4ec0ca' : '#f1c40f'}">
-                            ${friend.status === 'claimed' ? 'Бонус получен' : 'Ждет зачисления'}
+            friendsListContainer.innerHTML = friends.map(friend => {
+                const isClaimed = friend.status === 'claimed';
+                const buttonText = isClaimed ? '✅' : '+5 🟡';
+                const buttonColor = isClaimed ? '#2ecc71' : '#f7d51d';
+                const buttonActionClass = isClaimed ? 'disabled' : 'claim-friend-reward-btn';
+                
+                return `
+                    <div class="powerup-card" style="border-color: ${buttonColor};">
+                        <div style="display: flex; align-items: center;">
+                            <div class="icon">👤</div>
+                            <div>
+                                <div class="name">@${friend.username || 'Игрок'}</div>
+                                <div class="desc">${isClaimed ? 'Награда получена' : 'Ожидает'}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="${buttonActionClass} action-btn" data-friend-id="${friend.referred_id}" data-friend-username="${friend.username}"
+                                style="background:${buttonColor}; ${isClaimed ? 'pointer-events: none; opacity: 0.7;' : ''}">
+                                ${buttonText}
+                            </button>
                         </div>
                     </div>
-                    <div class="score-col">
-                        ${friend.status === 'pending' ? 
-                            `<button class="primary-btn claim-mini-btn" data-user="${friend.username}" style="padding: 6px 10px; font-size: 12px; width: auto; height: auto;">+5 🟡</button>` 
-                            : '<span style="color: #4ec0ca; font-size: 20px;">✅</span>'}
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
-            // --- 3. ЛОГИКА СБОРА НАГРАД ---
-            container.querySelectorAll('.claim-mini-btn').forEach(btn => {
+            // --- 3. ЛОГИКА СБОРА НАГРАД ЗА ДРУЗЕЙ ---
+            friendsListContainer.querySelectorAll('.claim-friend-reward-btn').forEach(btn => {
                 btn.onclick = async (e) => {
-                    const targetBtn = e.currentTarget;
-                    if (targetBtn.disabled) return;
-                    
-                    targetBtn.disabled = true;
-                    targetBtn.innerText = "⏳";
+                    const button = e.currentTarget;
+                    const friendUsername = button.dataset.friendUsername;
+                    const friendId = button.dataset.friendId;
+
+                    if (button.disabled) return;
+
+                    button.disabled = true;
+                    button.innerHTML = "⏳";
                     
                     try {
-                        // Вызов API
-                        await api.claimFriendReward(targetBtn.dataset.user);
+                        const res = await api.claimFriendReward(friendUsername); // Отправляем username
                         
-                        state.coins += 5;
-                        if(updateGlobalUI) updateGlobalUI();
-                        if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                        
-                        // Заменяем кнопку на галочку
-                        targetBtn.parentElement.innerHTML = '<span style="color: #4ec0ca; font-size: 20px;">✅</span>';
-                        
+                        if (res.success) {
+                            state.coins += 5; // Начисляем монеты
+                            updateGlobalUI(); // Обновляем хедер
+                            
+                            // Обновляем статус друга в локальном стейте
+                            const friendEntry = state.user.friends.find(f => f.referred_id == friendId);
+                            if(friendEntry) friendEntry.status = 'claimed';
+
+                            tg?.HapticFeedback?.notificationOccurred('success');
+                            tg?.showAlert(`Вы получили 5 🟡 за ${friendUsername}!`);
+                            
+                            // Визуально меняем кнопку на галочку
+                            button.innerHTML = '✅';
+                            button.style.background = '#2ecc71';
+                            button.style.pointerEvents = 'none';
+                        } else {
+                            throw new Error(res.message || res.error || "Ошибка");
+                        }
                     } catch (err) {
                         console.error(err);
-                        targetBtn.disabled = false;
-                        targetBtn.innerText = "+5 🟡";
-                        if(tg?.showAlert) tg.showAlert("Ошибка: " + err.message);
+                        button.disabled = false;
+                        button.innerHTML = '+5 🟡';
+                        tg?.showAlert(err.message || "Не удалось получить награду");
                     }
                 };
             });
         }
     } catch (e) {
         console.error("[Friends] Error:", e);
-        container.innerHTML = '<p class="empty-text" style="text-align:center;">Не удалось загрузить список.</p>';
+        friendsListContainer.innerHTML = `<p style="text-align:center; color:red; padding: 20px;">Не удалось загрузить список друзей: ${e.message}</p>`;
     }
 }
