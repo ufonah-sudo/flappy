@@ -8,7 +8,6 @@ const handler = async (req, res) => {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { initData, startParam, action, coins, crystals, powerups, inventory } = req.body;
 
     // --- ЛОГИРОВАНИЕ: ЧТО ПРИШЛО ---
     console.log("--- AUTH REQUEST ---");
