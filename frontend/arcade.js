@@ -58,7 +58,7 @@ export class ArcadeGame {
         // Глобальные настройки баланса
         this.config = {
             itemChance: 0.3,      // Шанс выпадения предмета (примерный)
-            magnetRadius: 250,    // Радиус действия магнита
+            magnetRadius: 280,    // Радиус действия магнита
             powerupDuration: 420  // Длительность способностей (60 FPS * 7 сек)
         };
 
@@ -290,17 +290,31 @@ export class ArcadeGame {
         }
         
         // 6. Спавн монет в небе
-        if (this.pipeSpawnTimer === 50 && Math.random() > 0.5) {
-            const minSpawnY = window.innerHeight / 5;
-            const maxSpawnY = window.innerHeight - this.ground.h - 50;
+               // 6. СПАВН "ПОЛЯ" МОНЕТ (Grid)
+        // Спавним реже (раз в 200 кадров), но сразу много
+        if (this.pipeSpawnTimer === 50 && Math.random() > 0.6) {
+            
+            const rows = 3; // 3 ряда по высоте
+            const cols = 6; // 6 монет в длину
+            const spacing = 35; // Расстояние между монетами
+
+            // Случайная высота центра поля
+            const minSpawnY = window.innerHeight / 4;
+            const maxSpawnY = window.innerHeight - this.ground.h - 100;
             const startY = Math.random() * (maxSpawnY - minSpawnY) + minSpawnY;
-            for (let i = 0; i < 5; i++) {
-                this.coins.push({
-                    x: window.innerWidth + 50 + (i * 30),
-                    y: startY + (Math.sin(i) * 20),
-                    collected: false,
-                    angle: 0
-                });
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    // Делаем "дырки" в поле (шанс 20%), чтобы было интереснее
+                    if (Math.random() > 0.2) {
+                        this.coins.push({
+                            x: window.innerWidth + 100 + (c * spacing),
+                            y: startY + (r * spacing),
+                            collected: false,
+                            angle: 0
+                        });
+                    }
+                }
             }
         }
 
@@ -368,8 +382,8 @@ export class ArcadeGame {
             if (this.activePowerups.magnet > 0 && !c.collected) {
                 const dist = Math.hypot(this.bird.x - c.x, this.bird.y - c.y);
                 if (dist < this.config.magnetRadius) {
-                    c.x += (this.bird.x - c.x) * 0.15;
-                    c.y += (this.bird.y - c.y) * 0.15;
+                    c.x += (this.bird.x - c.x) * 0.25;
+                    c.y += (this.bird.y - c.y) * 0.25;
                 }
             }
 
