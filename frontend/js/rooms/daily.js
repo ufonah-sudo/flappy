@@ -219,19 +219,30 @@ const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaime
         };
     }
 
-        // Клик по сундуку
+               // Клик по сундуку
         if (chest.classList.contains('ready')) {
             chest.onclick = async () => {
                 try {
                     const res = await api.apiRequest('daily', 'POST', { action: 'claim_bonus_chest' });
+                    
                     if(res.success) {
-                        tg?.showAlert("Супер-приз получен!");
+                        // 👇 ИСПРАВЛЕНО: Берем текст награды из ответа сервера 👇
+                        // Если сервер прислал "200 coins, 1 crystal", показываем это
+                        // Можем заменить английские слова на иконки для красоты
+                        const rewardText = (res.reward || "Награда")
+                            .replace('coins', '🟡')
+                            .replace('crystal', '💎')
+                            .replace('energy', '⚡');
+
+                        tg?.showAlert(`СУПЕР ПРИЗ ОТКРЫТ! \n\n${rewardText}`);
+                        
                         // Тут надо обновить state
                         initDaily(); 
                     }
                 } catch(e) { tg?.showAlert(e.message); }
             };
         }
+
 
     } catch (error) {
         container.innerHTML = `<div style="text-align:center; color:red;">Ошибка загрузки: ${error.message}</div>`;
