@@ -24,7 +24,7 @@ const handler = async (req, res) => {
     try {
         const { data: dbUser, error: fetchError } = await supabase
             .from('users')
-            .select('daily_step, daily_claimed, daily_challenges, last_daily_reset')
+            .select('daily_step, daily_claimed, daily_challenges, last_daily_reset, bonus_claimed, powerups')
             .eq('id', user.id)
             .single();
 

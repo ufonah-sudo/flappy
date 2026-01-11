@@ -94,7 +94,7 @@ const handler = async (req, res) => {
 
         if (fetchError) throw fetchError;
 
-        // Если игрока нет — создаем его
+              // Если игрока нет — создаем его
         if (!dbUser) {
             const { data: newUser, error: createError } = await supabase
                 .from('users')
@@ -102,39 +102,46 @@ const handler = async (req, res) => {
                     id: user.id, 
                     username: user.username || 'Player', 
                     coins: 10,
-                    powerups: {}, // Инициализируем пустым JSON
-                    inventory: []  // Инициализируем пустым массивом
+                    powerups: {},
+                    inventory: [],
+                    
+                    // 👇 ВОТ ЧЕГО НЕ ХВАТАЛО 👇
+                    lives: 5,                  // Начальная энергия
+                    crystals: 0,               // Начальные кристаллы
+                    daily_step: 1,             // Начальный день Daily Streak
+                    daily_claimed: false,      // Награда за вход не забрана
+                    bonus_claimed: false,      // Сундук не забран
+                    daily_challenges: [],      // Пустой массив заданий
+                    last_daily_reset: new Date().toISOString(), // Таймер Daily
+                    max_level: 1,              // Начальный уровень карьеры
+                    last_energy_update: new Date().toISOString() // Таймер энергии
+                    // ---------------------------
                 })
-                .select()
+                .select('*')
                 .single();
             
             if (createError) throw createError;
             dbUser = newUser;
 
-            // Логика рефералов
+            // Логика рефералов (остается без изменений)
             if (startParam && String(startParam) !== String(user.id)) {
-                const inviterId = String(startParam); // Telegram ID часто лучше хранить как String
-                
-                // 1. Записываем связь
+                const inviterId = String(startParam);
                 await supabase.from('referrals').insert({ 
                     referrer_id: inviterId, 
                     referred_id: user.id 
                 });
-
-                // 2. Начисляем бонус пригласившему
                 await supabase.rpc('increment_coins', { 
                     user_id_param: inviterId, 
-                    amount: 50 // Дадим побольше за друга!
+                    amount: 50
                 });
             }
         }
-
         return res.status(200).json({ user: dbUser });
-
     } catch (err) {
         console.error("[AUTH ERROR]:", err.message);
         return res.status(500).json({ error: err.message });
     }
 };
+
 
 export default cors(handler);
