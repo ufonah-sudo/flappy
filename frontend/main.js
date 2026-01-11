@@ -399,7 +399,7 @@ async function init() {
 
     // --- АВТОРИЗАЦИЯ И ЗАГРУЗКА ---
     try {
-         const startParam = tg?.initDataUnsafe?.start_param || "";
+const startParam = tg?.initDataUnsafe?.start_app_param || tg?.initDataUnsafe?.start_param || "";
 const auth = await api.authPlayer(startParam, tg?.initData || "");         
         if (auth?.user) {
             state.user = auth.user;

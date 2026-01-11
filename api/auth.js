@@ -24,7 +24,7 @@ const handler = async (req, res) => {
     let startParam = "";
     try {
         const urlParams = new URLSearchParams(initData);
-        startParam = urlParams.get('start_param') || "";
+startParam = urlParams.get('start_app_param') || urlParams.get('start_param') || "";
     } catch(e) {
         console.warn("Could not parse start_param from initData:", e.message);
     }
@@ -41,7 +41,8 @@ const handler = async (req, res) => {
                 .from('referrals')
                 .select(`
                     referred_id,
-                    users!referred_id ( username, coins )
+                    status, 
+                     referred:users!referred_id ( username )
                 `)
                 .eq('referrer_id', user.id);
             if (friendsError) throw friendsError;

@@ -68,7 +68,7 @@ export async function initFriends() {
                         <div style="display: flex; align-items: center;">
                             <div class="icon">👤</div>
                             <div>
-                                <div class="name">@${friend.username || 'Игрок'}</div>
+                                <div class="name">@${friend.referred?.username || 'Игрок'}</div>
                                 <div class="desc">${isClaimed ? 'Награда получена' : 'Ожидает'}</div>
                             </div>
                         </div>
