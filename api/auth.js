@@ -102,8 +102,7 @@ startParam = urlParams.get('start_app_param') || urlParams.get('start_param') ||
                 .from('users')
                 .insert({ 
                     id: user.id, 
-                    username: user.username || 'Player', 
-                    coins: 10,
+  username: user.username || (user.first_name + ' ' + (user.last_name || '')).trim() || 'Player', // <-- УБЕДИСЬ, ЧТО ЭТА СТРОКА ЕСТЬ                    coins: 10,
                     powerups: {},
                     inventory: [],
                     lives: 5, crystals: 0,
