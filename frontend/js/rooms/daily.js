@@ -79,7 +79,8 @@ export async function initDaily() {
         const alreadyClaimedToday = state.user?.daily_claimed || false;
         
         streakGrid.innerHTML = dailyRewards.map(item => {
-            const isClaimed = item.day < userStep;
+// Галочка ставится, если день уже прошел ИЛИ это сегодняшний день и награда уже забрана
+const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaimedToday);
             const isCurrent = item.day === userStep && !alreadyClaimedToday;
             const isFuture = item.day > userStep;
 
