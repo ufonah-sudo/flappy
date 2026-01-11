@@ -14,6 +14,15 @@
     
     <!-- Скрипты -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // Принудительное расширение на весь экран сразу при старте
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+            // Запрет на сворачивание свайпом (для iOS)
+            window.Telegram.WebApp.enableClosingConfirmation(); 
+        }
+    </script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </head>
 
