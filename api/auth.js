@@ -8,15 +8,19 @@ const handler = async (req, res) => {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
+    // Всегда извлекаем initData и action. Остальное - по требованию.
+    // startParam здесь не извлекаем, т.к. он в initData
     const { initData, action, coins, crystals, powerups, inventory } = req.body;
 
+    // --- 1. Проверка Telegram-подписи initData ---
     const user = verifyTelegramData(initData);
     if (!user) {
-        console.error("AUTH FAILED: Invalid signature for initData. initData was:", initData);
+        console.error("AUTH FAILED: Invalid signature for initData.");
         return res.status(403).json({ error: 'Invalid signature' });
     }
     console.log("Authenticated User ID:", user.id, "Username:", user.username);
 
+    // --- 2. Извлекаем start_param из initData ---
     let startParam = "";
     try {
         const urlParams = new URLSearchParams(initData);
@@ -24,17 +28,20 @@ const handler = async (req, res) => {
     } catch(e) {
         console.warn("Could not parse start_param from initData:", e.message);
     }
-    console.log("Extracted startParam:", startParam);
-    
+    // --- ЛОГИРОВАНИЕ: ЧТО ИЗВЛЕКЛИ ---
+    console.log("--- AUTH REQUEST ---");
+    console.log("Extracted startParam:", startParam); // Теперь startParam будет тут
+    console.log("Received action:", action);
+    // ----------------------------------
+
     try {
         // --- ОБРАБОТКА ACTION: GET_FRIENDS ---
         if (action === 'get_friends') {
             const { data: friends, error: friendsError } = await supabase
                 .from('referrals')
                 .select(`
-                    *,
-                    referrer:users!referrer_id ( username ),
-                    referred:users!referred_id ( username )
+                    referred_id,
+                    users!referred_id ( username, coins )
                 `)
                 .eq('referrer_id', user.id);
             if (friendsError) throw friendsError;
@@ -85,10 +92,7 @@ const handler = async (req, res) => {
             .select('*') // Выбираем все поля
             .eq('id', user.id)
             .maybeSingle();
-        if (fetchError) {
-            console.error("ERROR fetching existing user:", fetchError.message);
-            throw fetchError;
-        }
+        if (fetchError) throw fetchError;
 
         // Если игрока нет — создаем его
         if (!dbUser) {
@@ -106,13 +110,10 @@ const handler = async (req, res) => {
                     daily_challenges: [], last_daily_reset: new Date().toISOString(),
                     max_level: 1, last_energy_update: new Date().toISOString()
                 })
-                .select('*')
+                .select('*') // Важно: выбираем все поля, чтобы dbUser был полным
                 .single();
             
-            if (createError) {
-                console.error("ERROR creating new user:", createError.message);
-                throw createError;
-            }
+            if (createError) throw createError;
             dbUser = newUser;
             console.log("NEW USER CREATED:", dbUser);
 
@@ -121,38 +122,31 @@ const handler = async (req, res) => {
                 const inviterId = String(startParam);
                 console.log("REFERRAL DETECTED! Inviter:", inviterId, "New Referred User:", user.id);
                 
-                try {
-                    const { error: insertRefError } = await supabase.from('referrals').insert({ 
-                        referrer_id: inviterId, 
-                        referred_id: user.id 
+                const { error: insertRefError } = await supabase.from('referrals').insert({ 
+                    referrer_id: inviterId, 
+                    referred_id: user.id 
+                });
+                if (insertRefError) {
+                    console.error("REFERRAL INSERT FAILED:", insertRefError.message);
+                } else {
+                    console.log("Referral recorded successfully.");
+                    await supabase.rpc('increment_coins', { 
+                        user_id_param: inviterId, 
+                        amount: 50
                     });
-                    if (insertRefError) {
-                        console.error("REFERRAL INSERT FAILED:", insertRefError.message);
-                    } else {
-                        console.log("Referral recorded successfully for inviter:", inviterId);
-                        await supabase.rpc('increment_coins', { 
-                            user_id_param: inviterId, 
-                            amount: 50
-                        });
-                        console.log("Bonus for inviter granted.");
-                    }
-                } catch (referralProcessError) {
-                    console.error("ERROR during referral processing:", referralProcessError.message);
+                    console.log("Bonus for inviter granted.");
                 }
             } else {
-                console.log("Referral NOT PROCESSED. Conditions not met (no startParam, or self-invite, or existing user). startParam:", startParam, "user.id:", user.id);
+                console.log("Referral NOT PROCESSED. Conditions not met (no startParam or self-invite).");
             }
         } else {
-            console.log("EXISTING USER: User ID", user.id, "found in DB. Referral logic skipped.");
-            if (startParam && String(startParam) !== String(user.id)) {
-                console.log("WARNING: startParam present for existing user, but referral was not recorded. User ID:", user.id, "startParam:", startParam);
-            }
+            console.log("EXISTING USER: User ID", user.id, "found in DB.");
         }
         
         return res.status(200).json({ user: dbUser });
 
     } catch (err) {
-        console.error("[AUTH HANDLER CATCH ALL ERROR]:", err.message, err.stack);
+        console.error("[AUTH HANDLER ERROR]:", err.message, err.stack);
         return res.status(500).json({ error: err.message });
     }
 };
