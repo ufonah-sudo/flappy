@@ -399,7 +399,9 @@ async function init() {
 
     // --- АВТОРИЗАЦИЯ И ЗАГРУЗКА ---
     try {
-        const auth = await api.authPlayer(tg?.initDataUnsafe?.start_param || "");
+         const startParam = tg?.initDataUnsafe?.start_param || "";
+        const auth = await api.authPlayer(startParam); // Передаем startParam
+        
         if (auth?.user) {
             state.user = auth.user;
             state.coins = auth.user.coins ?? state.coins;

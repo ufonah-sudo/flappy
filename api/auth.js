@@ -23,6 +23,17 @@ const handler = async (req, res) => {
     }
     console.log("Authenticated User ID:", user.id, "Username:", user.username);
 
+    let startParam = "";
+    try {
+        const urlParams = new URLSearchParams(initData);
+        startParam = urlParams.get('start_param') || "";
+    } catch(e) {
+        console.warn("Could not parse start_param from initData:", e.message);
+    }
+    console.log("Extracted startParam:", startParam); // Логируем, что извлекли
+    // ----------------------------------------
+
+
     try {
         // --- ОБРАБОТКА ACTION: GET_FRIENDS ---
         if (action === 'get_friends') {
