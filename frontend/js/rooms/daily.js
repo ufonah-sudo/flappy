@@ -1,249 +1,263 @@
 /**
- * js/rooms/daily.js - ПОЛНАЯ ЛОГИКА ЕЖЕДНЕВНОГО ХАБА
+ * js/rooms/daily.js - НОВЫЙ DAILY HUB (FINAL)
  */
 import * as api from '../../api.js';
 
-let countdownInterval = null;
+let countdownInterval = null; // Переменная для таймера
 
 export async function initDaily() {
+    // 1. ПОЛУЧАЕМ ДАННЫЕ
     const state = window.state;
     const tg = window.Telegram?.WebApp;
-    // Ищем контейнер внутри #scene-daily. Используем селектор из rooms.css
-    const container = document.querySelector('#scene-daily .room-content');
+    const container = document.querySelector('#scene-daily #daily-content-wrapper');
 
     if (!container) return;
+    
+    // Показываем заглушку-загрузку
+    container.innerHTML = `<div style="text-align:center; color:#aaa; padding: 40px;">Загрузка ежедневных наград...</div>`;
 
-    // Заглушка загрузки
-    container.innerHTML = `<div style="text-align:center; color:#aaa; padding: 40px;">Загрузка данных...</div>`;
-
-    try {
-        // --- 1. ЗАПРОС ДАННЫХ ---
+     try {
+        // --- ЗАПРОС СВЕЖИХ ДАННЫХ С СЕРВЕРА ---
         const dailyData = await api.apiRequest('daily', 'POST');
 
-        if (dailyData?.error) throw new Error(dailyData.error);
+        // ЕСЛИ ЕСТЬ ОШИБКА - ПОКАЗЫВАЕМ
+        if (dailyData && dailyData.error) {
+            throw new Error(dailyData.error);
+        }
 
-        // Если сервер вернул обновленного юзера (сброс дня), обновляем стейт
-        if (dailyData?.refreshedUser) {
+        // Если сервер прислал обновленного юзера (т.е. день сбросился)
+        if (dailyData && dailyData.refreshedUser) {
+            // Обновляем локальный стейт
             const user = dailyData.refreshedUser;
             state.user.daily_step = user.daily_step;
             state.user.daily_claimed = user.daily_claimed;
             state.user.daily_challenges = user.daily_challenges;
             state.user.last_daily_reset = user.last_daily_reset;
             state.user.bonus_claimed = user.bonus_claimed;
+             state.user.bonus_claimed = user.bonus_claimed;
+            
         }
 
-        // --- 2. РЕНДЕР КАРКАСА (HTML) ---
+        // --- 2. РЕНДЕР HTML-СКЕЛЕТА ---
         container.innerHTML = `
-            <div class="daily-section">
-                <h3>Daily Rewards</h3>
+            <!-- Секция 1: Награды за вход -->
+            <div class="daily-hub-section">
+                <h4>Награды за вход</h4>
                 <div class="daily-streak-grid"></div>
             </div>
 
-            <div class="daily-section">
-                <h3>Daily Challenges</h3>
+            <!-- Секция 2: Ежедневные задания -->
+            <div class="daily-hub-section">
+                <h4>Задания дня</h4>
                 <div class="challenge-list"></div>
             </div>
 
-            <div class="daily-section" style="text-align:center;">
-                <h3>Weekly Bonus</h3>
+            <!-- Секция 3: Главный приз (Сундук) -->
+            <div class="daily-hub-section">
+                <h4>Главный приз</h4>
                 <div class="bonus-chest-container">
                     <div class="total-progress-bar"><div class="total-progress-fill"></div></div>
                     <div class="bonus-chest"></div>
                 </div>
             </div>
 
-            <div class="daily-timer" style="margin-top:20px; color:#f7d51d; font-weight:bold; text-align:center;"></div>
+            <!-- Таймер -->
+            <div class="daily-timer"></div>
         `;
 
-        // --- 3. НАПОЛНЕНИЕ ДАННЫМИ ---
+        // --- 3. ЗАПОЛНЕНИЕ КОНТЕНТОМ ---
 
-        // А) Конфигурация наград (должна совпадать с сервером)
+        // А) Награды за вход (5 дней, шахматный порядок)
+        const streakGrid = container.querySelector('.daily-streak-grid');
         const dailyRewards = [
             { day: 1, reward: '50 🟡' },
             { day: 2, reward: '1 ⚡' },
             { day: 3, reward: '1 🛡️' },
             { day: 4, reward: '150 🟡' },
-            { day: 5, reward: '1 💎' } 
+            { day: 5, reward: '1 💎' } // Супер-приз
         ];
 
-        const streakGrid = container.querySelector('.daily-streak-grid');
         const userStep = state.user?.daily_step || 1;
-        const alreadyClaimed = state.user?.daily_claimed || false;
-
-        // Генерация карточек дней
+        const alreadyClaimedToday = state.user?.daily_claimed || false;
+        
         streakGrid.innerHTML = dailyRewards.map(item => {
-            // Логика состояний:
-            // 1. Пройдено: день меньше текущего ИЛИ (день равен текущему и уже забрано)
-            const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaimed);
-            // 2. Текущий активный: день равен текущему и ЕЩЕ НЕ забрано
-            const isCurrent = item.day === userStep && !alreadyClaimed;
+// Галочка ставится, если день уже прошел ИЛИ это сегодняшний день и награда уже забрана
+const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaimedToday);
+            const isCurrent = item.day === userStep && !alreadyClaimedToday;
+            const isFuture = item.day > userStep;
+
+            let cardClass = 'daily-reward-card';
+            if (isClaimed) cardClass += ' claimed';
+            if (isCurrent) cardClass += ' current';
             
-            let classes = 'daily-card'; // Класс из rooms.css
-            if (isClaimed) classes += ' collected'; // Добавляем стили для собранного
-            if (isCurrent) classes += ' current active'; // Добавляем стили для активного (подсветка)
-            
-            // Блокировка 5-го дня, если мы еще не дошли
-            if (item.day === 5 && userStep < 5) classes += ' locked';
+            // Проверка для 5-го дня (доступен только если 4 предыдущих забраны)
+            if (item.day === 5 && userStep < 5) {
+                cardClass += ' locked';
+            }
 
             return `
-                <div class="${classes}" data-day="${item.day}">
-                    <span>Day ${item.day}</span>
-                    <div style="font-size:24px;">${isClaimed ? '✅' : (item.day === 5 ? '💎' : '🎁')}</div>
-                    <div class="val">${item.reward}</div>
+                <div class="${cardClass}" data-day="${item.day}">
+                    <div class="day">День ${item.day}</div>
+                    <div class="icon">${isClaimed ? '✅' : '🎁'}</div>
+                    <div class="reward">${item.reward}</div>
                 </div>
             `;
         }).join('');
-
-        // Б) Генерация заданий
+        
+        // Б) Задания
         const challengeList = container.querySelector('.challenge-list');
         const challenges = state.user?.daily_challenges || [];
-
-        if (challenges.length > 0) {
+        if(challenges.length > 0) {
             challengeList.innerHTML = challenges.map(ch => {
                 const progress = Math.min(100, ((ch.progress || 0) / ch.target) * 100);
-                // Форматируем награду (заменяем коды на иконки)
-                const prettyReward = ch.reward
-                    .replace('coins_', '🟡 ')
-                    .replace('energy_', '⚡ ')
-                    .replace('powerup_', '1 ');
-
                 return `
-                    <div class="challenge-item">
-                        <div class="item-info">
-                            <div class="item-name">${ch.text}</div>
-                            <div class="item-val" style="font-size:12px; opacity:0.8;">${prettyReward}</div>
+                    <div class="challenge-card">
+                        <div class="info">
+                            <span class="text">${ch.text}</span>
+                            <span class="reward">${ch.reward.replace('coins_', '🟡 ').replace('energy_', '⚡ ').replace('powerup_', '1 ')}</span>
                         </div>
-                        <div style="width: 100%; margin-top: 5px; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px;">
-                            <div style="width: ${progress}%; height: 100%; background: #f7d51d; border-radius: 3px; transition: width 0.3s;"></div>
+                        <div class="challenge-progress">
+                            <div class="challenge-progress-fill" style="width: ${progress}%"></div>
                         </div>
                     </div>
                 `;
             }).join('');
         } else {
-            challengeList.innerHTML = `<div style="text-align:center; opacity:0.5; padding:10px;">Задания выполнены!</div>`;
+            challengeList.innerHTML = `<p style="text-align:center;color:#888;">Нет заданий</p>`;
         }
 
-        // В) Логика Сундука
-        const completedCount = challenges.filter(c => (c.progress || 0) >= c.target).length;
-        const totalBar = container.querySelector('.total-progress-fill');
-        const chest = container.querySelector('.bonus-chest');
-        
-        // Полоска прогресса сундука
-        if (totalBar) totalBar.style.width = `${(completedCount / (challenges.length || 1)) * 100}%`;
 
-        // Состояния сундука
+        // В) Сундук
+        const completedCount = challenges.filter(c => (c.progress || 0) >= c.target).length;
+        const totalProgressFill = container.querySelector('.total-progress-fill');
+        totalProgressFill.style.width = `${(completedCount / challenges.length) * 100}%`;
+
+        const chest = container.querySelector('.bonus-chest');
         if (state.user?.bonus_claimed) {
-            chest.innerHTML = '<div style="font-size:40px;">✅</div>'; // Уже забрано
+            chest.innerHTML = '✅';
+            chest.classList.remove('ready');
         } else if (completedCount === challenges.length && challenges.length > 0) {
-            chest.innerHTML = '<div style="font-size:40px; cursor:pointer;" class="pulse">🎁</div>'; // Готов к сбору
+            chest.innerHTML = '🎁';
             chest.classList.add('ready');
         } else {
-            chest.innerHTML = '<div style="font-size:40px; opacity:0.5;">🔒</div>'; // Заблокирован
+            chest.innerHTML = '🔒';
+            chest.classList.remove('ready');
         }
-
-        // Г) Таймер обратного отсчета
+        
+        // Г) Таймер
         const timerEl = container.querySelector('.daily-timer');
         if (countdownInterval) clearInterval(countdownInterval);
         
-        const lastReset = new Date(state.user?.last_daily_reset || Date.now());
-        const nextReset = new Date(lastReset.getTime() + (24 * 60 * 60 * 1000)); // +24 часа
-
+        const lastResetDate = new Date(state.user?.last_daily_reset || Date.now());
+        const nextResetDate = new Date(lastResetDate.getTime() + (24 * 60 * 60 * 1000));
+        
         countdownInterval = setInterval(() => {
-            const diff = nextReset - new Date();
-            if (diff <= 0) {
-                timerEl.innerText = "Обновите страницу!";
+            const remaining = nextResetDate - new Date();
+            if (remaining <= 0) {
+                timerEl.innerHTML = "Готово к обновлению!";
                 clearInterval(countdownInterval);
             } else {
-                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                timerEl.innerText = `До обновления: ${h}:${m}`;
+                const h = Math.floor((remaining / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
+                const m = Math.floor((remaining / 1000 / 60) % 60).toString().padStart(2, '0');
+                const s = Math.floor((remaining / 1000) % 60).toString().padStart(2, '0');
+                timerEl.innerHTML = `Новые задания через: ${h}:${m}:${s}`;
             }
         }, 1000);
 
-        // --- 4. ОБРАБОТЧИКИ КЛИКОВ (ВОССТАНОВЛЕННАЯ ЛОГИКА) ---
+        // --- 4. КЛИКИ ---
+        
+       // --- 4. КЛИКИ ---
 
-        // 4.1 КЛИК ПО НАГРАДЕ ЗА ВХОД (STREAK)
-        const currentCard = streakGrid.querySelector('.daily-card.current');
-        if (currentCard) {
-            currentCard.onclick = async () => {
-                if (currentCard.classList.contains('locked')) {
-                    tg?.showAlert("Сначала собери награды за прошлые дни!");
-                    return;
-                }
+    // Клик по награде за вход
+    const currentCard = streakGrid.querySelector('.daily-reward-card.current');
+    if (currentCard) {
+        currentCard.onclick = async () => {
+            // Проверяем, не заблокирован ли 5-й день
+            if(currentCard.classList.contains('locked')) {
+                tg?.showAlert("Сначала собери все предыдущие награды!");
+                return;
+            }
 
-                try {
-                    // 1. Отправляем запрос на сервер
-                    const res = await api.apiRequest('daily', 'POST', { action: 'claim_streak' });
+            try {
+                // 1. Отправляем запрос на сервер, чтобы он поставил флаг 'daily_claimed'
+                const res = await api.apiRequest('daily', 'POST', { action: 'claim_streak' });
 
-                    if (res.success) {
-                        // 2. Парсим строку награды для локального обновления (чтобы цифры обновились сразу)
-                        // Например: reward: "50 🟡"
-                        const rewardConfig = dailyRewards[userStep - 1];
-                        if (rewardConfig) {
-                            const [valStr, type] = rewardConfig.reward.split(' ');
-                            const amount = parseInt(valStr);
+                if (res.success) {
+                    // 2. Выдаем награду на стороне клиента
+                    const rewardConfig = dailyRewards[userStep - 1]; // Находим конфиг награды
+                    const [value, type] = rewardConfig.reward.split(' ');
+                    const amount = parseInt(value);
 
-                            if (type === '🟡') state.coins = (state.coins || 0) + amount;
-                            else if (type === '⚡') state.lives = (state.lives || 0) + amount;
-                            else if (type === '💎') state.crystals = (state.crystals || 0) + amount;
-                            else if (type === '🛡️') state.powerups.shield = (state.powerups.shield || 0) + amount;
-                        }
-
-                        // 3. Обновляем флаг
-                        state.user.daily_claimed = true;
-                        
-                        // 4. Эффекты успеха
-                        tg?.HapticFeedback.notificationOccurred('success');
-                        
-                        // 5. Обновляем верхний бар (монеты/кристаллы)
-                        if (window.updateGlobalUI) window.updateGlobalUI();
-                        
-                        // 6. Полная перерисовка экрана Daily (чтобы появилась галочка)
-                        initDaily();
+                    if (type === '🟡') {
+                        state.coins += amount;
+                    } else if (type === '⚡') {
+                        state.lives += amount;
+                    } else if (type === '💎') {
+                        state.crystals += amount;
                     } else {
-                        tg?.showAlert(res.error || "Ошибка получения награды");
+                        // Для способностей (🛡️)
+                        const powerupId = rewardConfig.id || 'shield'; // Заглушка, нужно будет правильно прописать ID
+                        state.powerups[powerupId] = (state.powerups[powerupId] || 0) + amount;
                     }
-                } catch (e) { 
-                    console.error(e);
-                    tg?.showAlert("Ошибка соединения");
-                }
-            };
-        }
 
-        // 4.2 КЛИК ПО СУНДУКУ (CHEST)
+                    // 3. Обновляем UI
+                    tg?.HapticFeedback.notificationOccurred('success');
+                    tg?.showAlert(`Получена награда: ${rewardConfig.reward}!`);
+                    updateGlobalUI(); // Обновляем баланс в хедере
+                     // 👇 ЭТА СТРОКА ОТВЕЧАЕТ ЗА ГАЛОЧКУ 👇
+                    // Мы должны обновить стейт, чтобы при перерисовке галочка встала
+                    state.user.daily_claimed = true; 
+                    
+
+                    // 4. Перерисовываем, чтобы показать галочку
+                    initDaily(); 
+                } else {
+                    throw new Error(res.error || "Не удалось забрать награду");
+                }
+            } catch (e) {
+                console.error(e);
+                tg?.showAlert(e.message);
+            }
+        };
+    }
+
+               // Клик по сундуку
+               // Клик по сундуку
         if (chest.classList.contains('ready')) {
             chest.onclick = async () => {
                 try {
                     const res = await api.apiRequest('daily', 'POST', { action: 'claim_bonus_chest' });
                     
-                    if (res.success) {
-                        // Красивое сообщение о награде
+                    if(res.success) {
                         const rewardText = (res.reward || "Награда")
                             .replace('coins', '🟡')
                             .replace('crystals', '💎')
                             .replace('energy', '⚡');
 
                         tg?.showAlert(`СУПЕР ПРИЗ ОТКРЫТ! \n\n${rewardText}`);
-                        
-                        // 1. Обновляем локальный флаг
+                       
+                        // 1. Меняем стейт (чтобы при следующем входе было ок)
                         state.user.bonus_claimed = true;
                         
-                        // 2. Ручное обновление DOM (чтобы не перезагружать список заданий)
-                        chest.classList.remove('ready'); // Убираем анимацию
-                        chest.innerHTML = '<div style="font-size:40px;">✅</div>'; // Ставим галочку
-                        chest.onclick = null; // Убираем клик
+                        // 2. Прямо здесь, руками меняем HTML элемента
+                        chest.classList.remove('ready'); // Убираем тряску
+                        chest.innerHTML = '✅';          // Ставим галочку
+                        chest.style.pointerEvents = 'none'; // Отключаем клики
                         
-                        // 3. Обновляем хедер
-                        if (window.updateGlobalUI) window.updateGlobalUI();
+                        // 3. НЕ ВЫЗЫВАЕМ initDaily()! 
+                        // Потому что он может перерисовать старые данные, пока сервер думает.
+                        // initDaily(); <--- УДАЛИ ЭТУ СТРОКУ
+                        
+                        // 4. Просто обновляем баланс в хедере
+                        if (window.updateGlobalUI) window.updateGlobalUI(); 
                     }
-                } catch (e) { 
-                    console.error(e); 
-                }
+                } catch(e) { tg?.showAlert(e.message); }
             };
         }
 
-    } catch (e) {
-        console.error(e);
-        container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Ошибка: ${e.message}</div>`;
+
+
+    } catch (error) {
+        container.innerHTML = `<div style="text-align:center; color:red;">Ошибка загрузки: ${error.message}</div>`;
     }
 }
