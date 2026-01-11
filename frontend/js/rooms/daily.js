@@ -235,7 +235,7 @@ const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaime
                             .replace('energy', '⚡');
 
                         tg?.showAlert(`СУПЕР ПРИЗ ОТКРЫТ! \n\n${rewardText}`);
-                        
+                        state.user.bonus_claimed = true; 
                         // Тут надо обновить state
                         initDaily(); 
                     }

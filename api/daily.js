@@ -96,24 +96,46 @@ const handler = async (req, res) => {
         }
 
 
-        // --- 3. ВЫДАЧА БОНУСА (СУНДУКА) ---
+               // --- 3. ВЫДАЧА БОНУСА (РУЛЕТКА) ---
         if (action === 'claim_bonus_chest') {
-            const allDone = dbUser.daily_challenges.every(ch => ch.progress >= ch.target);
-            if (!allDone) {
-                return res.status(400).json({ error: 'Complete all challenges first!' });
+            // 🛑 ЗАЩИТА ОТ ПОВТОРНОГО СБОРА
+            if (dbUser.bonus_claimed) {
+                return res.status(400).json({ error: 'Сундук уже открыт сегодня!' });
             }
+
+            const allDone = dbUser.daily_challenges.every(ch => (ch.progress || 0) >= ch.target);
+            if (!allDone) return res.status(400).json({ error: 'Выполни все задания!' });
             
-            // Награждаем (например, 200 монет и 1 кристалл)
+            // Рулетка призов
+            const rand = Math.random();
+            let rewardText = "";
+            let c = 0, cr = 0, l = 0;
+
+            if (rand < 0.5) { 
+                // 50% шанс: 300 Монет
+                c = 300; rewardText = "300 coins";
+            } else if (rand < 0.8) { 
+                // 30% шанс: 5 Энергии
+                l = 5; rewardText = "5 energy";
+            } else { 
+                // 20% шанс: 2 Кристалла
+                cr = 2; rewardText = "2 crystals";
+            }
+
+            // Начисляем выпавшее
             await supabase.rpc('increment_resources', { 
                 user_id_param: user.id, 
-                coins_to_add: 200,
-                crystals_to_add: 1
+                coins_to_add: c, 
+                crystals_to_add: cr, 
+                lives_to_add: l 
             });
+            
+            // Помечаем, что забрали
             await supabase.from('users').update({ bonus_claimed: true }).eq('id', user.id);
             
-            return res.status(200).json({ success: true, reward: '200 coins, 1 crystal' });
-            
+            return res.status(200).json({ success: true, reward: rewardText });
         }
+
 
                 // --- 4. ОБНОВЛЕНИЕ ПРОГРЕССА ЗАДАНИЙ ---
         if (action === 'update_challenges') {
