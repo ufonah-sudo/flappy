@@ -8,6 +8,7 @@ const handler = async (req, res) => {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
+const { initData, action, coins, crystals, powerups, inventory } = req.body; // startParam убран
 
     // --- ЛОГИРОВАНИЕ: ЧТО ПРИШЛО ---
     console.log("--- AUTH REQUEST ---");
@@ -22,16 +23,13 @@ const handler = async (req, res) => {
     }
     console.log("Authenticated User ID:", user.id, "Username:", user.username);
 
-    let startParam = "";
+   let startParam = "";
     try {
         const urlParams = new URLSearchParams(initData);
         startParam = urlParams.get('start_param') || "";
     } catch(e) {
         console.warn("Could not parse start_param from initData:", e.message);
     }
-    console.log("Extracted startParam:", startParam); // Логируем, что извлекли
-    // ----------------------------------------
-
 
     try {
         // --- ОБРАБОТКА ACTION: GET_FRIENDS ---
