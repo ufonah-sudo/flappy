@@ -143,7 +143,7 @@ const handler = async (req, res) => {
                 lives_to_add: l 
             });
             
-            return res.status(200).json({ success: true, reward: rewardText });
+            return res.status(200).json({ success: true, reward: rewardText,   bonus_claimed: true  });
         }
 
 
