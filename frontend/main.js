@@ -14,7 +14,8 @@ import { ArcadeGame } from './arcade.js';
 // Импортируем игровой движок Карьеры (восстановлено!)
 import { CareerGame } from './career.js';
 // Импортируем менеджер кошелька TON
-import { WalletManager } from './wallet.js';
+import { WalletManager } from './wallet.js'; 
+
 import { DailyTracker } from './js/DailyTracker.js';
 
 
@@ -421,7 +422,7 @@ async function init() {
     } catch (e) { 
         console.error("Login Error:", e);
     }
-
+window.dailyTracker = new DailyTracker();
     // Запускаем UI
     window.state = state;
     updateGlobalUI();
