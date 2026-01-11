@@ -220,6 +220,6 @@ export async function claimFriendReward(friendUsername) {
     // Отправляем запрос на auth.js с действием claim_friend
     return await apiRequest('auth', 'POST', { 
         action: 'claim_friend', 
-        friend_username: friendUsername 
+          friend_id: friendId
     });
 }

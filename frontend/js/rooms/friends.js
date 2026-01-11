@@ -86,8 +86,9 @@ export async function initFriends() {
             friendsListContainer.querySelectorAll('.claim-friend-reward-btn').forEach(btn => {
                 btn.onclick = async (e) => {
                     const button = e.currentTarget;
-                    const friendUsername = button.dataset.friendUsername;
-                    const friendId = button.dataset.friendId;
+                    // 👇 ИСПРАВЛЕНИЕ: ОТПРАВЛЯЕМ ID, А НЕ USERNAME 👇
+                    const friendId = button.dataset.friendId; // <-- ИСПОЛЬЗУЕМ friendId
+                    const friendUsername = button.dataset.friendUsername; // <-- Для логов
 
                     if (button.disabled) return;
 
@@ -95,7 +96,7 @@ export async function initFriends() {
                     button.innerHTML = "⏳";
                     
                     try {
-                        const res = await api.claimFriendReward(friendUsername); // Отправляем username
+ const res = await api.claimFriendReward(friendId); // <-- Передаем ID
                         
                         if (res.success) {
                             state.coins += 5; // Начисляем монеты
