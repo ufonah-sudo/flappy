@@ -165,6 +165,6 @@ export function initSettings() {
         }
     };
 
-    document.getElementById('btn-channel').onclick = () => openLink('https://t.me/your_channel');
-    document.getElementById('btn-support').onclick = () => openLink('https://t.me/your_support');
+    document.getElementById('btn-channel').onclick = () => openLink('https://t.me/valx7');
+    document.getElementById('btn-support').onclick = () => openLink('https://t.me/valx7');
 }

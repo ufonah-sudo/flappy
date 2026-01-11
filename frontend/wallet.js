@@ -25,7 +25,7 @@ export class WalletManager {
                 
                 // Не указываем buttonRootId сразу, мы будем назначать его вручную в настройках
                 uiOptions: {
-                    twaReturnUrl: 'https://t.me/FlappyTonBird_bot/app'
+                    twaReturnUrl: 'https://t.me/FlappyTonBird_bot/FlappyTon'
                 }
             });
 
