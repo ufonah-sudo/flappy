@@ -8,14 +8,11 @@ const handler = async (req, res) => {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-const { initData, action, coins, crystals, powerups, inventory } = req.body; // startParam убран
+    // Всегда извлекаем initData и action. Остальное - по требованию.
+    // startParam здесь не извлекаем, т.к. он в initData
+    const { initData, action, coins, crystals, powerups, inventory } = req.body;
 
-    // --- ЛОГИРОВАНИЕ: ЧТО ПРИШЛО ---
-    console.log("--- AUTH REQUEST ---");
-    console.log("Received startParam:", startParam); // Важно!
-    console.log("Received action:", action);
-    // ----------------------------
-    
+    // --- 1. Проверка Telegram-подписи initData ---
     const user = verifyTelegramData(initData);
     if (!user) {
         console.error("AUTH FAILED: Invalid signature for initData.");
@@ -23,13 +20,19 @@ const { initData, action, coins, crystals, powerups, inventory } = req.body; // 
     }
     console.log("Authenticated User ID:", user.id, "Username:", user.username);
 
-   let startParam = "";
+    // --- 2. Извлекаем start_param из initData ---
+    let startParam = "";
     try {
         const urlParams = new URLSearchParams(initData);
         startParam = urlParams.get('start_param') || "";
     } catch(e) {
         console.warn("Could not parse start_param from initData:", e.message);
     }
+    // --- ЛОГИРОВАНИЕ: ЧТО ИЗВЛЕКЛИ ---
+    console.log("--- AUTH REQUEST ---");
+    console.log("Extracted startParam:", startParam); // Теперь startParam будет тут
+    console.log("Received action:", action);
+    // ----------------------------------
 
     try {
         // --- ОБРАБОТКА ACTION: GET_FRIENDS ---
@@ -127,10 +130,9 @@ const { initData, action, coins, crystals, powerups, inventory } = req.body; // 
                     console.error("REFERRAL INSERT FAILED:", insertRefError.message);
                 } else {
                     console.log("Referral recorded successfully.");
-                    // Начисляем бонус пригласившему
                     await supabase.rpc('increment_coins', { 
                         user_id_param: inviterId, 
-                        amount: 50 // Дадим побольше за друга!
+                        amount: 50
                     });
                     console.log("Bonus for inviter granted.");
                 }
