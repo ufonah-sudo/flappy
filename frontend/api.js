@@ -105,9 +105,12 @@ export async function apiRequest(endpoint, method = 'POST', extraData = {}) {
 /**
  * Авторизация или регистрация игрока при входе
  */
-export async function authPlayer(startParam) {
+export async function authPlayer(startParam, initDataString) { // <-- Теперь принимает initDataString
     // Шлем запрос на /api/auth с параметром реферала
-    return await apiRequest('auth', 'POST', { startParam });
+    return await apiRequest('auth', 'POST', { 
+        startParam, 
+        initData: initDataString // <-- Передаем initData на сервер
+    });
 }
 
 /**
