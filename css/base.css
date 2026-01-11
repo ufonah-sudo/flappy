@@ -395,7 +395,6 @@ canvas {
 /* Настраиваем высоту кнопок, чтобы они были чуть ниже */
 #top-btn, #daily-btn {
     position: absolute;
-    top: 85px; /* Регулируй высоту здесь */
     z-index: 2000;
     display: block; /* По умолчанию видны */
 }
