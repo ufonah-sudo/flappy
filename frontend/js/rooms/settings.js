@@ -1,3 +1,6 @@
+/**
+ * js/rooms/settings.js - НАСТРОЙКИ (СТИЛЬ МАГАЗИНА)
+ */
 import * as api from '../../api.js';
 
 export function initSettings() {
@@ -9,104 +12,100 @@ export function initSettings() {
         music: localStorage.getItem('music') !== 'off'
     };
 
-    // 1. HTML: Добавили красную кнопку #btn-disconnect-ton (скрытую по умолчанию)
+    // --- 1. HTML: КРАСИВЫЕ БЛОКИ (.powerup-card) ---
     container.innerHTML = `
-        <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: flex-start; padding-top: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; padding-top: 10px;">
             
-            <!-- БЛОК КОШЕЛЬКА -->
-            <div style="width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 25px;">
-                
-                <!-- 1. Синяя кнопка (TON Connect) -->
-                <div id="settings-wallet-root-unique" style="width: 100%; display: flex; justify-content: center; min-height: 50px;"></div>
+            <!-- БЛОК КОШЕЛЬКА (Специальная карточка) -->
+            <div class="powerup-card" style="border-color: #0098ea; flex-direction: column; align-items: center; padding: 15px;">
+                <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center;">
+                        <div class="icon">💎</div>
+                        <div class="name">КОШЕЛЕК</div>
+                    </div>
+                    <!-- Статус (подключен или нет) -->
+                    <div id="wallet-status-text" style="font-size: 10px; font-weight: 900; color: #aaa;">OFFLINE</div>
+                </div>
 
-                <!-- 2. Запасная кнопка "Connect" (если синяя сломалась) -->
-                <button id="manual-wallet-btn" style="display: none; background: #0098EA; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px;">
-                    💎 Connect Wallet
+                <!-- Место для синей кнопки -->
+                <div id="settings-wallet-root-unique" style="width: 100%; display: flex; justify-content: center;"></div>
+
+                <!-- Кнопка "Отключить" (появляется при подключении) -->
+                <button id="btn-disconnect-ton" class="action-btn" style="background: #ff4f4f; display: none; width: 100%; margin-top: 10px;">
+                    ОТКЛЮЧИТЬ
                 </button>
-
-                <!-- 3. Кнопка ОТКЛЮЧИТЬ (Появляется только если подключен) -->
-                <button id="btn-disconnect-ton" style="
-                    display: none; /* Скрыта */
-                    margin-top: 15px;
-                    background: transparent;
-                    border: 1px solid #ff4f4f;
-                    color: #ff4f4f;
-                    padding: 8px 16px;
-                    border-radius: 12px;
-                    font-size: 12px;
-                    font-weight: 900;
-                    cursor: pointer;
-                    text-transform: uppercase;
-                ">
-                    ❌ ОТКЛЮЧИТЬ КОШЕЛЕК
+                
+                <!-- Запасная кнопка -->
+                <button id="manual-wallet-btn" class="action-btn btn-blue" style="display: none; width: 100%;">
+                    CONNECT WALLET
                 </button>
             </div>
 
-            <!-- ПЕРЕКЛЮЧАТЕЛИ -->
-            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-                <button id="toggle-sound" class="settings-btn wooden-btn" style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin: 0;">
-                    <span>🔊 ЗВУК</span>
-                    <span class="status" style="color: ${settings.sound ? '#4ec0ca' : '#ff4f4f'}">
-                        ${settings.sound ? 'ВКЛ' : 'ВЫКЛ'}
-                    </span>
-                </button>
+            <!-- ЗВУК -->
+            <div id="toggle-sound" class="powerup-card" style="cursor: pointer;">
+                <div style="display: flex; align-items: center;">
+                    <div class="icon">🔊</div>
+                    <div class="name">ЗВУКИ</div>
+                </div>
+                <div class="status" style="font-weight: 900; color: ${settings.sound ? '#4ec0ca' : '#ff4f4f'};">
+                    ${settings.sound ? 'ВКЛ' : 'ВЫКЛ'}
+                </div>
+            </div>
 
-                <button id="toggle-music" class="settings-btn wooden-btn" style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin: 0;">
-                    <span>🎵 МУЗЫКА</span>
-                    <span class="status" style="color: ${settings.music ? '#4ec0ca' : '#ff4f4f'}">
-                        ${settings.music ? 'ВКЛ' : 'ВЫКЛ'}
-                    </span>
-                </button>
+            <!-- МУЗЫКА -->
+            <div id="toggle-music" class="powerup-card" style="cursor: pointer;">
+                <div style="display: flex; align-items: center;">
+                    <div class="icon">🎵</div>
+                    <div class="name">МУЗЫКА</div>
+                </div>
+                <div class="status" style="font-weight: 900; color: ${settings.music ? '#4ec0ca' : '#ff4f4f'};">
+                    ${settings.music ? 'ВКЛ' : 'ВЫКЛ'}
+                </div>
             </div>
 
             <!-- ССЫЛКИ -->
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button id="btn-channel" class="secondary-btn" style="flex: 1; font-size: 12px; padding: 12px;">📢 КАНАЛ</button>
-                <button id="btn-support" class="secondary-btn" style="flex: 1; font-size: 12px; padding: 12px;">🆘 ПОМОЩЬ</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <button id="btn-channel" class="powerup-card" style="justify-content: center; cursor: pointer; border-color: #ffd700;">
+                    <span style="font-size: 12px; font-weight: 900; color: #333;">📢 КАНАЛ</span>
+                </button>
+                <button id="btn-support" class="powerup-card" style="justify-content: center; cursor: pointer; border-color: #ffd700;">
+                    <span style="font-size: 12px; font-weight: 900; color: #333;">🆘 ПОМОЩЬ</span>
+                </button>
             </div>
             
-            <div class="version-info" style="margin-top: auto; padding-bottom: 10px; font-size: 10px; opacity: 0.4; color: #fff; text-align: center;">
-                v1.1.1
+            <div class="version-info" style="margin-top: 20px; font-size: 10px; opacity: 0.4; color: #fff; text-align: center;">
+                v1.2.0
             </div>
         </div>
     `;
 
-    // 2. ФУНКЦИЯ ОБНОВЛЕНИЯ СТАТУСА (Показать/Скрыть кнопки)
+    // --- 2. ЛОГИКА КОШЕЛЬКА ---
     const updateWalletState = () => {
         const discBtn = document.getElementById('btn-disconnect-ton');
         const manualBtn = document.getElementById('manual-wallet-btn');
-        const root = document.getElementById('settings-wallet-root-unique');
+        const statusText = document.getElementById('wallet-status-text');
 
-        if (!window.wallet || !discBtn) return;
+        if (!window.wallet) return;
 
         if (window.wallet.isConnected) {
-            // Если подключен: Показываем "Отключить", скрываем "Manual"
-            discBtn.style.display = 'block';
-            if (manualBtn) manualBtn.style.display = 'none';
+            if(discBtn) discBtn.style.display = 'block';
+            if(manualBtn) manualBtn.style.display = 'none';
+            if(statusText) { statusText.innerText = "ONLINE"; statusText.style.color = "#4ec0ca"; }
         } else {
-            // Если отключен: Скрываем "Отключить"
-            discBtn.style.display = 'none';
+            if(discBtn) discBtn.style.display = 'none';
+            if(statusText) { statusText.innerText = "OFFLINE"; statusText.style.color = "#ff4f4f"; }
         }
     };
 
-    // 3. ОТРИСОВКА И ПОДПИСКА НА СОБЫТИЯ
     const attemptRender = (retries = 0) => {
         if (window.wallet && window.wallet.tonConnectUI) {
             try {
-                // Рисуем основную кнопку
                 window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
-                
-                // Обновляем состояние кнопок
                 updateWalletState();
                 
-                // Подписываемся на изменения (чтобы кнопка "Отключить" появлялась/исчезала сама)
-                // Важно: отписываемся от старых, чтобы не дублировать (упрощенно)
-                window.wallet.tonConnectUI.onStatusChange(() => {
-                    updateWalletState();
-                });
-
+                // Подписка на изменения
+                window.wallet.tonConnectUI.onStatusChange(() => updateWalletState());
             } catch (e) {
-                console.warn("TON UI Error:", e);
                 document.getElementById('manual-wallet-btn').style.display = 'block';
             }
         } else {
@@ -116,48 +115,48 @@ export function initSettings() {
     };
     attemptRender();
 
-    // 4. ОБРАБОТЧИК КНОПКИ "ОТКЛЮЧИТЬ"
+    // Кнопка отключения
     const discBtn = document.getElementById('btn-disconnect-ton');
     if (discBtn) {
         discBtn.onclick = async () => {
             if (window.wallet) {
                 await window.wallet.disconnect();
-                // Принудительно обновляем UI
                 updateWalletState();
-                // Перезагружаем страницу для чистоты (опционально, но надежно)
-                // window.location.reload(); 
             }
         };
     }
 
-    // Обработчик Manual Connect
+    // Ручная кнопка подключения
     const manualBtn = document.getElementById('manual-wallet-btn');
-    if (manualBtn) {
-        manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
-    }
+    if (manualBtn) manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
 
-    // 5. ОСТАЛЬНЫЕ КНОПКИ (Звук, Музыка...)
-    const soundBtn = document.getElementById('toggle-sound');
-    if (soundBtn) {
-        soundBtn.onclick = () => {
-            settings.sound = !settings.sound;
-            localStorage.setItem('sound', settings.sound ? 'on' : 'off');
-            soundBtn.querySelector('.status').innerText = settings.sound ? 'ВКЛ' : 'ВЫКЛ';
-            soundBtn.querySelector('.status').style.color = settings.sound ? '#4ec0ca' : '#ff4f4f';
-        };
-    }
 
-    const musicBtn = document.getElementById('toggle-music');
-    if (musicBtn) {
-        musicBtn.onclick = () => {
-            settings.music = !settings.music;
-            localStorage.setItem('music', settings.music ? 'on' : 'off');
-            musicBtn.querySelector('.status').innerText = settings.music ? 'ВКЛ' : 'ВЫКЛ';
-            musicBtn.querySelector('.status').style.color = settings.music ? '#4ec0ca' : '#ff4f4f';
+    // --- 3. ЛОГИКА НАСТРОЕК (ЗВУК/МУЗЫКА) ---
+    const toggleSetting = (key, btnId) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+
+        btn.onclick = () => {
+            // Меняем значение
+            settings[key] = !settings[key];
+            localStorage.setItem(key, settings[key] ? 'on' : 'off');
+            
+            // Обновляем UI
+            const statusEl = btn.querySelector('.status');
+            statusEl.innerText = settings[key] ? 'ВКЛ' : 'ВЫКЛ';
+            statusEl.style.color = settings[key] ? '#4ec0ca' : '#ff4f4f';
+            
+            // Вибрация
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
         };
-    }
+    };
+
+    toggleSetting('sound', 'toggle-sound');
+    toggleSetting('music', 'toggle-music');
     
-    // Ссылки
+    // --- 4. ССЫЛКИ ---
     const openLink = (url) => {
         if (window.Telegram?.WebApp?.openTelegramLink) {
             window.Telegram.WebApp.openTelegramLink(url);
@@ -165,7 +164,6 @@ export function initSettings() {
             window.open(url, '_blank');
         }
     };
-    
 
     document.getElementById('btn-channel').onclick = () => openLink('https://t.me/your_channel');
     document.getElementById('btn-support').onclick = () => openLink('https://t.me/your_support');

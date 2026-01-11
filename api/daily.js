@@ -105,7 +105,7 @@ const handler = async (req, res) => {
                 .from('users')
                 .update({ bonus_claimed: true })
                 .eq('id', user.id)
-                .eq('bonus_claimed', false) // <--- КЛЮЧЕВАЯ ЗАЩИТА
+                .eq('bonus_claimed', false  ) // <--- КЛЮЧЕВАЯ ЗАЩИТА
                 .select(); // Возвращает обновленные строки
 
             if (claimError) throw claimError;
