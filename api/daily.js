@@ -56,16 +56,45 @@ const handler = async (req, res) => {
             return res.status(200).json({ refreshedUser });
         }
         
-        // --- 2. ВЫДАЧА НАГРАДЫ ЗА СЕРИЮ ---
+               // --- 2. ВЫДАЧА НАГРАДЫ ЗА СЕРИЮ ---
         if (action === 'claim_streak') {
             if (dbUser.daily_claimed) {
                 return res.status(400).json({ error: 'Already claimed' });
             }
 
-            // Проверка, что все предыдущие дни забраны (логика на клиенте)
+            const step = dbUser.daily_step || 1;
+            let coins = 0, energy = 0, crystals = 0, shield = 0;
+
+            // Награды (должны совпадать с frontend/daily.js)
+            if (step === 1) coins = 50;
+            else if (step === 2) energy = 1;
+            else if (step === 3) shield = 1;
+            else if (step === 4) coins = 150;
+            else if (step === 5) crystals = 1;
+
+            // Начисляем ресурсы (монеты, энергия, кристаллы)
+            if (coins > 0 || energy > 0 || crystals > 0) {
+                await supabase.rpc('increment_resources', {
+                    user_id_param: user.id,
+                    coins_to_add: coins,
+                    crystals_to_add: crystals,
+                    lives_to_add: energy
+                });
+            }
+
+            // Начисляем щит (если выпал)
+            if (shield > 0) {
+                const currentPowerups = dbUser.powerups || {};
+                currentPowerups['shield'] = (currentPowerups['shield'] || 0) + 1;
+                await supabase.from('users').update({ powerups: currentPowerups }).eq('id', user.id);
+            }
+
+            // Ставим галочку
             await supabase.from('users').update({ daily_claimed: true }).eq('id', user.id);
-            return res.status(200).json({ success: true, message: 'Streak reward claimed' });
+            
+            return res.status(200).json({ success: true, message: 'Reward claimed' });
         }
+
 
         // --- 3. ВЫДАЧА БОНУСА (СУНДУКА) ---
         if (action === 'claim_bonus_chest') {
