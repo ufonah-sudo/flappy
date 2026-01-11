@@ -34,6 +34,7 @@ export async function initDaily() {
             state.user.daily_challenges = user.daily_challenges;
             state.user.last_daily_reset = user.last_daily_reset;
             state.user.bonus_claimed = user.bonus_claimed;
+            
         }
 
         // --- 2. РЕНДЕР HTML-СКЕЛЕТА ---
@@ -243,7 +244,7 @@ const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaime
                         
                         // 3. Меняем иконку на галочку
                         chest.innerHTML = '✅';
-                        
+                          if (res.bonus_claimed) state.user.bonus_claimed = true; // Явно обновляем
                         // 4. Обновляем баланс в хедере (чтобы цифры изменились)
                         // (Логику начисления лучше добавить и сюда, если сервер не вернул новые балансы)
                         // Но если initDaily() перезапрашивает сервер, то просто перерисуем:
