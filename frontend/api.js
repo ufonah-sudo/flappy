@@ -1,34 +1,24 @@
 /**
  * api.js - Модуль для взаимодействия с бэкендом (сервером)
  */
-
-// Получаем доступ к SDK Telegram WebApp для работы внутри мессенджера
 const tg = window.Telegram?.WebApp;
-
-// Устанавливаем базовый путь для всех запросов к серверу
 const API_BASE = '/api';
 
 /**
  * Функция для извлечения данных авторизации Telegram
+ * (Используется как fallback, если initData не передан явно)
  */
 function getInitData() {
     try {
-        // Если SDK доступно и содержит данные, возвращаем их
         if (tg && tg.initData) return tg.initData;
-        // Если SDK нет, пробуем достать данные из хеша URL (для тестов в браузере)
         const hash = window.location.hash.slice(1);
-        // Если хеш существует, парсим его
         if (hash) {
-            // Используем встроенный парсер URL параметров
             const params = new URLSearchParams(hash);
-            // Возвращаем значение tgWebAppData или пустую строку
             return params.get('tgWebAppData') || "";
         }
     } catch (e) {
-        // Выводим ошибку в консоль, если чтение данных провалилось
-        console.warn("⚠️ [API] InitData check failed:", e);
+        console.warn("⚠️ [API] InitData check failed in getInitData():", e);
     }
-    // Возвращаем пустую строку как фолбэк
     return "";
 }
 
@@ -36,66 +26,57 @@ function getInitData() {
  * Универсальное ядро для выполнения сетевых запросов fetch
  */
 export async function apiRequest(endpoint, method = 'POST', extraData = {}) {
-    // Получаем свежую строку авторизации перед каждым запросом
-    const initData = getInitData();
-    // Формируем итоговый URL (база + эндпоинт)
+    // --- ИСПРАВЛЕНИЕ: ПРИОРИТЕТ initData ---
+    // 1. Пытаемся взять initData из extraData (если authPlayer его передал)
+    // 2. Если нет, берем из getInitData()
+    const finalInitData = extraData.initData || getInitData(); 
+
+    // Удаляем initData из extraData, чтобы не дублировать его в body
+    const cleanExtraData = { ...extraData };
+    delete cleanExtraData.initData; 
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     const url = `${API_BASE}/${endpoint}`;
+    
+    // Логируем, что отправляем
+    console.log(`[🚀 API REQUEST] ${url}`, { ...cleanExtraData, initDataStatus: finalInitData ? "PRESENT" : "MISSING" });
 
-    // Логируем запрос в консоль для отладки (маршрут и тело запроса)
-    console.log(`[🚀 API REQUEST] ${url}`, extraData);
-
-    // Создаем контроллер для управления отменой запроса по времени
     const controller = new AbortController();
-    // Устанавливаем таймер: если сервер молчит 10 сек, запрос прерывается
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-        // Выполняем асинхронный сетевой запрос
         const response = await fetch(url, {
-            method: method, // Метод запроса (POST)
+            method: method,
             headers: { 
-                'Content-Type': 'application/json', // Указываем, что шлем JSON
-                'Cache-Control': 'no-cache' // Запрещаем браузеру кэшировать ответ
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
             },
             body: JSON.stringify({
-                initData: initData, // Добавляем данные авторизации в каждый запрос
-                ...extraData // Распаковываем дополнительные параметры запроса
+                initData: finalInitData, // <--- ИСПОЛЬЗУЕМ КОРРЕКТНЫЙ initData
+                ...cleanExtraData        // <--- ОСТАЛЬНЫЕ ПАРАМЕТРЫ
             }),
-            signal: controller.signal // Привязываем сигнал отмены к fetch
+            signal: controller.signal
         });
 
-        // Если запрос успешен, очищаем таймер ожидания
         clearTimeout(timeoutId);
 
-        // Обработка случая, когда сервер ответил "Успешно, но данных нет"
         if (response.status === 204) return { success: true };
 
-        // Проверяем тип контента в ответе сервера
         const contentType = response.headers.get("content-type");
-        // Если сервер вернул JSON, парсим его
         if (contentType && contentType.includes("application/json")) {
-            // Ожидаем парсинг тела ответа в объект
             const responseData = await response.json();
-            
-            // Если статус ответа не 2xx, выбрасываем ошибку с сообщением от сервера
             if (!response.ok) {
                 throw new Error(responseData.error || responseData.message || `Status: ${response.status}`);
             }
-            // Возвращаем чистый объект с данными
             return responseData;
         } 
         
-        // Если ответ не JSON, читаем его как текст для диагностики
         const text = await response.text();
-        // Генерируем ошибку с первыми 100 символами текста ответа
         throw new Error(text.slice(0, 100) || `Server Error ${response.status}`);
 
     } catch (error) {
-        // Обязательно очищаем таймер в случае любой ошибки
         clearTimeout(timeoutId);
-        // Логируем подробности ошибки в консоль
         console.error(`[❌ API ERROR] /${endpoint}:`, error.message);
-        // Возвращаем объект ошибки, чтобы игра не "крашнулась"
         return { error: true, message: error.message };
     }
 }
@@ -104,120 +85,77 @@ export async function apiRequest(endpoint, method = 'POST', extraData = {}) {
 
 /**
  * Авторизация или регистрация игрока при входе
+ * initDataString - это tg.initData, который main.js передает
  */
-export async function authPlayer(startParam, initDataString) { // <-- Теперь принимает initDataString
-    // Шлем запрос на /api/auth с параметром реферала
+export async function authPlayer(startParam, initDataString) {
     return await apiRequest('auth', 'POST', { 
         startParam, 
-        initData: initDataString // <-- Передаем initData на сервер
+        initData: initDataString // <-- Передаем initData как часть extraData
     });
 }
 
 /**
- * Метод для получения текущего количества монет
+ * Метод для получения текущего количества монет (deprecated, use authPlayer)
  */
 export async function fetchBalance() {
     // Запрашиваем данные пользователя через действие get_user
+    // initData здесь возьмется из getInitData()
     const data = await apiRequest('auth', 'POST', { action: 'get_user' }); 
-    // Если произошла ошибка или пользователя нет, возвращаем 0
     if (data.error || !data.user) return 0;
-    // Возвращаем число монет, если оно корректно
     return typeof data.user.coins === 'number' ? data.user.coins : 0;
 }
 
 /**
  * Полная синхронизация состояния игры с базой данных
  */
-export async function syncState(state) {
-    // Отправляем все ключевые показатели на сервер для сохранения
+export async function syncState(stateData) { // Переименовал state, чтобы не конфликтовать с window.state
     return await apiRequest('auth', 'POST', { 
-        action: 'sync_state', // Имя действия на бэкенде
-        coins: state.coins, // Текущие монеты
-        crystals: state.crystals, // Текущие кристаллы
-        powerups: state.powerups, // Объект способностей
-        inventory: state.inventory || [] // Массив купленных предметов
+        action: 'sync_state', 
+        coins: stateData.coins,
+        crystals: stateData.crystals,
+        powerups: stateData.powerups,
+        inventory: stateData.inventory || []
     });
 }
 
-/**
- * Псевдоним функции синхронизации для совместимости с main.js
- */
 export const updateUserData = syncState;
 
 // --- СЕКЦИЯ: ЭКОНОМИКА (МОНЕТЫ И МАГАЗИН) ---
 
-/**
- * Зачисление монет после покупки через TON
- */
 export async function buyCoins(amount) {
-    // Сообщаем серверу сумму пополнения
     return await apiRequest('coins', 'POST', { action: 'buy_coins', amount: amount });
 }
 
-/**
- * Покупка игрового предмета за внутренние монеты
- */
 export async function buyItem(itemType) {
-    // Отправляем ID предмета (например, 'shield') на сервер
-    return await apiRequest('coins', 'POST', { 
-        action: 'buy_item', 
-        item: itemType 
-    });
+    return await apiRequest('coins', 'POST', { action: 'buy_item', item: itemType });
 }
 
-/**
- * Списание монет за мгновенное возрождение
- */
 export async function spendCoin() {
-    // Запрос к эндпоинту монет на списание за ревайв
     const data = await apiRequest('coins', 'POST', { action: 'spend_revive' }); 
-    // Если ответ содержит новый баланс, возвращаем его
     if (data && !data.error && typeof data.newBalance === 'number') {
         return data.newBalance; 
     }
-    // В случае неудачи возвращаем объект ошибки
     return { error: true };
 }
 
 // --- СЕКЦИЯ: РЕКОРДЫ И СОЦИАЛКА ---
 
-/**
- * Сохранение набранных очков в таблицу лидеров
- */
 export async function saveScore(score) {
-    // Защита: не шлем запросы, если счет некорректен
     if (score < 0) return { error: true };
-    // Отправляем результат игры
     return await apiRequest('scores', 'POST', { action: 'save_score', score: score });
 }
 
-/**
- * Получение списка ТОП-игроков
- */
 export async function getLeaderboard() {
-    // Запрашиваем лидерборд у сервера
     const data = await apiRequest('scores', 'POST', { action: 'get_leaderboard' });
-    // Всегда возвращаем массив (даже пустой), чтобы UI не сломался
     return (data && Array.isArray(data.leaderboard)) ? data.leaderboard : [];
 }
 
-/**
- * Запрос списка приглашенных друзей
- */
 export async function getFriends() {
-    // Запрашиваем данные о друзьях через экшен get_friends
     const data = await apiRequest('auth', 'POST', { action: 'get_friends' });
-    // Гарантируем возврат массива
     return (data && Array.isArray(data.friends)) ? data.friends : [];
-
-    
 }
 
-/**
- * Запрос на получение награды за приглашенного друга
- */
 export async function claimFriendReward(friendUsername) {
-    // Отправляем запрос на auth.js с действием claim_friend
     return await apiRequest('auth', 'POST', { 
         action: 'claim_friend', 
         friend_username: friendUsername 
