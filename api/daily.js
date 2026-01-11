@@ -96,33 +96,46 @@ const handler = async (req, res) => {
         }
 
 
-               // --- 3. ВЫДАЧА БОНУСА (РУЛЕТКА) ---
+                      // --- 3. ВЫДАЧА БОНУСА (АТОМАРНАЯ ЗАЩИТА) ---
         if (action === 'claim_bonus_chest') {
-            // 🛑 ЗАЩИТА ОТ ПОВТОРНОГО СБОРА
-            if (dbUser.bonus_claimed) {
-                return res.status(400).json({ error: 'Сундук уже открыт сегодня!' });
+            
+            // 1. Пытаемся "застолбить" сундук
+            // Обновляем ТОЛЬКО если bonus_claimed = false
+            const { data: updatedRows, error: claimError } = await supabase
+                .from('users')
+                .update({ bonus_claimed: true })
+                .eq('id', user.id)
+                .eq('bonus_claimed', false) // <--- КЛЮЧЕВАЯ ЗАЩИТА
+                .select(); // Возвращает обновленные строки
+
+            if (claimError) throw claimError;
+
+            // Если массив пустой — значит, кто-то уже забрал сундук (или условие не прошло)
+            if (!updatedRows || updatedRows.length === 0) {
+                return res.status(400).json({ error: 'Сундук уже открыт!' });
             }
 
+            // 2. Проверяем задания (только если успешно "застолбили")
+            // Мы уже пометили сундук как открытый, поэтому если задания не выполнены - надо откатить?
+            // Нет, лучше проверить задания ДО обновления. Но тогда теряем атомарность.
+            // Компромисс: Проверяем задания в памяти (dbUser), это безопасно, так как задания редко меняются.
             const allDone = dbUser.daily_challenges.every(ch => (ch.progress || 0) >= ch.target);
-            if (!allDone) return res.status(400).json({ error: 'Выполни все задания!' });
             
-            // Рулетка призов
+            if (!allDone) {
+                // Откатываем флаг (возвращаем false), так как задания не сделаны
+                await supabase.from('users').update({ bonus_claimed: false }).eq('id', user.id);
+                return res.status(400).json({ error: 'Задания не выполнены!' });
+            }
+            
+            // 3. Рулетка и начисление
             const rand = Math.random();
             let rewardText = "";
             let c = 0, cr = 0, l = 0;
 
-            if (rand < 0.5) { 
-                // 50% шанс: 300 Монет
-                c = 300; rewardText = "300 coins";
-            } else if (rand < 0.8) { 
-                // 30% шанс: 5 Энергии
-                l = 5; rewardText = "5 energy";
-            } else { 
-                // 20% шанс: 2 Кристалла
-                cr = 2; rewardText = "2 crystals";
-            }
+            if (rand < 0.5) { c = 300; rewardText = "300 coins"; }
+            else if (rand < 0.8) { l = 5; rewardText = "5 energy"; }
+            else { cr = 2; rewardText = "2 crystals"; }
 
-            // Начисляем выпавшее
             await supabase.rpc('increment_resources', { 
                 user_id_param: user.id, 
                 coins_to_add: c, 
@@ -130,11 +143,9 @@ const handler = async (req, res) => {
                 lives_to_add: l 
             });
             
-            // Помечаем, что забрали
-            await supabase.from('users').update({ bonus_claimed: true }).eq('id', user.id);
-            
             return res.status(200).json({ success: true, reward: rewardText });
         }
+
 
 
                 // --- 4. ОБНОВЛЕНИЕ ПРОГРЕССА ЗАДАНИЙ ---
