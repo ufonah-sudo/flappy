@@ -229,68 +229,72 @@ window.showRoom = showRoom;
 /* ---------------------------------------------------------
    6. ИНИЦИАЛИЗАЦИЯ (init) - Точка входа
    --------------------------------------------------------- */
+/* ---------------------------------------------------------
+   6. ИНИЦИАЛИЗАЦИЯ (init) - Точка входа
+   --------------------------------------------------------- */
 async function init() {
     // Сообщаем Телеграму о готовности
-    if (tg) { tg.ready(); tg.expand(); }
+    if (tg) { 
+        tg.ready(); 
+        tg.expand(); 
+        
+        // Автопауза при свайпе шторки вниз (специфично для Telegram)
+        tg.onEvent('viewportChanged', ({ isStateStable }) => {
+            if (!isStateStable) {
+                window.audioManager?.pauseMusic();
+            } else if (window.audioManager?.musicEnabled) {
+                window.audioManager?.playMusic();
+            }
+        });
+    }
     
     // Инициализация игровых движков
     const canvas = document.getElementById('game-canvas');
     if (canvas) {
-        // Создаем Классику
         window.game = new Game(canvas, (s, r) => handleGameOver(s, r));
-        // Создаем Аркаду
         window.arcadeGame = new ArcadeGame(canvas, (s, r) => handleGameOver(s, r));
-        // Создаем Карьеру (ВОССТАНОВЛЕНО)
-        // Передаем колбеки Победы (handleCareerWin) и Поражения (handleCareerLose)
         window.careerGame = new CareerGame(canvas, (lvl) => handleCareerWin(lvl), () => handleCareerLose());
     }
     
     // Инициализация кошелька
     try { 
         window.wallet = new WalletManager(); 
-        
-        // 👇 ДОБАВЛЕНО: Отслеживаем статус кошелька 👇
         if (window.wallet.tonConnectUI) {
             window.wallet.tonConnectUI.onStatusChange(async (wallet) => {
                 const isConnected = !!wallet;
                 if (isConnected) {
                     const walletAddress = wallet.account.address;
-                    console.log("Wallet connected:", walletAddress);
-                    // Отправляем адрес на сервер
-                    await api.apiRequest('auth', 'POST', { 
-                        action: 'update_wallet_info', 
-                        wallet_address: walletAddress 
-                    });
+                    await api.apiRequest('auth', 'POST', { action: 'update_wallet_info', wallet_address: walletAddress });
                 } else {
-                    console.log("Wallet disconnected.");
-                    // Если отключились, можно удалить адрес с сервера
-                    await api.apiRequest('auth', 'POST', { 
-                        action: 'update_wallet_info', 
-                        wallet_address: null 
-                    });
+                    await api.apiRequest('auth', 'POST', { action: 'update_wallet_info', wallet_address: null });
                 }
-                // Обновляем UI, где отображается кошелек (например, в Настройках)
                 window.updateGlobalUI?.(); 
             });
         }
     } catch (e) { console.warn("Wallet skip:", e); }
-window.audioManager = new AudioManager();
+
+    // Инициализация Аудио и Фокуса (Visibility API)
+    window.audioManager = new AudioManager();
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            window.audioManager?.pauseMusic();
+            if (window.audioManager?.ctx) window.audioManager.ctx.suspend();
+        } else {
+            if (window.audioManager?.musicEnabled) window.audioManager?.playMusic();
+            if (window.audioManager?.ctx) window.audioManager.ctx.resume();
+        }
+    });
+
     // --- СЛУШАТЕЛЬ СОБЫТИЯ ПОКУПКИ ---
     window.addEventListener('buy_item', async (e) => {
         const { id, price, type, powerupType } = e.detail;
-        
-        // Проверка монет
         if (state.coins >= price) {
             state.coins -= price;
-            
             if (type === 'powerup') {
-                // Если расходник
                 state.powerups[powerupType] = (state.powerups[powerupType] || 0) + 1;
             } else {
-                // Если предмет инвентаря
                 if (!state.inventory.includes(id)) state.inventory.push(id);
             }
-            
             tg?.HapticFeedback.notificationOccurred('success');
             updateGlobalUI();
             await saveData();
@@ -310,72 +314,54 @@ window.audioManager = new AudioManager();
         };
     };
     
-    // Основное меню
     bind('btn-shop', 'shop');
     bind('btn-inventory', 'inventory');
     bind('btn-friends', 'friends');
     bind('btn-settings', 'settings');
     bind('btn-home-panel', 'home');
     bind('btn-back-to-home', 'home');
-    
-    // Главный экран
     bind('btn-start', 'modeSelection');
     bind('top-btn', 'leaderboard');
     bind('daily-btn', 'daily');
 
-    // Выбор режима
+    // Режимы игры
     const btnCl = document.getElementById('btn-mode-classic');
     if (btnCl) btnCl.onclick = () => {
         window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'round_started' } }));
         state.currentMode = 'classic'; 
         showRoom('game'); 
     };
-    // Кнопки выбора режима
+
     const btnAr = document.getElementById('btn-mode-arcade');
-    if (btnAr) {
-        console.log("Кнопка Аркады найдена!"); // <--- Добавь это для проверки
-        btnAr.onclick = () => { 
-            console.log("Клик по Аркаде!"); // <--- И это
-            state.currentMode = 'arcade'; 
-            showRoom('game'); 
-        };
-    } else {
-        console.error("Кнопка Аркады НЕ НАЙДЕНА в HTML!");
-    }
-    // Кнопка Карьеры (ВОССТАНОВЛЕНО)
+    if (btnAr) btnAr.onclick = () => { 
+        state.currentMode = 'arcade'; 
+        showRoom('game'); 
+    };
+
     const btnCareer = document.getElementById('btn-mode-career');
-    if (btnCareer) {
-        btnCareer.onclick = () => {
-            state.currentMode = 'career';
-            showRoom('careerMap');
-        };
-    }
-    // Кнопка назад из Карьеры
+    if (btnCareer) btnCareer.onclick = () => {
+        state.currentMode = 'career';
+        showRoom('careerMap');
+    };
+
     const btnBackCareer = document.getElementById('btn-back-from-career');
     if (btnBackCareer) btnBackCareer.onclick = () => showRoom('modeSelection');
 
-    // Кнопка Паузы
+    // Пауза и Resume
     const pauseTrigger = document.getElementById('pause-btn');
     if (pauseTrigger) {
         pauseTrigger.onclick = (e) => {
             e.preventDefault();
-            // Останавливаем все движки
             if (window.game) window.game.isRunning = false;
             if (window.arcadeGame) window.arcadeGame.isRunning = false;
             if (window.careerGame) window.careerGame.isRunning = false;
-            
-            // Показываем меню паузы (модалка)
             document.getElementById('pause-menu').classList.remove('hidden');
         };
     }
 
-    // Кнопка RESUME
     const resBtn = document.getElementById('btn-resume');
     if (resBtn) resBtn.onclick = () => {
-        // Скрываем меню паузы
         document.getElementById('pause-menu').classList.add('hidden');
-        
-        // Возобновляем нужный движок
         if (state.currentMode === 'classic' && window.game) {
             window.game.isRunning = true; window.game.loop();
         } else if (state.currentMode === 'arcade' && window.arcadeGame) {
@@ -385,59 +371,42 @@ window.audioManager = new AudioManager();
         }
     };
     
-    // Кнопка Выхода в меню (из паузы)
-    const exitBtn = document.getElementById('btn-exit-home');
-    if (exitBtn) exitBtn.onclick = () => showRoom('home');
+    document.getElementById('btn-exit-home')?.addEventListener('click', () => showRoom('home'));
     
-    // Кнопка REVIVE (Использование сердца)
     const reviveBtn = document.getElementById('btn-revive');
     if (reviveBtn) {
         reviveBtn.onclick = (e) => {
             e.preventDefault();
-            // Если есть сердце и кнопка активна
             if (state.powerups.heart > 0 && !reviveBtn.disabled) {
-                state.powerups.heart--; // Списываем
+                state.powerups.heart--;
                 updateGlobalUI();
-                
-                // Скрываем геймовер
                 document.getElementById('game-over').classList.add('hidden');
-                
-                // Выбираем движок
                 let engine = state.currentMode === 'classic' ? window.game : window.arcadeGame;
                 if(state.currentMode === 'career') engine = window.careerGame;
-                
-                // Вызываем метод revive (который не сбрасывает счет)
                 engine.revive();
                 saveData();
             }
         };
     }
     
-    // Кнопка RESTART (Начать заново)
-    const restartBtn = document.getElementById('btn-restart');
-    if (restartBtn) restartBtn.onclick = () => {
+    document.getElementById('btn-restart')?.addEventListener('click', () => {
         document.getElementById('game-over').classList.add('hidden');
-        // В карьере рестарт ведет на карту
         if(state.currentMode === 'career') showRoom('careerMap');
-        else showRoom('game'); // В классике - перезапуск
-    };
+        else showRoom('game');
+    });
     
-    // Кнопка выхода из Геймовера
-    const exitGO = document.getElementById('btn-exit-gameover');
-    if (exitGO) exitGO.onclick = () => showRoom('home');
+    document.getElementById('btn-exit-gameover')?.addEventListener('click', () => showRoom('home'));
 
     // --- АВТОРИЗАЦИЯ И ЗАГРУЗКА ---
     try {
-const startParam = tg?.initDataUnsafe?.start_app_param || tg?.initDataUnsafe?.start_param || "";
-const auth = await api.authPlayer(startParam, tg?.initData || "");         
+        const startParam = tg?.initDataUnsafe?.start_app_param || tg?.initDataUnsafe?.start_param || "";
+        const auth = await api.authPlayer(startParam, tg?.initData || "");         
         if (auth?.user) {
             state.user = auth.user;
             state.coins = auth.user.coins ?? state.coins;
-            state.lives = auth.user.lives ?? state.lives; // Энергия
-            state.crystals = auth.user.crystals ?? state.crystals; // Кристаллы
+            state.lives = auth.user.lives ?? state.lives;
+            state.crystals = auth.user.crystals ?? state.crystals;
             state.inventory = auth.user.inventory ?? [];
-            
-            // Если нет заданий — создаем
             if (!state.user.daily_challenges) {
                 state.user.daily_challenges = [
                     { id: 1, text: "Fly through 10 pipes", target: 10, progress: 0, done: false },
@@ -445,15 +414,11 @@ const auth = await api.authPlayer(startParam, tg?.initData || "");
                     { id: 3, text: "Use 1 ability", target: 1, progress: 0, done: false }
                 ];
             }
-            if (auth.user.powerups) {
-                state.powerups = { ...state.powerups, ...auth.user.powerups };
-            }
+            if (auth.user.powerups) state.powerups = { ...state.powerups, ...auth.user.powerups };
         }
-    } catch (e) { 
-        console.error("Login Error:", e);
-    }
-window.dailyTracker = new DailyTracker();
-    // Запускаем UI
+    } catch (e) { console.error("Login Error:", e); }
+
+    window.dailyTracker = new DailyTracker();
     window.state = state;
     updateGlobalUI();
     showRoom('home'); 

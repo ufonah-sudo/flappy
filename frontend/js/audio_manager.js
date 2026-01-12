@@ -15,6 +15,7 @@ export class AudioManager {
         this.musicEnabled = localStorage.getItem('music') !== 'off';
 
         this.loadAll();
+    this.initVisibilityHandler();
     }
 
     async loadAll() {
@@ -104,4 +105,25 @@ export class AudioManager {
         if (this.musicEnabled) this.playMusic();
         else this.pauseMusic();
     }
+    initVisibilityHandler() {
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            // Если вкладку скрыли (свернули Telegram)
+            this.pauseMusic();
+            // "Усыпляем" аудио-контекст, чтобы остановить все текущие эффекты
+            if (this.ctx && this.ctx.state !== 'closed') {
+                this.ctx.suspend();
+            }
+        } else {
+            // Если пользователь вернулся
+            if (this.musicEnabled) {
+                this.playMusic();
+            }
+            // Пробуждаем контекст
+            if (this.ctx && this.ctx.state !== 'closed') {
+                this.ctx.resume();
+            }
+        }
+    });
+}
 }
