@@ -1,5 +1,5 @@
 /**
- * js/rooms/settings.js - НАСТРОЙКИ (СТИЛЬ МАГАЗИНА)
+ * js/rooms/settings.js - НАСТРОЙКИ (FIXED WALLET)
  */
 import * as api from '../../api.js';
 
@@ -22,31 +22,28 @@ export function initSettings() {
                         <div class="icon">💎</div>
                         <div class="name">КОШЕЛЕК</div>
                     </div>
-                    <div id="wallet-status-text" style="font-size: 10px; font-weight: 900; color: #aaa;">OFFLINE</div>
+                    <div id="wallet-status-text" style="font-size: 10px; font-weight: 900; color: #aaa;">CHECKING...</div>
                 </div>
 
                 <div id="settings-wallet-root-unique" style="width: 100%; display: flex; justify-content: center;"></div>
 
                 <button id="btn-disconnect-ton" style="
-                    background: #ff4747; 
-                    color: white; 
-                    border: none; 
-                    border-radius: 30px; /* Сделали овалом */
-                    padding: 10px 0; 
-                    width: 100%; 
-                    margin-top: 5px; 
-                    font-weight: 900; 
-                    font-size: 12px;
-                    cursor: pointer;
-                    display: none; /* По умолчанию скрыта */
-                    box-shadow: 0 4px 0 #cc0000;
-                    transition: transform 0.1s;
+                    display: none; 
+                    background: #ff4747 !important; 
+                    color: white !important; 
+                    border: none !important; 
+                    border-radius: 30px !important; 
+                    padding: 12px 0 !important; 
+                    width: 100% !important; 
+                    margin-top: 5px !important; 
+                    font-weight: 900 !important; 
+                    font-size: 12px !important;
+                    cursor: pointer !important;
+                    box-shadow: 0 4px 0 #cc0000 !important;
+                    transition: transform 0.1s !important;
+                    text-transform: uppercase !important;
                 ">
                     🚪 DISCONNECT WALLET
-                </button>
-                
-                <button id="manual-wallet-btn" class="action-btn btn-blue" style="display: none; width: 100%;">
-                    CONNECT WALLET
                 </button>
             </div>
 
@@ -78,119 +75,101 @@ export function initSettings() {
                     <span style="font-size: 12px; font-weight: 900; color: #333;">🆘 ПОМОЩЬ</span>
                 </button>
             </div>
-            
-            <div class="version-info" style="margin-top: 20px; font-size: 10px; opacity: 0.4; color: #fff; text-align: center;">
-                v1.2.2
-            </div>
         </div>
     `;
 
     // --- 2. ЛОГИКА КОШЕЛЬКА ---
-    const updateWalletState = () => {
+    
+    const updateWalletUI = () => {
         const discBtn = document.getElementById('btn-disconnect-ton');
         const walletRoot = document.getElementById('settings-wallet-root-unique');
         const statusText = document.getElementById('wallet-status-text');
 
         if (!window.wallet || !window.wallet.tonConnectUI) return;
 
-        // Самая надежная проверка: есть ли данные аккаунта
+        //account — самый надежный способ проверки
         const account = window.wallet.tonConnectUI.account;
-        const isConnected = !!account; 
+        const isConnected = !!account;
 
         if (isConnected) {
-            // КОШЕЛЕК ПОДКЛЮЧЕН
-            if(discBtn) discBtn.style.setProperty('display', 'block', 'important'); // Форсируем показ
-            if(walletRoot) walletRoot.style.display = 'none'; // Прячем синюю кнопку
+            // СКРЫВАЕМ СИНЮЮ, ПОКАЗЫВАЕМ КРАСНУЮ
+            if (walletRoot) walletRoot.style.display = 'none';
+            if (discBtn) discBtn.style.setProperty('display', 'block', 'important');
             
-            if(statusText) {
+            if (statusText) {
                 const addr = account.address;
                 statusText.innerText = addr.slice(0, 4) + '...' + addr.slice(-4);
                 statusText.style.color = "#4ec0ca";
             }
         } else {
-            // КОШЕЛЕК НЕ ПОДКЛЮЧЕН
-            if(discBtn) discBtn.style.display = 'none';
-            if(walletRoot) walletRoot.style.display = 'flex';
+            // ПОКАЗЫВАЕМ СИНЮЮ, СКРЫВАЕМ КРАСНУЮ
+            if (walletRoot) walletRoot.style.display = 'flex';
+            if (discBtn) discBtn.style.setProperty('display', 'none', 'important');
             
-            if(statusText) {
+            if (statusText) {
                 statusText.innerText = "OFFLINE";
                 statusText.style.color = "#ff4f4f";
             }
         }
     };
 
-    const attemptRender = (retries = 0) => {
+    const initWallet = async () => {
         if (window.wallet && window.wallet.tonConnectUI) {
-            try {
-                // Рендерим стандартную кнопку
-                window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
-                
-                updateWalletState();
-                
-                // Следим за изменениями
-                window.wallet.tonConnectUI.onStatusChange(() => updateWalletState());
-            } catch (e) {
-                console.error("Wallet UI Error", e);
-                document.getElementById('manual-wallet-btn').style.display = 'block';
-            }
+            // Привязываем корень кнопки
+            window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
+            
+            // Сразу проверяем статус
+            updateWalletUI();
+
+            // Слушаем изменения (подключение/отключение)
+            window.wallet.tonConnectUI.onStatusChange(() => {
+                updateWalletUI();
+            });
         } else {
-            if (retries < 10) setTimeout(() => attemptRender(retries + 1), 200);
-            else document.getElementById('manual-wallet-btn').style.display = 'block';
+            // Если объект еще не готов, пробуем через 300мс
+            setTimeout(initWallet, 300);
         }
     };
-    attemptRender();
 
-    // --- ЛОГИКА КНОПКИ DISCONNECT ---
+    initWallet();
+
+    // Обработка клика по красной кнопке
     const discBtn = document.getElementById('btn-disconnect-ton');
     if (discBtn) {
         discBtn.onclick = async () => {
-            // Анимация нажатия
             discBtn.style.transform = "scale(0.95)";
-            setTimeout(() => discBtn.style.transform = "scale(1)", 100);
-
-            if (window.wallet && window.wallet.tonConnectUI) {
-                await window.wallet.tonConnectUI.disconnect();
-                // updateWalletState вызовется автоматически через onStatusChange, 
-                // но можно вызвать и вручную для мгновенной реакции
-                updateWalletState();
+            try {
+                if (window.wallet && window.wallet.tonConnectUI) {
+                    await window.wallet.tonConnectUI.disconnect();
+                    updateWalletUI();
+                }
+            } catch (e) {
+                console.error("Disconnect error", e);
             }
+            setTimeout(() => discBtn.style.transform = "scale(1)", 100);
         };
     }
 
-    // Ручная кнопка (бэкап)
-    const manualBtn = document.getElementById('manual-wallet-btn');
-    if (manualBtn) manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
-
-
-    // --- 3. ЛОГИКА НАСТРОЕК (ЗВУК/МУЗЫКА) ---
+    // --- 3. ОСТАЛЬНАЯ ЛОГИКА ---
     const toggleSetting = (key, btnId) => {
         const btn = document.getElementById(btnId);
         if (!btn) return;
-
         btn.onclick = () => {
             settings[key] = !settings[key];
             localStorage.setItem(key, settings[key] ? 'on' : 'off');
-            
             const statusEl = btn.querySelector('.status');
             statusEl.innerText = settings[key] ? 'ВКЛ' : 'ВЫКЛ';
             statusEl.style.color = settings[key] ? '#4ec0ca' : '#ff4f4f';
-            
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-            }
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
         };
     };
 
     toggleSetting('sound', 'toggle-sound');
     toggleSetting('music', 'toggle-music');
-    
-    // --- 4. ССЫЛКИ ---
+
     const openLink = (url) => {
-        if (window.Telegram?.WebApp?.openTelegramLink) {
-            window.Telegram.WebApp.openTelegramLink(url);
-        } else {
-            window.open(url, '_blank');
-        }
+        if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
+        else window.open(url, '_blank');
     };
 
     document.getElementById('btn-channel').onclick = () => openLink('https://t.me/valx7');
