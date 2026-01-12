@@ -522,6 +522,8 @@ function updateGlobalUI() {
     if (scenes.game && !scenes.game.classList.contains('hidden')) {
         updatePowerupsPanel();
     }
+    if (typeof window.refreshWalletUI === 'function') window.refreshWalletUI();
+
 }
 window.updateGlobalUI = updateGlobalUI;
 

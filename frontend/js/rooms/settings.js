@@ -1,5 +1,5 @@
 /**
- * js/rooms/settings.js - НАСТРОЙКИ (FIXED WALLET)
+ * js/rooms/settings.js - НАСТРОЙКИ (СТИЛЬ МАГАЗИНА + СИНХРОНИЗАЦИЯ)
  */
 import * as api from '../../api.js';
 
@@ -22,28 +22,31 @@ export function initSettings() {
                         <div class="icon">💎</div>
                         <div class="name">КОШЕЛЕК</div>
                     </div>
-                    <div id="wallet-status-text" style="font-size: 10px; font-weight: 900; color: #aaa;">CHECKING...</div>
+                    <div id="wallet-status-text" style="font-size: 10px; font-weight: 900; color: #aaa;">OFFLINE</div>
                 </div>
 
                 <div id="settings-wallet-root-unique" style="width: 100%; display: flex; justify-content: center;"></div>
 
                 <button id="btn-disconnect-ton" style="
-                    display: none; 
                     background: #ff4747 !important; 
                     color: white !important; 
                     border: none !important; 
                     border-radius: 30px !important; 
-                    padding: 12px 0 !important; 
+                    padding: 10px 0 !important; 
                     width: 100% !important; 
                     margin-top: 5px !important; 
                     font-weight: 900 !important; 
                     font-size: 12px !important;
                     cursor: pointer !important;
+                    display: none; 
                     box-shadow: 0 4px 0 #cc0000 !important;
                     transition: transform 0.1s !important;
-                    text-transform: uppercase !important;
                 ">
                     🚪 DISCONNECT WALLET
+                </button>
+                
+                <button id="manual-wallet-btn" class="action-btn btn-blue" style="display: none; width: 100%;">
+                    CONNECT WALLET
                 </button>
             </div>
 
@@ -75,37 +78,40 @@ export function initSettings() {
                     <span style="font-size: 12px; font-weight: 900; color: #333;">🆘 ПОМОЩЬ</span>
                 </button>
             </div>
+            
+            <div class="version-info" style="margin-top: 20px; font-size: 10px; opacity: 0.4; color: #fff; text-align: center;">
+                v1.2.2
+            </div>
         </div>
     `;
 
     // --- 2. ЛОГИКА КОШЕЛЬКА ---
-    
-    const updateWalletUI = () => {
+
+    // Глобальная функция обновления для вызова из main.js или onStatusChange
+    window.refreshWalletUI = () => {
         const discBtn = document.getElementById('btn-disconnect-ton');
-        const walletRoot = document.getElementById('settings-wallet-root-unique');
+        const manualBtn = document.getElementById('manual-wallet-btn');
         const statusText = document.getElementById('wallet-status-text');
+        const walletRoot = document.getElementById('settings-wallet-root-unique');
 
         if (!window.wallet || !window.wallet.tonConnectUI) return;
 
-        //account — самый надежный способ проверки
+        const isConnected = window.wallet.tonConnectUI.connected;
         const account = window.wallet.tonConnectUI.account;
-        const isConnected = !!account;
 
         if (isConnected) {
-            // СКРЫВАЕМ СИНЮЮ, ПОКАЗЫВАЕМ КРАСНУЮ
-            if (walletRoot) walletRoot.style.display = 'none';
             if (discBtn) discBtn.style.setProperty('display', 'block', 'important');
-            
-            if (statusText) {
+            if (walletRoot) walletRoot.style.display = 'none';
+            if (manualBtn) manualBtn.style.display = 'none';
+
+            if (statusText && account?.address) {
                 const addr = account.address;
                 statusText.innerText = addr.slice(0, 4) + '...' + addr.slice(-4);
                 statusText.style.color = "#4ec0ca";
             }
         } else {
-            // ПОКАЗЫВАЕМ СИНЮЮ, СКРЫВАЕМ КРАСНУЮ
-            if (walletRoot) walletRoot.style.display = 'flex';
             if (discBtn) discBtn.style.setProperty('display', 'none', 'important');
-            
+            if (walletRoot) walletRoot.style.display = 'flex';
             if (statusText) {
                 statusText.innerText = "OFFLINE";
                 statusText.style.color = "#ff4f4f";
@@ -113,44 +119,56 @@ export function initSettings() {
         }
     };
 
-    const initWallet = async () => {
+    const attemptRender = (retries = 0) => {
         if (window.wallet && window.wallet.tonConnectUI) {
-            // Привязываем корень кнопки
-            window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
-            
-            // Сразу проверяем статус
-            updateWalletUI();
-
-            // Слушаем изменения (подключение/отключение)
-            window.wallet.tonConnectUI.onStatusChange(() => {
-                updateWalletUI();
-            });
+            try {
+                // Привязываем синюю кнопку к контейнеру
+                window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
+                
+                // Начальное обновление
+                window.refreshWalletUI();
+                
+                // Подписка на изменения (чтобы кнопки менялись сразу при коннекте)
+                window.wallet.tonConnectUI.onStatusChange(() => window.refreshWalletUI());
+            } catch (e) {
+                console.error("Wallet UI Error", e);
+                const mBtn = document.getElementById('manual-wallet-btn');
+                if (mBtn) mBtn.style.display = 'block';
+            }
         } else {
-            // Если объект еще не готов, пробуем через 300мс
-            setTimeout(initWallet, 300);
+            if (retries < 15) {
+                setTimeout(() => attemptRender(retries + 1), 300);
+            } else {
+                const mBtn = document.getElementById('manual-wallet-btn');
+                if (mBtn) mBtn.style.display = 'block';
+            }
         }
     };
 
-    initWallet();
+    attemptRender();
 
-    // Обработка клика по красной кнопке
-    const discBtn = document.getElementById('btn-disconnect-ton');
-    if (discBtn) {
-        discBtn.onclick = async () => {
-            discBtn.style.transform = "scale(0.95)";
-            try {
-                if (window.wallet && window.wallet.tonConnectUI) {
+    // Логика кнопки Disconnect
+    const dBtn = document.getElementById('btn-disconnect-ton');
+    if (dBtn) {
+        dBtn.onclick = async () => {
+            dBtn.style.transform = "scale(0.95)";
+            if (window.wallet && window.wallet.tonConnectUI) {
+                try {
                     await window.wallet.tonConnectUI.disconnect();
-                    updateWalletUI();
-                }
-            } catch (e) {
-                console.error("Disconnect error", e);
+                    window.refreshWalletUI();
+                } catch (e) { console.error("Disconnect error", e); }
             }
-            setTimeout(() => discBtn.style.transform = "scale(1)", 100);
+            setTimeout(() => dBtn.style.transform = "scale(1)", 100);
         };
     }
 
-    // --- 3. ОСТАЛЬНАЯ ЛОГИКА ---
+    // Бэкап кнопка
+    const manualBtn = document.getElementById('manual-wallet-btn');
+    if (manualBtn) {
+        manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
+    }
+
+    // --- 3. ЛОГИКА НАСТРОЕК (ЗВУК/МУЗЫКА) ---
     const toggleSetting = (key, btnId) => {
         const btn = document.getElementById(btnId);
         if (!btn) return;
@@ -166,7 +184,8 @@ export function initSettings() {
 
     toggleSetting('sound', 'toggle-sound');
     toggleSetting('music', 'toggle-music');
-
+    
+    // --- 4. ССЫЛКИ ---
     const openLink = (url) => {
         if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
         else window.open(url, '_blank');
