@@ -88,50 +88,33 @@ export function initSettings() {
     // --- 2. ЛОГИКА КОШЕЛЬКА ---
     const updateWalletState = () => {
         const discBtn = document.getElementById('btn-disconnect-ton');
-        const manualBtn = document.getElementById('manual-wallet-btn');
+        const walletRoot = document.getElementById('settings-wallet-root-unique');
         const statusText = document.getElementById('wallet-status-text');
-        const walletRoot = document.getElementById('settings-wallet-root-unique'); // Стандартная кнопка
 
         if (!window.wallet || !window.wallet.tonConnectUI) return;
 
-        const isConnected = window.wallet.tonConnectUI.connected;
+        // Самая надежная проверка: есть ли данные аккаунта
         const account = window.wallet.tonConnectUI.account;
+        const isConnected = !!account; 
 
         if (isConnected) {
-            // === ЕСЛИ ПОДКЛЮЧЕН ===
+            // КОШЕЛЕК ПОДКЛЮЧЕН
+            if(discBtn) discBtn.style.setProperty('display', 'block', 'important'); // Форсируем показ
+            if(walletRoot) walletRoot.style.display = 'none'; // Прячем синюю кнопку
             
-            // 1. Показываем КРАСНУЮ кнопку
-            if(discBtn) discBtn.style.display = 'block';
-            
-            // 2. Скрываем стандартную СИНЮЮ кнопку (чтобы была "вместо")
-            if(walletRoot) walletRoot.style.display = 'none';
-            if(manualBtn) manualBtn.style.display = 'none';
-
-            // 3. Показываем сокращенный адрес в статусе (так как синюю кнопку мы скрыли)
             if(statusText) {
-                if (account && account.address) {
-                    // Форматируем адрес: UQ...ABCD
-                    const rawAddress = account.address;
-                    const short = rawAddress.slice(0, 4) + '...' + rawAddress.slice(-4);
-                    statusText.innerText = short;
-                } else {
-                    statusText.innerText = "ONLINE";
-                }
-                statusText.style.color = "#4ec0ca"; // Зеленый/Голубой цвет
+                const addr = account.address;
+                statusText.innerText = addr.slice(0, 4) + '...' + addr.slice(-4);
+                statusText.style.color = "#4ec0ca";
             }
-
         } else {
-            // === ЕСЛИ НЕ ПОДКЛЮЧЕН ===
-            
-            // 1. Скрываем КРАСНУЮ кнопку
+            // КОШЕЛЕК НЕ ПОДКЛЮЧЕН
             if(discBtn) discBtn.style.display = 'none';
-            
-            // 2. Показываем стандартную СИНЮЮ кнопку
             if(walletRoot) walletRoot.style.display = 'flex';
             
-            if(statusText) { 
-                statusText.innerText = "OFFLINE"; 
-                statusText.style.color = "#ff4f4f"; // Красный цвет текста
+            if(statusText) {
+                statusText.innerText = "OFFLINE";
+                statusText.style.color = "#ff4f4f";
             }
         }
     };
