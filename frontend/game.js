@@ -104,7 +104,7 @@ export class Game {
     revive() {
         this.isRunning = true;
         this.reviveUsed = true;
-        
+        if (window.audioManager) window.audioManager.playSound('swoosh');
         // Подбрасываем птицу
         this.bird.velocity = -4; 
         
@@ -125,6 +125,7 @@ export class Game {
 
     flap() {
         if (!this.isRunning || this.isPaused) return;
+        if (window.audioManager) window.audioManager.playSound('flap');
         this.bird.velocity = this.jump;
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
@@ -183,6 +184,7 @@ export class Game {
         const groundTop = window.innerHeight - this.ground.h;
         if (this.bird.y + this.bird.size > groundTop) {
             this.bird.y = groundTop - this.bird.size;
+            if (window.audioManager) window.audioManager.playSound('die');
             this.gameOver();
             return;
         }
@@ -206,6 +208,7 @@ export class Game {
             if (hitX && hitY) {
                 // Если призрак (после ревайва), то не умираем
                 if (this.isGhost) continue;
+                if (window.audioManager) window.audioManager.playSound('hit');
                 
                 this.gameOver();
                 return;
@@ -214,6 +217,7 @@ export class Game {
             if (!p.passed && p.x + p.width < this.bird.x) {
                 p.passed = true;
                 this.score++;
+                if (window.audioManager) window.audioManager.playSound('point');
                             // "КРИЧИМ" В ЭФИР, ЧТО ПРОЛЕТЕЛИ ТРУБУ
             window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'pipe_passed' } }));
             
