@@ -309,6 +309,7 @@ async function init() {
         const el = document.getElementById(id);
         if (el) el.onclick = (e) => {
             e.preventDefault(); e.stopPropagation();
+            window.audioManager?.playSound('button_click');
             tg?.HapticFeedback.impactOccurred('light');
             showRoom(room);
         };
