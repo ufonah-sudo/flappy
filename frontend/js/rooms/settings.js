@@ -151,6 +151,7 @@ export function initSettings() {
     const dBtn = document.getElementById('btn-disconnect-ton');
     if (dBtn) {
         dBtn.onclick = async () => {
+            if (window.audioManager) window.audioManager.playSound('button_click');
             dBtn.style.transform = "scale(0.95)";
             if (window.wallet && window.wallet.tonConnectUI) {
                 try {
@@ -165,29 +166,40 @@ export function initSettings() {
     // Бэкап кнопка
     const manualBtn = document.getElementById('manual-wallet-btn');
     if (manualBtn) {
-        manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
-    }
+    manualBtn.onclick = () => {
+        if (window.audioManager) window.audioManager.playSound('button_click');
+        window.wallet?.tonConnectUI?.openModal();
+    };
+}
 
     // --- 3. ЛОГИКА НАСТРОЕК (ЗВУК/МУЗЫКА) ---
     const toggleSetting = (key, btnId) => {
-        const btn = document.getElementById(btnId);
-        if (!btn) return;
-        btn.onclick = () => {
-            settings[key] = !settings[key];
-            localStorage.setItem(key, settings[key] ? 'on' : 'off');
-            if (window.audioManager) window.audioManager.updateAudioSettings();
-            const statusEl = btn.querySelector('.status');
-            statusEl.innerText = settings[key] ? 'ВКЛ' : 'ВЫКЛ';
-            statusEl.style.color = settings[key] ? '#4ec0ca' : '#ff4f4f';
-            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
-        };
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.onclick = () => {
+        // 🎵 ЗВУК КЛИКА (Проигрываем ПЕРЕД переключением, чтобы игрок услышал подтверждение)
+        if (window.audioManager) window.audioManager.playSound('button_click');
+
+        settings[key] = !settings[key];
+        localStorage.setItem(key, settings[key] ? 'on' : 'off');
+        
+        // Обновляем менеджер (он подхватит новые настройки из localStorage)
+        if (window.audioManager) window.audioManager.updateAudioSettings();
+
+        // Обновление UI...
+        const statusEl = btn.querySelector('.status');
+        statusEl.innerText = settings[key] ? 'ВКЛ' : 'ВЫКЛ';
+        statusEl.style.color = settings[key] ? '#4ec0ca' : '#ff4f4f';
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
     };
+};
 
     toggleSetting('sound', 'toggle-sound');
     toggleSetting('music', 'toggle-music');
     
     // --- 4. ССЫЛКИ ---
     const openLink = (url) => {
+        if (window.audioManager) window.audioManager.playSound('button_click');
         if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
         else window.open(url, '_blank');
     };

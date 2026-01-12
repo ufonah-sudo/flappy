@@ -121,6 +121,7 @@ export function initShop() {
     const contents = container.querySelectorAll('.shop-tab-content');
     tabs.forEach(tab => {
         tab.onclick = () => {
+            if (window.audioManager) window.audioManager.playSound('button_click');
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active-view'));
             

@@ -174,6 +174,7 @@ const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaime
         currentCard.onclick = async () => {
             // Проверяем, не заблокирован ли 5-й день
             if(currentCard.classList.contains('locked')) {
+                if (window.audioManager) window.audioManager.playSound('button_click');
                 tg?.showAlert("Сначала собери все предыдущие награды!");
                 return;
             }
@@ -183,6 +184,7 @@ const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaime
                 const res = await api.apiRequest('daily', 'POST', { action: 'claim_streak' });
 
                 if (res.success) {
+                    if (window.audioManager) window.audioManager.playSound('coin');
                     // 2. Выдаем награду на стороне клиента
                     const rewardConfig = dailyRewards[userStep - 1]; // Находим конфиг награды
                     const [value, type] = rewardConfig.reward.split(' ');
@@ -229,6 +231,7 @@ const isClaimed = item.day < userStep || (item.day === userStep && alreadyClaime
                     const res = await api.apiRequest('daily', 'POST', { action: 'claim_bonus_chest' });
                     
                     if(res.success) {
+                        if (window.audioManager) window.audioManager.playSound('chest_open');
                         const rewardText = (res.reward || "Награда")
                             .replace('coins', '🟡')
                             .replace('crystals', '💎')

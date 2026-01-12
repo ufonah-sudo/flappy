@@ -100,6 +100,7 @@ export function initInventory() {
     
     tabs.forEach(tab => {
         tab.onclick = () => {
+            if (window.audioManager) window.audioManager.playSound('button_click');
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active-view'));
             
@@ -112,13 +113,18 @@ export function initInventory() {
 
     // Переход в магазин
     container.querySelectorAll('.go-shop-btn').forEach(btn => {
-        btn.onclick = () => window.showRoom('shop');
-    });
+    btn.onclick = () => {
+        // 🎵 ЗВУК КЛИКА
+        if (window.audioManager) window.audioManager.playSound('button_click');
+        window.showRoom('shop');
+    };
+});
     
     // Экипировка скина (Заглушка)
     container.querySelectorAll('.equip-btn').forEach(btn => {
         btn.onclick = (e) => {
             const id = e.target.dataset.id;
+            if (window.audioManager) window.audioManager.playSound('swoosh');
             // Тут можно добавить логику смены спрайта птицы
             // window.game.setSkin(id);
             alert(`Скин ${id} выбран! (в разработке)`);
