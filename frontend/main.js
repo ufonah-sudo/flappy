@@ -17,6 +17,8 @@ import { CareerGame } from './career.js';
 import { WalletManager } from './wallet.js'; 
 
 import { DailyTracker } from './js/DailyTracker.js';
+import { AudioManager } from './js/audio_manager.js';
+
 
 
 // Импорт функций для инициализации каждой комнаты (экрана)
@@ -272,7 +274,7 @@ async function init() {
             });
         }
     } catch (e) { console.warn("Wallet skip:", e); }
-
+window.audioManager = new AudioManager();
     // --- СЛУШАТЕЛЬ СОБЫТИЯ ПОКУПКИ ---
     window.addEventListener('buy_item', async (e) => {
         const { id, price, type, powerupType } = e.detail;
@@ -550,6 +552,10 @@ function updateGlobalUI() {
         updatePowerupsPanel();
     }
     if (typeof window.refreshWalletUI === 'function') window.refreshWalletUI();
+
+    if (window.audioManager) {
+        window.audioManager.updateAudioSettings();
+    }
 
 }
 window.updateGlobalUI = updateGlobalUI;
