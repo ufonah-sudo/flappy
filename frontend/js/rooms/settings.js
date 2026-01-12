@@ -31,14 +31,14 @@ export function initSettings() {
                     background: #ff4747; 
                     color: white; 
                     border: none; 
-                    border-radius: 12px; 
+                    border-radius: 30px; /* Сделали овалом */
                     padding: 10px 0; 
                     width: 100%; 
-                    margin-top: 12px; 
+                    margin-top: 5px; 
                     font-weight: 900; 
                     font-size: 12px;
                     cursor: pointer;
-                    display: none; 
+                    display: none; /* По умолчанию скрыта */
                     box-shadow: 0 4px 0 #cc0000;
                     transition: transform 0.1s;
                 ">
@@ -80,7 +80,7 @@ export function initSettings() {
             </div>
             
             <div class="version-info" style="margin-top: 20px; font-size: 10px; opacity: 0.4; color: #fff; text-align: center;">
-                v1.2.1
+                v1.2.2
             </div>
         </div>
     `;
@@ -90,34 +90,61 @@ export function initSettings() {
         const discBtn = document.getElementById('btn-disconnect-ton');
         const manualBtn = document.getElementById('manual-wallet-btn');
         const statusText = document.getElementById('wallet-status-text');
+        const walletRoot = document.getElementById('settings-wallet-root-unique'); // Стандартная кнопка
 
-        // Проверяем наличие объекта кошелька
         if (!window.wallet || !window.wallet.tonConnectUI) return;
 
-        // isConnected может быть свойством или методом UI, лучше проверять account
-        const isConnected = window.wallet.tonConnectUI.connected || window.wallet.tonConnectUI.account;
+        const isConnected = window.wallet.tonConnectUI.connected;
+        const account = window.wallet.tonConnectUI.account;
 
         if (isConnected) {
-            // Если подключен: показываем красную кнопку, меняем статус
+            // === ЕСЛИ ПОДКЛЮЧЕН ===
+            
+            // 1. Показываем КРАСНУЮ кнопку
             if(discBtn) discBtn.style.display = 'block';
+            
+            // 2. Скрываем стандартную СИНЮЮ кнопку (чтобы была "вместо")
+            if(walletRoot) walletRoot.style.display = 'none';
             if(manualBtn) manualBtn.style.display = 'none';
-            if(statusText) { statusText.innerText = "ONLINE"; statusText.style.color = "#4ec0ca"; }
+
+            // 3. Показываем сокращенный адрес в статусе (так как синюю кнопку мы скрыли)
+            if(statusText) {
+                if (account && account.address) {
+                    // Форматируем адрес: UQ...ABCD
+                    const rawAddress = account.address;
+                    const short = rawAddress.slice(0, 4) + '...' + rawAddress.slice(-4);
+                    statusText.innerText = short;
+                } else {
+                    statusText.innerText = "ONLINE";
+                }
+                statusText.style.color = "#4ec0ca"; // Зеленый/Голубой цвет
+            }
+
         } else {
-            // Если НЕ подключен: скрываем красную кнопку
+            // === ЕСЛИ НЕ ПОДКЛЮЧЕН ===
+            
+            // 1. Скрываем КРАСНУЮ кнопку
             if(discBtn) discBtn.style.display = 'none';
-            if(statusText) { statusText.innerText = "OFFLINE"; statusText.style.color = "#ff4f4f"; }
+            
+            // 2. Показываем стандартную СИНЮЮ кнопку
+            if(walletRoot) walletRoot.style.display = 'flex';
+            
+            if(statusText) { 
+                statusText.innerText = "OFFLINE"; 
+                statusText.style.color = "#ff4f4f"; // Красный цвет текста
+            }
         }
     };
 
     const attemptRender = (retries = 0) => {
         if (window.wallet && window.wallet.tonConnectUI) {
             try {
-                // Рендерим стандартную кнопку в контейнер
+                // Рендерим стандартную кнопку
                 window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
                 
                 updateWalletState();
                 
-                // Подписка на изменения статуса
+                // Следим за изменениями
                 window.wallet.tonConnectUI.onStatusChange(() => updateWalletState());
             } catch (e) {
                 console.error("Wallet UI Error", e);
@@ -140,12 +167,14 @@ export function initSettings() {
 
             if (window.wallet && window.wallet.tonConnectUI) {
                 await window.wallet.tonConnectUI.disconnect();
+                // updateWalletState вызовется автоматически через onStatusChange, 
+                // но можно вызвать и вручную для мгновенной реакции
                 updateWalletState();
             }
         };
     }
 
-    // Ручная кнопка подключения (на случай ошибки UI)
+    // Ручная кнопка (бэкап)
     const manualBtn = document.getElementById('manual-wallet-btn');
     if (manualBtn) manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
 
