@@ -87,6 +87,20 @@ const handler = async (req, res) => {
             return res.status(200).json({ user: updated });
         }
 
+                // --- ОБРАБОТКА ACTION: UPDATE_WALLET_INFO (НОВОЕ) ---
+        if (action === 'update_wallet_info') {
+            const { wallet_address } = req.body;
+
+            await supabase
+                .from('users')
+                .update({ wallet_address: wallet_address }) // Сохраняем адрес
+                .eq('id', user.id);
+            
+            console.log(`User ${user.id} wallet updated to: ${wallet_address}`);
+            return res.status(200).json({ success: true });
+        }
+
+
         // --- АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ ---
         let { data: dbUser, error: fetchError } = await supabase
             .from('users')

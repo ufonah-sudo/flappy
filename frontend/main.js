@@ -244,7 +244,34 @@ async function init() {
     }
     
     // Инициализация кошелька
-    try { window.wallet = new WalletManager(); } catch (e) { console.warn("Wallet skip"); }
+    try { 
+        window.wallet = new WalletManager(); 
+        
+        // 👇 ДОБАВЛЕНО: Отслеживаем статус кошелька 👇
+        if (window.wallet.tonConnectUI) {
+            window.wallet.tonConnectUI.onStatusChange(async (wallet) => {
+                const isConnected = !!wallet;
+                if (isConnected) {
+                    const walletAddress = wallet.account.address;
+                    console.log("Wallet connected:", walletAddress);
+                    // Отправляем адрес на сервер
+                    await api.apiRequest('auth', 'POST', { 
+                        action: 'update_wallet_info', 
+                        wallet_address: walletAddress 
+                    });
+                } else {
+                    console.log("Wallet disconnected.");
+                    // Если отключились, можно удалить адрес с сервера
+                    await api.apiRequest('auth', 'POST', { 
+                        action: 'update_wallet_info', 
+                        wallet_address: null 
+                    });
+                }
+                // Обновляем UI, где отображается кошелек (например, в Настройках)
+                window.updateGlobalUI?.(); 
+            });
+        }
+    } catch (e) { console.warn("Wallet skip:", e); }
 
     // --- СЛУШАТЕЛЬ СОБЫТИЯ ПОКУПКИ ---
     window.addEventListener('buy_item', async (e) => {
