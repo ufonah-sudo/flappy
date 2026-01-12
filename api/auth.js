@@ -33,42 +33,12 @@ const handler = async (req, res) => {
                 .from('referrals')
                 .select(`
                     referred_id,
-                    status,                      
-                    referred:users!referred_id ( id, username, first_name, last_name ) 
+                    status, 
+                    referred:users!referred_id ( username )
                 `)
                 .eq('referrer_id', user.id);
-            if (friendsError) {
-                console.error("ERROR fetching friends from DB:", friendsError.message);
-                throw friendsError;
-            }
-            
-            // 👇 ВОТ ЭТОТ БЛОК ФОРМАТИРУЕТ ДАННЫЕ 👇
-            const formattedFriends = (friends || []).map(friend => {
-                const referredUser = friend.referred;
-                let displayUsername = 'Неизвестный';
-
-                // 1. Приоритет: Telegram username
-                if (referredUser?.username) {
-                    displayUsername = referredUser.username;
-                } 
-                // 2. Если нет username, используем имя + фамилию
-                else if (referredUser?.first_name || referredUser?.last_name) {
-                    displayUsername = (referredUser.first_name || '') + ' ' + (referredUser.last_name || '');
-                    displayUsername = displayUsername.trim(); // Удаляем лишние пробелы
-                } 
-                // 3. Если и этого нет, выводим ID
-                else {
-                    displayUsername = `ID: ${friend.referred_id}`;
-                }
-                
-                return {
-                    ...friend, // Копируем все существующие поля
-                    display_name: displayUsername // <-- Создаем новое поле display_name
-                };
-            });
-            
-            console.log("Fetched and formatted friends:", formattedFriends);
-            return res.status(200).json({ friends: formattedFriends });
+            if (friendsError) throw friendsError;
+            return res.status(200).json({ friends: friends || [] });
         }
 
         // --- ОБРАБОТКА ACTION: CLAIM_FRIEND ---
