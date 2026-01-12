@@ -128,14 +128,20 @@ export class Game {
         if (window.audioManager) window.audioManager.playSound('flap');
         this.bird.velocity = this.jump;
         if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+     //       window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
     }
 
     handleInput(e) {
-        if (this.isRunning && e.type === 'touchstart') e.preventDefault();
-        this.flap();
-    }
+    // Останавливаем дальнейшее распространение события
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+
+    // Если это mousedown, а мы на тач-устройстве — игнорируем
+    if (e.type === 'mousedown' && 'ontouchstart' in window) return;
+
+    this.flap();
+}
 
     handleKeyDown(e) {
         if (e.code === 'Space') {
