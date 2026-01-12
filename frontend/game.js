@@ -125,10 +125,10 @@ export class Game {
 
     flap() {
         if (!this.isRunning || this.isPaused) return;
-        if (window.audioManager) window.audioManager.playSound('flap');
+        window.audioManager.playSound('flap'); // Теперь это летит мгновенно
         this.bird.velocity = this.jump;
         if (window.Telegram?.WebApp?.HapticFeedback) {
-     //       window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
     }
 

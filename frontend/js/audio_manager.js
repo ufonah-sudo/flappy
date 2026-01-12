@@ -1,22 +1,23 @@
-// frontend/js/audio_manager.js
+/**
+ * js/audio_manager.js - OPTIMIZED FOR IOS/ANDROID (WEB AUDIO API)
+ */
 export class AudioManager {
     constructor() {
-        this.sounds = {};
+        // Создаем аудио-контекст (стандарт для игр)
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.buffers = {}; // Здесь будем хранить декодированные звуки
         this.music = null;
-        this.currentMusicVolume = 0.3; // Громкость музыки (0.0 - 1.0)
-        this.currentSoundVolume = 0.7; // Громкость звуков
-        this.isMusicPlaying = false;
+        
+        this.currentMusicVolume = 0.3;
+        this.currentSoundVolume = 0.7;
 
-        // Загружаем настройки из localStorage
         this.soundEnabled = localStorage.getItem('sound') !== 'off';
         this.musicEnabled = localStorage.getItem('music') !== 'off';
 
-        this.loadSounds();
-        this.initMusic();
+        this.loadAll();
     }
 
-    // Загрузка всех звуковых файлов
-    loadSounds() {
+    async loadAll() {
         const soundFiles = {
             flap: 'flap.mp3',
             point: 'point.mp3',
@@ -30,57 +31,77 @@ export class AudioManager {
             purchase: 'purchase.mp3'
         };
 
-        for (const key in soundFiles) {
-            this.sounds[key] = new Audio(`/frontend/assets/audio/${soundFiles[key]}`);
-            this.sounds[key].volume = this.currentSoundVolume;
+        // Загружаем и декодируем все звуки сразу в память
+        for (const [key, fileName] of Object.entries(soundFiles)) {
+            try {
+                const response = await fetch(`/frontend/assets/audio/${fileName}`);
+                const arrayBuffer = await response.arrayBuffer();
+                this.buffers[key] = await this.ctx.decodeAudioData(arrayBuffer);
+            } catch (e) {
+                console.error(`Ошибка загрузки звука ${key}:`, e);
+            }
         }
+
+        // Музыку оставляем обычным Audio-тегом, так как это длинный стрим
+        this.initMusic();
     }
 
-    // Инициализация фоновой музыки
     initMusic() {
         this.music = new Audio('/frontend/assets/audio/bg_music.mp3');
-        this.music.loop = true; // Зацикливаем
+        this.music.loop = true;
         this.music.volume = this.currentMusicVolume;
-        // Запускаем музыку, если она включена в настройках
-        if (this.musicEnabled) {
-            this.playMusic();
-        }
+        if (this.musicEnabled) this.playMusic();
     }
 
-    // Проигрывание звукового эффекта
+    /**
+     * ПРОИГРЫВАНИЕ ЭФФЕКТА (БЕЗ ЛАГОВ)
+     */
     playSound(key) {
-        if (!this.soundEnabled || !this.sounds[key]) return;
-        // Клонируем, чтобы звуки могли накладываться
-        const sound = this.sounds[key].cloneNode();
-        sound.volume = this.currentSoundVolume;
-        sound.play().catch(e => console.warn("Audio play failed:", key, e));
-    }
+        if (!this.soundEnabled || !this.buffers[key]) return;
 
-    // Запуск/продолжение музыки
-    playMusic() {
-        if (!this.musicEnabled || this.isMusicPlaying) return;
-        this.music.play().then(() => {
-            this.isMusicPlaying = true;
-        }).catch(e => console.warn("Music play failed:", e));
-    }
-
-    // Пауза музыки
-    pauseMusic() {
-        if (this.isMusicPlaying) {
-            this.music.pause();
-            this.isMusicPlaying = false;
+        // На iOS контекст часто "спит", пока пользователь не тапнет по экрану
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
         }
+
+        // Создаем виртуальный источник звука (BufferSource)
+        // Это "одноразовый" легкий объект, который не нагружает память
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.buffers[key];
+
+        // Узел громкости
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = this.currentSoundVolume;
+
+        // Соединяем: Источник -> Громкость -> Динамики
+        source.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+
+        source.start(0);
     }
 
-    // Обновление состояния аудио (из настроек)
+    playMusic() {
+        if (!this.musicEnabled) return;
+        this.music.play().catch(() => {
+            // iOS блокирует автоплей музыки до первого взаимодействия
+            const resumeOnAction = () => {
+                this.music.play();
+                this.ctx.resume();
+                window.removeEventListener('touchstart', resumeOnAction);
+            };
+            window.addEventListener('touchstart', resumeOnAction);
+        });
+    }
+
+    pauseMusic() {
+        if (this.music) this.music.pause();
+    }
+
     updateAudioSettings() {
         this.soundEnabled = localStorage.getItem('sound') !== 'off';
         this.musicEnabled = localStorage.getItem('music') !== 'off';
 
-        if (this.musicEnabled) {
-            this.playMusic();
-        } else {
-            this.pauseMusic();
-        }
+        if (this.musicEnabled) this.playMusic();
+        else this.pauseMusic();
     }
 }
