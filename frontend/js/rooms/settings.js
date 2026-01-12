@@ -12,36 +12,44 @@ export function initSettings() {
         music: localStorage.getItem('music') !== 'off'
     };
 
-    // --- 1. HTML: КРАСИВЫЕ БЛОКИ (.powerup-card) ---
+    // --- 1. HTML: ИНТЕРФЕЙС ---
     container.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; padding-top: 10px;">
             
-            <!-- БЛОК КОШЕЛЬКА (Специальная карточка) -->
             <div class="powerup-card" style="border-color: #0098ea; flex-direction: column; align-items: center; padding: 15px;">
                 <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                     <div style="display: flex; align-items: center;">
                         <div class="icon">💎</div>
                         <div class="name">КОШЕЛЕК</div>
                     </div>
-                    <!-- Статус (подключен или нет) -->
                     <div id="wallet-status-text" style="font-size: 10px; font-weight: 900; color: #aaa;">OFFLINE</div>
                 </div>
 
-                <!-- Место для синей кнопки -->
                 <div id="settings-wallet-root-unique" style="width: 100%; display: flex; justify-content: center;"></div>
 
-                <!-- Кнопка "Отключить" (появляется при подключении) -->
-                <button id="btn-disconnect-ton" class="action-btn" style="background: #ff4f4f; display: none; width: 100%; margin-top: 10px;">
-                    ОТКЛЮЧИТЬ
+                <button id="btn-disconnect-ton" style="
+                    background: #ff4747; 
+                    color: white; 
+                    border: none; 
+                    border-radius: 12px; 
+                    padding: 10px 0; 
+                    width: 100%; 
+                    margin-top: 12px; 
+                    font-weight: 900; 
+                    font-size: 12px;
+                    cursor: pointer;
+                    display: none; 
+                    box-shadow: 0 4px 0 #cc0000;
+                    transition: transform 0.1s;
+                ">
+                    🚪 DISCONNECT WALLET
                 </button>
                 
-                <!-- Запасная кнопка -->
                 <button id="manual-wallet-btn" class="action-btn btn-blue" style="display: none; width: 100%;">
                     CONNECT WALLET
                 </button>
             </div>
 
-            <!-- ЗВУК -->
             <div id="toggle-sound" class="powerup-card" style="cursor: pointer;">
                 <div style="display: flex; align-items: center;">
                     <div class="icon">🔊</div>
@@ -52,7 +60,6 @@ export function initSettings() {
                 </div>
             </div>
 
-            <!-- МУЗЫКА -->
             <div id="toggle-music" class="powerup-card" style="cursor: pointer;">
                 <div style="display: flex; align-items: center;">
                     <div class="icon">🎵</div>
@@ -63,7 +70,6 @@ export function initSettings() {
                 </div>
             </div>
 
-            <!-- ССЫЛКИ -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                 <button id="btn-channel" class="powerup-card" style="justify-content: center; cursor: pointer; border-color: #ffd700;">
                     <span style="font-size: 12px; font-weight: 900; color: #333;">📢 КАНАЛ</span>
@@ -74,7 +80,7 @@ export function initSettings() {
             </div>
             
             <div class="version-info" style="margin-top: 20px; font-size: 10px; opacity: 0.4; color: #fff; text-align: center;">
-                v1.2.0
+                v1.2.1
             </div>
         </div>
     `;
@@ -85,13 +91,19 @@ export function initSettings() {
         const manualBtn = document.getElementById('manual-wallet-btn');
         const statusText = document.getElementById('wallet-status-text');
 
-        if (!window.wallet) return;
+        // Проверяем наличие объекта кошелька
+        if (!window.wallet || !window.wallet.tonConnectUI) return;
 
-        if (window.wallet.isConnected) {
+        // isConnected может быть свойством или методом UI, лучше проверять account
+        const isConnected = window.wallet.tonConnectUI.connected || window.wallet.tonConnectUI.account;
+
+        if (isConnected) {
+            // Если подключен: показываем красную кнопку, меняем статус
             if(discBtn) discBtn.style.display = 'block';
             if(manualBtn) manualBtn.style.display = 'none';
             if(statusText) { statusText.innerText = "ONLINE"; statusText.style.color = "#4ec0ca"; }
         } else {
+            // Если НЕ подключен: скрываем красную кнопку
             if(discBtn) discBtn.style.display = 'none';
             if(statusText) { statusText.innerText = "OFFLINE"; statusText.style.color = "#ff4f4f"; }
         }
@@ -100,12 +112,15 @@ export function initSettings() {
     const attemptRender = (retries = 0) => {
         if (window.wallet && window.wallet.tonConnectUI) {
             try {
+                // Рендерим стандартную кнопку в контейнер
                 window.wallet.tonConnectUI.setConnectButtonRoot('settings-wallet-root-unique');
+                
                 updateWalletState();
                 
-                // Подписка на изменения
+                // Подписка на изменения статуса
                 window.wallet.tonConnectUI.onStatusChange(() => updateWalletState());
             } catch (e) {
+                console.error("Wallet UI Error", e);
                 document.getElementById('manual-wallet-btn').style.display = 'block';
             }
         } else {
@@ -115,18 +130,22 @@ export function initSettings() {
     };
     attemptRender();
 
-    // Кнопка отключения
+    // --- ЛОГИКА КНОПКИ DISCONNECT ---
     const discBtn = document.getElementById('btn-disconnect-ton');
     if (discBtn) {
         discBtn.onclick = async () => {
-            if (window.wallet) {
-                await window.wallet.disconnect();
+            // Анимация нажатия
+            discBtn.style.transform = "scale(0.95)";
+            setTimeout(() => discBtn.style.transform = "scale(1)", 100);
+
+            if (window.wallet && window.wallet.tonConnectUI) {
+                await window.wallet.tonConnectUI.disconnect();
                 updateWalletState();
             }
         };
     }
 
-    // Ручная кнопка подключения
+    // Ручная кнопка подключения (на случай ошибки UI)
     const manualBtn = document.getElementById('manual-wallet-btn');
     if (manualBtn) manualBtn.onclick = () => window.wallet?.tonConnectUI?.openModal();
 
@@ -137,16 +156,13 @@ export function initSettings() {
         if (!btn) return;
 
         btn.onclick = () => {
-            // Меняем значение
             settings[key] = !settings[key];
             localStorage.setItem(key, settings[key] ? 'on' : 'off');
             
-            // Обновляем UI
             const statusEl = btn.querySelector('.status');
             statusEl.innerText = settings[key] ? 'ВКЛ' : 'ВЫКЛ';
             statusEl.style.color = settings[key] ? '#4ec0ca' : '#ff4f4f';
             
-            // Вибрация
             if (window.Telegram?.WebApp?.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
             }
