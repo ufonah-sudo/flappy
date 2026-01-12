@@ -19,7 +19,7 @@ export async function initFriends() {
     // --- 1. ЛОГИКА КНОПКИ "ПРИГЛАСИТЬ" ---
     // Формируем реферальную ссылку
     const userId = state?.user?.id || tg?.initDataUnsafe?.user?.id || '0';
-    const inviteLink = `https://t.me/${BOT_USERNAME}/game?startapp=${userId}`;
+    const inviteLink = `https://t.me/FlappyTonBird_bot/FlappyTon?startapp=${userId}`;
     const shareText = "Лети со мной в Flappy TON! 🐦 Заработай реальные монеты! 💰";
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
 
@@ -73,10 +73,11 @@ export async function initFriends() {
                             </div>
                         </div>
                         <div>
-                            <button class="${buttonActionClass} action-btn" data-friend-id="${friend.referred_id}" data-friend-username="${friend.username}"
+                                                       <button class="${buttonActionClass} action-btn" data-friend-id="${friend.referred_id}" data-friend-username="${friend.display_name}" // <--- ИСПОЛЬЗУЕМ display_name
                                 style="background:${buttonColor}; ${isClaimed ? 'pointer-events: none; opacity: 0.7;' : ''}">
                                 ${buttonText}
                             </button>
+
                         </div>
                     </div>
                 `;
