@@ -175,6 +175,7 @@ export function initSettings() {
         btn.onclick = () => {
             settings[key] = !settings[key];
             localStorage.setItem(key, settings[key] ? 'on' : 'off');
+            if (window.audioManager) window.audioManager.updateAudioSettings();
             const statusEl = btn.querySelector('.status');
             statusEl.innerText = settings[key] ? 'ВКЛ' : 'ВЫКЛ';
             statusEl.style.color = settings[key] ? '#4ec0ca' : '#ff4f4f';

@@ -165,6 +165,7 @@ export function initShop() {
                         state.coins = res.newCoins ?? state.coins;
                         state.crystals = res.newCrystals ?? state.crystals;
                         window.updateGlobalUI?.();
+                        if (window.audioManager) window.audioManager.playSound('purchase');
                         tg?.showAlert("Успешно!");
                     }
                 }
@@ -236,6 +237,7 @@ export function initShop() {
                     window.dispatchEvent(new CustomEvent('buy_item', { 
                         detail: { id, price: cost, type: 'powerup', powerupType: id } 
                     }));
+                    if (window.audioManager) window.audioManager.playSound('purchase');
                     button.innerText = "✅";
                     setTimeout(() => initShop(), 1000); 
                 }
