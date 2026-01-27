@@ -326,6 +326,7 @@ export class ArcadeGame {
         const groundTop = window.innerHeight - this.ground.h;
         if (this.bird.y + this.bird.size > groundTop) {
             this.bird.y = groundTop - this.bird.size;
+            if (window.audioManager) window.audioManager.playSound('die');
             this.gameOver();
             return;
         }
@@ -353,6 +354,7 @@ export class ArcadeGame {
                     continue; 
                 } else {
                     // Смерть
+                    if (window.audioManager) window.audioManager.playSound('hit');
                     this.gameOver();
                     return;
                 }
@@ -392,6 +394,9 @@ export class ArcadeGame {
             const bY = this.bird.y + this.bird.size/2;
             if (!c.collected && Math.hypot(bX - c.x, bY - c.y) < 40) {
                 c.collected = true; // Помечаем как собранную
+                if (window.audioManager) window.audioManager.playSound('point'); // Или 'coin', если есть такой звук
+    // ... логика window.state
+
                 if(window.state) {
                     window.state.coins++;
                     window.dispatchEvent(new CustomEvent('game_event', { detail: { type: 'coin_collected' } }));
@@ -416,6 +421,7 @@ export class ArcadeGame {
         this.items = this.items.filter(it => {
             if (Math.hypot(bX - it.x, bY - it.y) < 45) {
                 this.activatePowerupEffect(it.type);
+                if (window.audioManager) window.audioManager.playSound('swoosh');
                 if(window.updateGlobalUI) window.updateGlobalUI();
                 return false; // Удаляем бонус
             }
@@ -532,7 +538,8 @@ export class ArcadeGame {
     handleInput(e) {
         if (!this.isRunning || this.isPaused) return;
         if (e && e.type === 'touchstart') e.preventDefault();
-        
+        // ДОБАВЛЯЕМ ЗВУК
+    if (window.audioManager) window.audioManager.playSound('flap');
         this.bird.velocity = this.jump; // Прыжок
         
         // Вибрация при прыжке
