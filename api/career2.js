@@ -48,33 +48,41 @@ const handler = async (req, res) => {
             return res.status(200).json({ success: true, lives: updated.lives });
         }
 
-        // --- ДЕЙСТВИЕ: COMPLETE_LEVEL (Награда и прогресс) ---
         if (action === 'complete_level') {
             const levelId = parseInt(level);
             if (isNaN(levelId)) return res.status(400).json({ error: 'Invalid level ID' });
 
+            // 1. Сначала просто получаем юзера
             const { data: dbUser, error: userErr } = await supabase
                 .from('users')
                 .select('max_level, coins')
                 .eq('id', user.id)
                 .single();
 
-            if (userErr || !dbUser) throw new Error('User fetch error');
+            if (userErr || !dbUser) {
+                console.error("DB Error or User not found:", userErr);
+                return res.status(404).json({ error: 'User not found' });
+            }
 
-            // Обновляем макс. уровень, если текущий пройденный больше или равен макс.
-            const newMaxLevel = Math.max(dbUser.max_level, levelId + 1);
+            const currentMax = parseInt(dbUser.max_level) || 1;
+            const currentCoins = parseInt(dbUser.coins) || 0;
+            const newMaxLevel = Math.max(currentMax, levelId + 1);
             const REWARD = 10;
 
+            // 2. Апдейтим с явным приведением типов
             const { error: saveErr } = await supabase
                 .from('users')
                 .update({ 
                     max_level: newMaxLevel,
-                    coins: (dbUser.coins || 0) + REWARD,
-                    last_sync: new Date().toISOString()
+                    coins: currentCoins + REWARD,
+                    last_sync: new Date() // Supabase JS клиент сам преобразует Date объект
                 })
                 .eq('id', user.id);
 
-            if (saveErr) throw saveErr;
+            if (saveErr) {
+                console.error("Save Error:", saveErr);
+                throw saveErr;
+            }
 
             return res.status(200).json({ 
                 success: true, 
