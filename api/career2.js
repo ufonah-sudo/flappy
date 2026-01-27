@@ -28,17 +28,32 @@ export default async function handler(req, res) {
   }
 
   // Парсим данные пользователя из строки Telegram (для получения username/id)
- const urlParams = new URLSearchParams(initData);
-  const userJson = urlParams.get('user');
-  
-  // Проверяем, удалось ли достать пользователя
-  if (!userJson) return res.status(401).json({ error: 'User data missing' });
-  
-  const telegramUser = JSON.parse(userJson);
-  const userId = telegramUser?.id;
+// --- БЕЗОПАСНЫЙ ПАРСИНГ ПОЛЬЗОВАТЕЛЯ ---
+  let userId;
+  try {
+    // Пробуем распарсить как строку от Telegram
+    const urlParams = new URLSearchParams(initData);
+    const userJson = urlParams.get('user');
+    
+    if (userJson) {
+      const telegramUser = JSON.parse(userJson);
+      userId = telegramUser?.id;
+    } else {
+      // Если initData — это уже объект (для локальных тестов)
+      const parsedData = typeof initData === 'string' ? JSON.parse(initData) : initData;
+      userId = parsedData?.user?.id || parsedData?.id;
+    }
+  } catch (e) {
+    console.error("Ошибка парсинга initData:", e);
+  }
 
-  if (!userId) return res.status(401).json({ error: 'Invalid User ID' });
-
+  if (!userId) {
+    return res.status(401).json({ 
+      error: 'Ошибка авторизации', 
+      details: 'Не удалось получить ID пользователя из initData' 
+    });
+  }
+  // ---------------------------------------
   try {
     // --- ДЕЙСТВИЕ: ЗАПУСК УРОВНЯ (START_LEVEL) ---
     if (action === 'start_level') {
