@@ -95,8 +95,9 @@ export async function apiRequest(endpoint, method = 'POST', extraData = {}) {
         clearTimeout(timeoutId);
         // Логируем подробности ошибки в консоль
         console.error(`[❌ API ERROR] /${endpoint}:`, error.message);
-        // Возвращаем объект ошибки, чтобы игра не "крашнулась"
-        return { error: true, message: error.message };
+        // ВАЖНО: Возвращаем success: false и error: текст ошибки
+        // Это исправит баг, когда alert показывал просто "true"
+        return { success: false, error: error.message };
     }
 }
 
@@ -183,12 +184,18 @@ export async function spendCoin() {
 
 /**
  * Сохранение набранных очков в таблицу лидеров
+ * mode по умолчанию 'classic', но можно передать 'arcade'
  */
-export async function saveScore(score) {
+export async function saveScore(score, mode = 'classic') {
     // Защита: не шлем запросы, если счет некорректен
-    if (score < 0) return { error: true };
-    // Отправляем результат игры
-    return await apiRequest('scores', 'POST', { action: 'save_score', score: score });
+    if (score < 0) return { success: false };
+    
+    // Отправляем результат игры и РЕЖИМ
+    return await apiRequest('scores', 'POST', { 
+        action: 'save_score', 
+        score: score,
+        mode: mode 
+    });
 }
 
 /**
@@ -216,10 +223,10 @@ export async function getFriends() {
 /**
  * Запрос на получение награды за приглашенного друга
  */
-export async function claimFriendReward(friendUsername) {
+export async function claimFriendReward(friendId) { // Исправлено имя аргумента
     // Отправляем запрос на auth.js с действием claim_friend
     return await apiRequest('auth', 'POST', { 
         action: 'claim_friend', 
-          friend_id: friendId
+        friend_id: friendId // Теперь переменные совпадают
     });
 }
