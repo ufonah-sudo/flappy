@@ -69,7 +69,7 @@ road.prepend(row);
                 
                 try {
                     // Запрос на старт уровня (списываем энергию на сервере)
-                    const res = await api.apiRequest('career', 'POST', { 
+                    const res = await api.apiRequest('career2', 'POST', { 
                         action: 'start_level', 
                         level: levelNum 
                     });
