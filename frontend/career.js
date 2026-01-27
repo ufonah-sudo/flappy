@@ -1,11 +1,10 @@
 /**
- * career.js - ИНТЕГРИРОВАННЫЙ ДВИЖОК КАРЬЕРЫ
+ * career.js - ИНТЕГРИРОВАННЫЙ ДВИЖОК КАРЬЕРЫ (ФИНАЛЬНАЯ ВЕРСИЯ)
  */
 import { Game } from './game.js'; 
 
 export class CareerGame extends Game {
     constructor(canvas, onWin, onLose) {
-        // Инициализируем родительский класс Game
         super(canvas, (score, reviveUsed) => {
             if (onLose) onLose(score);
         });
@@ -22,18 +21,19 @@ export class CareerGame extends Game {
             return;
         }
 
-        console.log("Starting level:", config.id);
+        console.log(`[Career] Start Level ${config.id}: Score Target ${config.targetScore}, Speed ${config.pipeSpeed}`);
         
         this.isFinished = false; 
         this.currentLevelConfig = config;
+
+        // 1. Устанавливаем цель
         this.targetScore = config.targetScore || 10;
         
-        // Сброс старой анимации
+        // 2. СБРОС СОСТОЯНИЯ (важно остановить старый цикл)
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
         }
         
-        // Базовые параметры (дублируем из старта, чтобы быть уверенными)
         this.score = 0;
         this.pipes = [];
         this.bird.y = window.innerHeight / 2;
@@ -43,12 +43,21 @@ export class CareerGame extends Game {
         this.reviveUsed = false;
         this.isGhost = false;
 
-        // Настройки из конфига
-        if (config.pipeSpeed) this.pipeSpeed = config.pipeSpeed;
-        if (config.spawnInterval) this.pipeSpawnThreshold = config.spawnInterval;
+        // 3. УСТАНОВКА СЛОЖНОСТИ (Синхронизация с levels.js)
+        // Мы прописываем и pipeSpawnThreshold, и spawnInterval на случай разных версий game.js
+        this.pipeSpeed = config.pipeSpeed || 3.5;
+        this.pipeGap = config.gap || 150;
+        this.pipeSpawnThreshold = config.spawnInterval || 1500;
+        this.spawnInterval = config.spawnInterval || 1500; // Дубликат для надежности
         
+        // Если в game.js есть поддержка цвета
+        this.pipeColor = config.pipeColor || '#75b85b';
+
         this.isRunning = true;
-        this.updateScoreUI();
+        this.isPaused = false;
+
+        // Обновляем интерфейс
+        if (typeof this.updateScoreUI === 'function') this.updateScoreUI();
         
         window.dispatchEvent(new CustomEvent('game_event', { 
             detail: { type: 'career_level_started', levelId: config.id } 
@@ -58,20 +67,21 @@ export class CareerGame extends Game {
     }
 
     update() {
-        // Если игра завершена или на паузе — ничего не делаем
         if (!this.isRunning || this.isPaused || this.isFinished) return;
 
-        // Вызываем физику родителя
+        // Вызываем физику родителя (движение птицы, спавн труб)
         super.update();
 
-        // Проверяем победу
+        // Проверяем условие победы
         if (!this.isFinished && this.score >= this.targetScore) {
             this.handleWin();
         }
     }
 
     handleWin() {
-        console.log("Win condition met!");
+        if (this.isFinished) return;
+        console.log("Level Complete!");
+        
         this.isFinished = true; 
         this.isRunning = false;
         
@@ -90,7 +100,6 @@ export class CareerGame extends Game {
 
     draw() {
         super.draw();
-        // Рисуем прогресс, если уровень в процессе или только что закончен
         if (this.isRunning || this.isFinished) {
             this.drawProgressBar();
         }
@@ -99,18 +108,19 @@ export class CareerGame extends Game {
     drawProgressBar() {
         const ctx = this.ctx;
         const padding = 30;
-        const screenWidth = window.innerWidth;
+        const screenWidth = this.canvas.width; // Берем ширину канваса
         const w = screenWidth - (padding * 2);
-        const h = 8;
+        const h = 10;
         const x = padding;
-        const y = 50; 
+        const y = 60; 
 
         const progress = Math.min(this.score / this.targetScore, 1);
 
-        // Используем обычный fillRect вместо roundRect для совместимости
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        // Фон полоски
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.fillRect(x, y, w, h);
 
+        // Сама полоска прогресса
         if (progress > 0) {
             ctx.fillStyle = '#f7d51d'; 
             ctx.fillRect(x, y, w * progress, h);
