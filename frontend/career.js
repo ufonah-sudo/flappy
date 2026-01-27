@@ -16,24 +16,25 @@ export class CareerGame extends Game {
     }
 
     startLevel(config) {
-        if (!config) {
-            console.error("Career: No config provided!");
-            return;
-        }
+        if (!config) return;
 
-        console.log(`[Career] Start Level ${config.id}: Score Target ${config.targetScore}, Speed ${config.pipeSpeed}`);
-        
+        // 1. Обязательно сбрасываем старый цикл анимации, чтобы они не накладывались
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+
         this.isFinished = false; 
         this.currentLevelConfig = config;
-
-        // 1. Устанавливаем цель
+        
+        // 2. Устанавливаем параметры из твоего уровня
         this.targetScore = config.targetScore || 10;
+        this.pipeSpeed = config.pipeSpeed || 3.5;
+        this.pipeGap = config.gap || 150;
         
-        // 2. СБРОС СОСТОЯНИЯ (важно остановить старый цикл)
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-        
+        // ВАЖНО: В твоем game.js логика спавна завязана на pipeSpawnThreshold.
+        // Мы пересчитываем его из миллисекунд в кадры (примерно 60fps)
+        // Если в конфиге 1500мс, то это примерно 90 кадров.
+        this.pipeSpawnThreshold = Math.floor((config.spawnInterval || 1500) / 16.6);
+
+        // 3. Полный сброс состояния
         this.score = 0;
         this.pipes = [];
         this.bird.y = window.innerHeight / 2;
@@ -43,21 +44,13 @@ export class CareerGame extends Game {
         this.reviveUsed = false;
         this.isGhost = false;
 
-        // 3. УСТАНОВКА СЛОЖНОСТИ (Синхронизация с levels.js)
-        // Мы прописываем и pipeSpawnThreshold, и spawnInterval на случай разных версий game.js
-        this.pipeSpeed = config.pipeSpeed || 3.5;
-        this.pipeGap = config.gap || 150;
-        this.pipeSpawnThreshold = config.spawnInterval || 1500;
-        this.spawnInterval = config.spawnInterval || 1500; // Дубликат для надежности
-        
-        // Если в game.js есть поддержка цвета
-        this.pipeColor = config.pipeColor || '#75b85b';
+        // Настройка цвета (если хочешь использовать из конфига)
+        this.currentPipeColor = config.pipeColor || '#75b85b';
 
         this.isRunning = true;
         this.isPaused = false;
-
-        // Обновляем интерфейс
-        if (typeof this.updateScoreUI === 'function') this.updateScoreUI();
+        
+        if (this.updateScoreUI) this.updateScoreUI();
         
         window.dispatchEvent(new CustomEvent('game_event', { 
             detail: { type: 'career_level_started', levelId: config.id } 
@@ -66,28 +59,40 @@ export class CareerGame extends Game {
         this.loop();
     }
 
+    // Переопределяем метод спавна труб, чтобы он учитывал GAP из конфига уровней
+    spawnPipe() {
+        // Берем gap из текущего уровня, если его нет — стандартный расчет из game.js
+        const gap = this.pipeGap || (window.innerHeight > 800 ? 190 : window.innerHeight * 0.15);
+        const minH = 100; 
+        const safeBottomMargin = this.ground.h + 80; 
+        const maxH = window.innerHeight - gap - safeBottomMargin;
+        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
+        
+        this.pipes.push({
+            x: window.innerWidth,
+            width: 75, 
+            top: h,
+            bottom: h + gap,
+            passed: false,
+            color: this.currentPipeColor // Передаем цвет для отрисовки
+        });
+    }
+
     update() {
         if (!this.isRunning || this.isPaused || this.isFinished) return;
 
-        // Вызываем физику родителя (движение птицы, спавн труб)
         super.update();
 
-        // Проверяем условие победы
+        // Проверка победы
         if (!this.isFinished && this.score >= this.targetScore) {
             this.handleWin();
         }
     }
 
     handleWin() {
-        if (this.isFinished) return;
-        console.log("Level Complete!");
-        
         this.isFinished = true; 
         this.isRunning = false;
-        
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
+        if (this.animationId) cancelAnimationFrame(this.animationId);
 
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
@@ -108,19 +113,14 @@ export class CareerGame extends Game {
     drawProgressBar() {
         const ctx = this.ctx;
         const padding = 30;
-        const screenWidth = this.canvas.width; // Берем ширину канваса
-        const w = screenWidth - (padding * 2);
-        const h = 10;
+        const w = this.canvas.width / (window.devicePixelRatio || 1) - (padding * 2);
+        const h = 8;
         const x = padding;
         const y = 60; 
-
         const progress = Math.min(this.score / this.targetScore, 1);
 
-        // Фон полоски
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(x, y, w, h);
-
-        // Сама полоска прогресса
         if (progress > 0) {
             ctx.fillStyle = '#f7d51d'; 
             ctx.fillRect(x, y, w * progress, h);
