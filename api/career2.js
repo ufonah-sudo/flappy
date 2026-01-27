@@ -20,18 +20,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { action, initData, level } = req.body;
+ const { action, initData, level } = req.body;
 
-  // 1. Простейшая валидация (в реальном продакшене тут нужна проверка initData от Telegram)
-  if (!initData) {
-    return res.status(401).json({ error: 'No auth data' });
-  }
-
-  // Парсим данные пользователя из строки Telegram (для получения username/id)
-// --- БЕЗОПАСНЫЙ ПАРСИНГ ПОЛЬЗОВАТЕЛЯ ---
+  // --- НОВЫЙ БЕЗОПАСНЫЙ БЛОК ПАРСИНГА ---
   let userId;
   try {
-    // Пробуем распарсить как строку от Telegram
+    if (!initData) throw new Error("No initData");
+
+    // Парсим как URL-строку от Telegram
     const urlParams = new URLSearchParams(initData);
     const userJson = urlParams.get('user');
     
@@ -39,21 +35,18 @@ export default async function handler(req, res) {
       const telegramUser = JSON.parse(userJson);
       userId = telegramUser?.id;
     } else {
-      // Если initData — это уже объект (для локальных тестов)
-      const parsedData = typeof initData === 'string' ? JSON.parse(initData) : initData;
-      userId = parsedData?.user?.id || parsedData?.id;
+      // Фолбэк для локальных тестов, если initData пришла как объект
+      const parsed = typeof initData === 'string' ? JSON.parse(initData) : initData;
+      userId = parsed?.user?.id || parsed?.id;
     }
   } catch (e) {
-    console.error("Ошибка парсинга initData:", e);
+    console.error("Ошибка авторизации:", e.message);
+    return res.status(401).json({ error: 'Auth failed', details: e.message });
   }
 
-  if (!userId) {
-    return res.status(401).json({ 
-      error: 'Ошибка авторизации', 
-      details: 'Не удалось получить ID пользователя из initData' 
-    });
-  }
+  if (!userId) return res.status(401).json({ error: 'Invalid User ID' });
   // ---------------------------------------
+
   try {
     // --- ДЕЙСТВИЕ: ЗАПУСК УРОВНЯ (START_LEVEL) ---
     if (action === 'start_level') {

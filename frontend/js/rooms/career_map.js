@@ -59,13 +59,17 @@ road.prepend(row);
                 if(tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
                 // Проверка энергии
-                if (state.lives < 1) {
-                    tg?.showAlert("Не хватает Энергии ⚡! Подожди восстановления.");
-                    return;
-                }
+                // 1. Проверяем локальный стейт перед запросом
+if (state.lives <= 0) {
+    tg?.showAlert("Не хватает Энергии ⚡! Подожди восстановления.");
+    return;
+}
 
-                const originalHTML = node.innerHTML;
-                node.innerHTML = '<div class="spinner"></div>';
+const originalHTML = node.innerHTML;
+node.innerHTML = '<div class="spinner"></div>';
+
+// 2. Важно: Убеждаемся, что данные авторизации готовы
+const initData = window.Telegram?.WebApp?.initData || "";
                 
                 try {
                     // Запрос на старт уровня (списываем энергию на сервере)
