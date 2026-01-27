@@ -51,8 +51,7 @@ export function initCareerMap() {
         }
         
         row.appendChild(node);
-        road.appendChild(row);
-
+road.prepend(row);
         // Обработка клика
         if (status !== 'locked') {
             node.onclick = async () => {
@@ -80,8 +79,8 @@ export function initCareerMap() {
                         window.updateGlobalUI();
                         
                         // Переход в игру
+                     state.currentMode = 'career'; 
                         window.showRoom('game');
-                        state.currentMode = 'career'; 
                         
                         if (window.careerGame) {
                             window.careerGame.startLevel(lvl);

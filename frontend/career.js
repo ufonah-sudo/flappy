@@ -1,183 +1,122 @@
 /**
- * career.js - УЛУЧШЕННЫЙ ДВИЖОК КАРЬЕРЫ
+ * career.js - ИНТЕГРИРОВАННЫЙ ДВИЖОК КАРЬЕРЫ
+ * Наследует всё от классического движка, добавляя условия победы.
  */
-export class CareerGame {
+import { Game } from './game.js'; // Импортируем твой основной движок
+
+export class CareerGame extends Game {
     constructor(canvas, onWin, onLose) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.onWin = onWin;
-        this.onLose = onLose;
-
-        this.ground = { img: new Image(), offsetX: 0, h: 100, realWidth: 512 };
-        this.ground.img.src = '/frontend/assets/ground.png';
-
-        this.bird = { x: 50, y: 0, size: 45, velocity: 0, rotation: 0 };
-        this.birdSprites = [];
-        ['bird1.png', 'bird2.png', 'bird3.png'].forEach(src => {
-            const img = new Image();
-            img.src = `/frontend/assets/${src}`;
-            this.birdSprites.push(img);
+        // Вызываем конструктор классического Game
+        super(canvas, (score, reviveUsed) => {
+            // Если игра вызвала GameOver, перенаправляем в onLose карьеры
+            if (onLose) onLose(score);
         });
-
-        this.bgImage = new Image();
-        this.pipes = [];
-        this.score = 0;
-        this.isRunning = false;
-        this.pipeSpawnTimer = 0; // Таймер для точного спавна
-
-        this.loop = this.loop.bind(this);
-        this.handleInput = this.handleInput.bind(this);
-        this.handleResize = this.resize.bind(this);
-
-        this.initEvents();
-        this.resize();
+        
+        this.onWin = onWin;
+        this.targetScore = 0;
+        this.currentLevelConfig = null;
     }
 
-    initEvents() {
-        this.canvas.addEventListener('mousedown', this.handleInput);
-        this.canvas.addEventListener('touchstart', this.handleInput, { passive: false });
-        window.addEventListener('resize', this.handleResize);
-    }
-
-    resize() {
-        const dpr = window.devicePixelRatio || 1;
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        this.canvas.width = w * dpr;
-        this.canvas.height = h * dpr;
-        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        this.canvas.style.width = w + 'px';
-        this.canvas.style.height = h + 'px';
-
-        // Адаптивная физика
-        this.gravity = h > 800 ? 0.45 : h * 0.0006;
-        this.jump = h > 800 ? -8 : -h * 0.012; 
-        this.bird.x = w / 4;
-    }
-
+    /**
+     * Запуск конкретного уровня
+     * @param {Object} config - данные уровня (targetScore, pipeSpeed и т.д.)
+     */
     startLevel(config) {
+        if (!config) return console.error("Career: No config provided!");
+
+        this.currentLevelConfig = config;
+        this.targetScore = config.targetScore || 10;
+        
+        // 1. Сбрасываем состояние через родительский метод
+        // (но не вызываем start сразу, чтобы настроить параметры)
         if (this.animationId) cancelAnimationFrame(this.animationId);
-        this.config = config;
+        
         this.score = 0;
         this.pipes = [];
-        this.pipeSpawnTimer = 0;
         this.bird.y = window.innerHeight / 2;
         this.bird.velocity = 0;
-        this.isRunning = true;
+        this.bird.rotation = 0;
+        this.pipeSpawnTimer = 0;
+        this.reviveUsed = false;
+        this.isGhost = false;
+
+        // 2. Устанавливаем специфические настройки уровня
+        // Если в конфиге нет параметров, используем адаптивные из resize()
+        this.pipeSpeed = config.pipeSpeed || this.pipeSpeed;
+        this.pipeSpawnThreshold = config.spawnInterval || this.pipeSpawnThreshold;
         
-        if (config.bg) this.bgImage.src = `/frontend/assets/${config.bg}`;
+        // 3. Запускаем
+        this.isRunning = true;
+        this.updateScoreUI();
+        
+        // Генерируем событие старта
+        window.dispatchEvent(new CustomEvent('game_event', { 
+            detail: { type: 'career_level_started', levelId: config.id } 
+        }));
+
         this.loop();
     }
 
-    handleInput(e) {
-        if (!this.isRunning) return;
-        if (e && e.cancelable) e.preventDefault();
-        
-        // ЗВУК ПРЫЖКА
-        if (window.audioManager) window.audioManager.playSound('flap');
-        
-        this.bird.velocity = this.jump;
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    }
-
+    // Переопределяем update, чтобы добавить проверку победы
     update() {
-        if (!this.isRunning) return;
+        if (!this.isRunning || this.isPaused) return;
 
-        const speed = this.config.speed || 3;
+        // Вызываем базовую физику из game.js (движение, коллизии, очки)
+        super.update();
 
-        // 1. Физика птицы
-        this.bird.velocity += this.gravity;
-        this.bird.y += this.bird.velocity;
-        const targetRot = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, (this.bird.velocity * 0.2)));
-        this.bird.rotation += (targetRot - this.bird.rotation) * 0.15;
-
-        // 2. Анимация крыльев
-        this.tickCount = (this.tickCount || 0) + 1;
-        if (this.tickCount > 6) {
-            this.tickCount = 0;
-            this.frameIndex = (this.frameIndex + 1) % this.birdSprites.length;
-        }
-
-        // 3. Спавн труб по дистанции, а не по тикам
-        this.pipeSpawnTimer += speed;
-        // Расстояние между трубами примерно 250-300 пикселей
-        if (this.pipeSpawnTimer > 280) {
-            this.spawnPipe();
-            this.pipeSpawnTimer = 0;
-        }
-
-        // 4. Земля
-        this.ground.offsetX -= speed;
-        if (this.ground.offsetX <= -this.ground.realWidth) this.ground.offsetX = 0;
-
-        // Смерть об пол
-        if (this.bird.y + this.bird.size > window.innerHeight - this.ground.h) {
-            this.lose();
-            return;
-        }
-
-        // 5. Обработка труб
-        for (let i = this.pipes.length - 1; i >= 0; i--) {
-            const p = this.pipes[i];
-            p.x -= speed;
-
-            // Коллизия
-            const pad = 10;
-            const hitX = this.bird.x + this.bird.size - pad > p.x && this.bird.x + pad < p.x + p.width;
-            const hitY = this.bird.y + pad < p.top || this.bird.y + this.bird.size - pad > p.bottom;
-
-            if (hitX && hitY) {
-                this.lose();
-                return;
-            }
-
-            // Очки и Победа
-            if (!p.passed && p.x + p.width < this.bird.x) {
-                p.passed = true;
-                this.score++;
-                if (window.audioManager) window.audioManager.playSound('point');
-
-                if (this.score >= this.config.target) {
-                    this.win();
-                    return;
-                }
-            }
-            if (p.x < -100) this.pipes.splice(i, 1);
+        // ПРОВЕРКА ПОБЕДЫ
+        if (this.isRunning && this.score >= this.targetScore) {
+            this.handleWin();
         }
     }
 
-    spawnPipe() {
-        const gap = this.config.gap || 150;
-        const minH = 100;
-        const maxH = window.innerHeight - gap - this.ground.h - 50;
-        const h = Math.floor(Math.random() * (maxH - minH)) + minH;
-
-        this.pipes.push({ x: window.innerWidth, width: 70, top: h, bottom: h + gap, passed: false });
-    }
-
-    // РИСОВАНИЕ БЕЗ ИЗМЕНЕНИЙ (как в твоем исходнике)
-    draw() { /* ... твой метод draw с прогресс-баром ... */ }
-
-    win() {
+    handleWin() {
         this.isRunning = false;
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+
+        // Вибрация успеха для Telegram
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
-        if (this.onWin) this.onWin(this.config.id);
+
+        if (this.onWin) {
+            this.onWin(this.currentLevelConfig.id);
+        }
     }
 
-    lose() {
-        this.isRunning = false;
-        if (window.audioManager) window.audioManager.playSound('hit');
-        if (this.onLose) this.onLose(this.score);
+    // Добавляем отрисовку прогресс-бара поверх классики
+    draw() {
+        // Отрисовка всего из классического движка
+        super.draw();
+
+        // Если игра идет, рисуем полоску прогресса
+        if (this.isRunning) {
+            this.drawProgressBar();
+        }
     }
 
-    loop() {
-        if (!this.isRunning) return;
-        this.update();
-        this.draw();
-        this.animationId = requestAnimationFrame(this.loop);
+    drawProgressBar() {
+        const ctx = this.ctx;
+        const padding = 30;
+        const w = window.innerWidth - (padding * 2);
+        const h = 8;
+        const x = padding;
+        const y = 50; // Под счетчиком очков
+
+        const progress = Math.min(this.score / this.targetScore, 1);
+
+        // Фон прогресса
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 4);
+        ctx.fill();
+
+        // Заполнение
+        if (progress > 0) {
+            ctx.fillStyle = '#f7d51d'; // Желтый цвет карьеры
+            ctx.beginPath();
+            ctx.roundRect(x, y, w * progress, h, 4);
+            ctx.fill();
+        }
     }
 }

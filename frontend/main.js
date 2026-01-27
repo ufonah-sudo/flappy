@@ -109,10 +109,10 @@ async function activateAbility(id) {
             window.arcadeGame.activatePowerupEffect(id);
             
             // Обновляем UI
-            updatePowerupsPanel();
+          updatePowerupsPanel();
             updateGlobalUI();
             
-             // 👇 ВСТАВЛЯЙ СЮДА (перед saveData) 👇
+            // Логика ежедневного задания "Использовать способность"
             const useTask = state.user?.daily_challenges?.find(c => c.id.startsWith('use_'));
             if (useTask && (useTask.progress || 0) < useTask.target) {
                 useTask.progress = (useTask.progress || 0) + 1;
@@ -253,7 +253,8 @@ async function init() {
     if (canvas) {
         window.game = new Game(canvas, (s, r) => handleGameOver(s, r));
         window.arcadeGame = new ArcadeGame(canvas, (s, r) => handleGameOver(s, r));
-        window.careerGame = new CareerGame(canvas, (lvl) => handleCareerWin(lvl), () => handleCareerLose());
+        // Важно: принимаем score (s) и передаем его дальше
+        window.careerGame = new CareerGame(canvas, (lvl) => handleCareerWin(lvl), (s) => handleCareerLose(s));
     }
     
     // Инициализация кошелька
@@ -390,10 +391,15 @@ async function init() {
         };
     }
     
-    document.getElementById('btn-restart')?.addEventListener('click', () => {
+   document.getElementById('btn-restart')?.addEventListener('click', () => {
         document.getElementById('game-over').classList.add('hidden');
-        if(state.currentMode === 'career') showRoom('careerMap');
-        else showRoom('game');
+        if (state.currentMode === 'career') {
+            // Возвращаемся на карту, чтобы выбрать уровень заново (или тот же)
+            showRoom('careerMap'); 
+        } else {
+            // В классике/аркаде просто перезапускаем сцену
+            showRoom('game');
+        }
     });
     
     document.getElementById('btn-exit-gameover')?.addEventListener('click', () => showRoom('home'));
@@ -498,9 +504,10 @@ async function handleCareerWin(levelId) {
 }
 
 // КАРЬЕРА: Поражение
-function handleCareerLose() {
-    tg?.showAlert("💀 ТЫ ПРОИГРАЛ!");
-    showRoom('careerMap');
+function handleCareerLose(score) {
+    // Используем общее окно проигрыша, но без флага reviveUsed
+    // Логика внутри handleGameOver сама скроет кнопку сердца, так как режим 'career'
+    handleGameOver(score || 0, false);
 }
 
 /* ---------------------------------------------------------
