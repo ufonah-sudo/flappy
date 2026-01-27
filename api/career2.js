@@ -1,109 +1,95 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * api/career2.js - Интегрированная логика карьеры
+ */
+import { supabase, verifyTelegramData, cors } from './_utils.js';
 
-// Прямая инициализация для гарантии работы
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
-
-export default async function handler(req, res) {
-  // Заголовки CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const { action, initData, level } = req.body;
-
-  // --- БЛОК АВТОРИЗАЦИИ ---
-  let userId;
-  try {
-    if (!initData) throw new Error("No initData provided");
-
-    const urlParams = new URLSearchParams(initData);
-    const userJson = urlParams.get('user');
-    
-    if (userJson) {
-      const telegramUser = JSON.parse(userJson);
-      userId = telegramUser?.id;
-    } else {
-      // Поддержка JSON-объекта
-      const parsed = typeof initData === 'string' ? JSON.parse(initData) : initData;
-      userId = parsed?.user?.id || parsed?.id;
-    }
-  } catch (e) {
-    console.error("Auth error:", e.message);
-    return res.status(401).json({ error: 'Auth failed', details: e.message });
-  }
-
-  if (!userId) return res.status(401).json({ error: 'Invalid User ID' });
-
-  // --- ОСНОВНАЯ ЛОГИКА ---
-  try {
-    // 1. СТАРТ УРОВНЯ (Списание жизни)
-    if (action === 'start_level') {
-      const { data: user, error: fetchError } = await supabase
-        .from('users')
-        .select('lives')
-        .eq('id', userId)
-        .single();
-
-      if (fetchError || !user) return res.status(404).json({ error: 'User not found' });
-      if (user.lives < 1) return res.status(400).json({ error: 'Недостаточно энергии' });
-
-      const { data: updated, error: updateError } = await supabase
-        .from('users')
-        .update({ lives: user.lives - 1 })
-        .eq('id', userId)
-        .select('lives')
-        .single();
-
-      if (updateError) throw updateError;
-
-      return res.status(200).json({ success: true, lives: updated.lives });
+const handler = async (req, res) => {
+    // 1. Проверка метода
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    // 2. ЗАВЕРШЕНИЕ УРОВНЯ (Начисление монет и прогресса)
-    else if (action === 'complete_level') {
-      if (!level) return res.status(400).json({ error: 'Level ID missing' });
-      const levelId = parseInt(level);
+    const { action, initData, level } = req.body;
 
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('max_level, coins')
-        .eq('id', userId)
-        .single();
-
-      if (userError || !user) throw new Error('User not found in DB');
-
-      const newMaxLevel = Math.max(user.max_level, levelId + 1);
-      const rewardCoins = 10; 
-
-      const { error: saveError } = await supabase
-        .from('users')
-        .update({ 
-          max_level: newMaxLevel,
-          coins: user.coins + rewardCoins
-        })
-        .eq('id', userId);
-
-      if (saveError) throw saveError;
-
-      return res.status(200).json({ 
-        success: true, 
-        new_max_level: newMaxLevel,
-        reward: rewardCoins
-      });
+    // 2. Валидация пользователя (используем твой основной механизм)
+    const user = verifyTelegramData(initData);
+    if (!user) {
+        console.error("[CAREER AUTH] Failed to verify Telegram data");
+        return res.status(403).json({ error: 'Invalid auth' });
     }
 
-    else {
-      return res.status(400).json({ error: 'Unknown action' });
-    }
+    try {
+        // --- ДЕЙСТВИЕ: START_LEVEL (Списание энергии) ---
+        if (action === 'start_level') {
+            const { data: dbUser, error: fetchErr } = await supabase
+                .from('users')
+                .select('lives')
+                .eq('id', user.id)
+                .single();
 
-  } catch (err) {
-    console.error('API Error:', err.message);
-    return res.status(500).json({ error: 'Server error', details: err.message });
-  }
-}
+            if (fetchErr || !dbUser) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            if (dbUser.lives < 1) {
+                return res.status(400).json({ error: 'Недостаточно энергии ⚡' });
+            }
+
+            // Атомарное списание через обновление
+            const { data: updated, error: updateErr } = await supabase
+                .from('users')
+                .update({ lives: dbUser.lives - 1 })
+                .eq('id', user.id)
+                .select('lives')
+                .single();
+
+            if (updateErr) throw updateErr;
+
+            return res.status(200).json({ success: true, lives: updated.lives });
+        }
+
+        // --- ДЕЙСТВИЕ: COMPLETE_LEVEL (Награда и прогресс) ---
+        if (action === 'complete_level') {
+            const levelId = parseInt(level);
+            if (isNaN(levelId)) return res.status(400).json({ error: 'Invalid level ID' });
+
+            const { data: dbUser, error: userErr } = await supabase
+                .from('users')
+                .select('max_level, coins')
+                .eq('id', user.id)
+                .single();
+
+            if (userErr || !dbUser) throw new Error('User fetch error');
+
+            // Обновляем макс. уровень, если текущий пройденный больше или равен макс.
+            const newMaxLevel = Math.max(dbUser.max_level, levelId + 1);
+            const REWARD = 10;
+
+            const { error: saveErr } = await supabase
+                .from('users')
+                .update({ 
+                    max_level: newMaxLevel,
+                    coins: (dbUser.coins || 0) + REWARD,
+                    last_sync: new Date().toISOString()
+                })
+                .eq('id', user.id);
+
+            if (saveErr) throw saveErr;
+
+            return res.status(200).json({ 
+                success: true, 
+                new_max_level: newMaxLevel,
+                reward: REWARD 
+            });
+        }
+
+        return res.status(400).json({ error: 'Unknown career action' });
+
+    } catch (e) {
+        console.error("[CAREER API ERROR]:", e.message);
+        return res.status(500).json({ error: e.message });
+    }
+};
+
+// Обязательно оборачиваем в твой CORS
+export default cors(handler);
