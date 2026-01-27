@@ -1,5 +1,5 @@
 /**
- * js/rooms/career_map.js - ЛОГИКА КАРТЫ
+ * js/rooms/career_map.js - ЛОГИКА КАРТЫ (Минимализм)
  */
 import * as api from '../../api.js';
 import { LEVELS } from '../levels.js';
@@ -11,73 +11,97 @@ export function initCareerMap() {
 
     if (!container) return;
 
-    // Чистим и строим дорогу
+    // Очищаем контейнер и создаем обертку для дороги
     container.innerHTML = '<div class="career-road"></div>';
     const road = container.querySelector('.career-road');
 
+    // Берем текущий уровень из стейта (если нет, то 1)
     const maxLevel = state.user?.max_level || 1;
 
-    // Рисуем уровни снизу вверх
-    LEVELS.forEach((lvl, index) => {
+    // Рисуем уровни (в обратном порядке, чтобы новые были сверху, или по порядку - как тебе удобнее)
+    // Давай сделаем классический путь снизу вверх
+    [...LEVELS].forEach((lvl, index) => {
         const levelNum = lvl.id;
         
-        // Статус
+        // Определение статуса
         let status = 'locked';
         if (levelNum < maxLevel) status = 'completed';
         else if (levelNum === maxLevel) status = 'current';
 
-        // Позиция (Змейка)
-        const posPattern = ['center', 'pos-right', 'center', 'pos-left'];
+        // Паттерн "Змейка" (Центр -> Право -> Центр -> Лево)
+        const posPattern = ['pos-center', 'pos-right', 'pos-center', 'pos-left'];
         const positionClass = posPattern[index % 4];
 
         const row = document.createElement('div');
         row.className = `level-row ${positionClass}`;
         
-        row.innerHTML = `
-            <div class="level-node ${status}" data-id="${levelNum}">
-                ${levelNum}
-            </div>
-        `;
+        // Создаем ноду уровня
+        const node = document.createElement('div');
+        node.className = `level-node ${status}`;
+        node.dataset.id = levelNum;
         
+        // Внутреннее наполнение ноды
+        if (status === 'locked') {
+            node.innerHTML = '<span class="lock-icon">🔒</span>';
+        } else if (status === 'completed') {
+            node.innerHTML = `<span>${levelNum}</span><div class="check-mark">✔</div>`;
+        } else {
+            // Текущий уровень
+            node.innerHTML = `<span>${levelNum}</span><div class="current-glow"></div>`;
+        }
+        
+        row.appendChild(node);
         road.appendChild(row);
 
-        // Клик
-        const node = row.querySelector('.level-node');
+        // Обработка клика
         if (status !== 'locked') {
             node.onclick = async () => {
+                // Вибрация
                 if(tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
+                // Проверка энергии
                 if (state.lives < 1) {
-                    tg?.showAlert("Не хватает Энергии ⚡!");
+                    tg?.showAlert("Не хватает Энергии ⚡! Подожди восстановления.");
                     return;
                 }
 
-                const originalText = node.innerText;
-                node.innerText = "⏳";
+                const originalHTML = node.innerHTML;
+                node.innerHTML = '<div class="spinner"></div>';
                 
                 try {
+                    // Запрос на старт уровня (списываем энергию на сервере)
                     const res = await api.apiRequest('career', 'POST', { 
-                        action: 'start_level', level: levelNum 
+                        action: 'start_level', 
+                        level: levelNum 
                     });
 
                     if (res && res.success) {
                         state.lives = res.lives;
                         window.updateGlobalUI();
                         
-                        // Запуск уровня
+                        // Переход в игру
                         window.showRoom('game');
                         state.currentMode = 'career'; 
+                        
                         if (window.careerGame) {
                             window.careerGame.startLevel(lvl);
                         }
                     } else {
-                        throw new Error(res.error || "Ошибка");
+                        throw new Error(res.error || "Ошибка старта");
                     }
                 } catch (e) {
-                    node.innerText = originalText;
-                    console.error(e);
+                    node.innerHTML = originalHTML;
+                    tg?.showAlert("Ошибка: " + e.message);
                 }
             };
         }
     });
+
+    // Авто-скролл к текущему уровню
+    setTimeout(() => {
+        const currentNode = container.querySelector('.level-node.current');
+        if (currentNode) {
+            currentNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
 }

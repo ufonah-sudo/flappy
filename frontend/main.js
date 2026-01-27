@@ -469,16 +469,32 @@ function handleGameOver(score, reviveUsed) {
 
 // КАРЬЕРА: Победа
 async function handleCareerWin(levelId) {
-    tg?.showAlert("🏆 УРОВЕНЬ ПРОЙДЕН!");
+    tg?.HapticFeedback.notificationOccurred('success');
+    
     try {
-        const res = await api.apiRequest('career', 'POST', { action: 'complete_level', level: levelId });
+        const res = await api.apiRequest('career', 'POST', { 
+            action: 'complete_level', 
+            level: levelId 
+        });
+
         if (res && res.success) {
-            if (res.newMaxLevel) state.user.max_level = res.newMaxLevel;
-            state.coins += res.reward || 0;
+            // Обновляем max_level в state
+            state.user.max_level = Math.max(state.user.max_level, levelId + 1);
+            
+            // Награда (сервер пришлет, сколько мы заработали)
+            if (res.reward_coins) state.coins += res.reward_coins;
+            if (res.reward_crystals) state.crystals += res.reward_crystals;
+
             updateGlobalUI();
+            
+            tg?.showConfirm(`Уровень ${levelId} пройден! 🏆`, () => {
+                showRoom('careerMap'); 
+            });
         }
-    } catch (e) { console.error(e); }
-    showRoom('careerMap');
+    } catch (e) {
+        console.error("Ошибка завершения уровня:", e);
+        showRoom('careerMap');
+    }
 }
 
 // КАРЬЕРА: Поражение
