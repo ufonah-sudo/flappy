@@ -151,11 +151,21 @@ export class Game {
     }
 
     spawnPipe() {
+        // 1. Ширина проема (Gap)
         let gap = window.innerHeight > 800 ? 190 : window.innerHeight * 0.15; 
-        const minAllowedY = window.innerHeight / 5; 
-        const minH = minAllowedY; 
-        const bottomLimit = 100;
-        const maxH = window.innerHeight - gap - bottomLimit;
+        
+        // 2. Минимальный отступ сверху (чтобы труба не была в самом потолке)
+        const minH = 100; 
+        
+        // 3. Безопасная зона снизу (Ground + отступ для пальца)
+        // g.h — это высота земли (100). Добавим еще 80-100 пикселей, чтобы проем не был слишком низко.
+        const safeBottomMargin = this.ground.h + 80; 
+        
+        // 4. Максимальная высота верхней трубы
+        // Вычитаем из общей высоты проем и безопасную зону снизу
+        const maxH = window.innerHeight - gap - safeBottomMargin;
+        
+        // Генерируем высоту верхней трубы в безопасном диапазоне
         const h = Math.floor(Math.random() * (maxH - minH)) + minH;
         
         this.pipes.push({
