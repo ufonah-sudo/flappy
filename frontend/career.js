@@ -1,5 +1,11 @@
+/**
+ * career.js - ИНТЕГРИРОВАННЫЙ ДВИЖОК КАРЬЕРЫ
+ */
+import { Game } from './game.js'; 
+
 export class CareerGame extends Game {
     constructor(canvas, onWin, onLose) {
+        // Инициализируем родительский класс Game
         super(canvas, (score, reviveUsed) => {
             if (onLose) onLose(score);
         });
@@ -7,19 +13,27 @@ export class CareerGame extends Game {
         this.onWin = onWin;
         this.targetScore = 0;
         this.currentLevelConfig = null;
-        this.isFinished = false; // ПРЕДОХРАНИТЕЛЬ
+        this.isFinished = false; 
     }
 
     startLevel(config) {
-        if (!config) return console.error("Career: No config provided!");
+        if (!config) {
+            console.error("Career: No config provided!");
+            return;
+        }
+
+        console.log("Starting level:", config.id);
         
-        this.isFinished = false; // Сбрасываем при старте
+        this.isFinished = false; 
         this.currentLevelConfig = config;
         this.targetScore = config.targetScore || 10;
         
-        // Сброс анимации
-        if (this.animationId) cancelAnimationFrame(this.animationId);
+        // Сброс старой анимации
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
         
+        // Базовые параметры (дублируем из старта, чтобы быть уверенными)
         this.score = 0;
         this.pipes = [];
         this.bird.y = window.innerHeight / 2;
@@ -29,8 +43,9 @@ export class CareerGame extends Game {
         this.reviveUsed = false;
         this.isGhost = false;
 
-        this.pipeSpeed = config.pipeSpeed || this.pipeSpeed;
-        this.pipeSpawnThreshold = config.spawnInterval || this.pipeSpawnThreshold;
+        // Настройки из конфига
+        if (config.pipeSpeed) this.pipeSpeed = config.pipeSpeed;
+        if (config.spawnInterval) this.pipeSpawnThreshold = config.spawnInterval;
         
         this.isRunning = true;
         this.updateScoreUI();
@@ -43,36 +58,39 @@ export class CareerGame extends Game {
     }
 
     update() {
+        // Если игра завершена или на паузе — ничего не делаем
         if (!this.isRunning || this.isPaused || this.isFinished) return;
 
+        // Вызываем физику родителя
         super.update();
 
-        // Проверяем победу только если уровень еще не закончен
+        // Проверяем победу
         if (!this.isFinished && this.score >= this.targetScore) {
             this.handleWin();
         }
     }
 
     handleWin() {
-        this.isFinished = true; // Мгновенно блокируем повторный вход
+        console.log("Win condition met!");
+        this.isFinished = true; 
         this.isRunning = false;
         
-        cancelAnimationFrame(this.animationId); // Останавливаем цикл отрисовки
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
 
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
 
-        console.log("Career: Win detected, calling onWin");
-
-        if (this.onWin) {
-            // Вызываем колбек (который идет в API)
+        if (typeof this.onWin === 'function') {
             this.onWin(this.currentLevelConfig.id);
         }
     }
 
     draw() {
         super.draw();
+        // Рисуем прогресс, если уровень в процессе или только что закончен
         if (this.isRunning || this.isFinished) {
             this.drawProgressBar();
         }
@@ -81,25 +99,21 @@ export class CareerGame extends Game {
     drawProgressBar() {
         const ctx = this.ctx;
         const padding = 30;
-        const w = window.innerWidth - (padding * 2);
+        const screenWidth = window.innerWidth;
+        const w = screenWidth - (padding * 2);
         const h = 8;
         const x = padding;
-        const y = 50; // Под счетчиком очков
+        const y = 50; 
 
         const progress = Math.min(this.score / this.targetScore, 1);
 
-        // Фон прогресса
+        // Используем обычный fillRect вместо roundRect для совместимости
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, h, 4);
-        ctx.fill();
+        ctx.fillRect(x, y, w, h);
 
-        // Заполнение
         if (progress > 0) {
-            ctx.fillStyle = '#f7d51d'; // Желтый цвет карьеры
-            ctx.beginPath();
-            ctx.roundRect(x, y, w * progress, h, 4);
-            ctx.fill();
+            ctx.fillStyle = '#f7d51d'; 
+            ctx.fillRect(x, y, w * progress, h);
         }
     }
 }

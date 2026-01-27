@@ -475,30 +475,43 @@ function handleGameOver(score, reviveUsed) {
 
 // КАРЬЕРА: Победа
 async function handleCareerWin(levelId) {
+    console.log("Starting Career Win Process for level:", levelId);
+    
+    // 1. Показываем лоадер или сразу блокируем повторные клики
     tg?.HapticFeedback.notificationOccurred('success');
     
     try {
-        const res = await api.apiRequest('career', 'POST', { 
+        // ВАЖНО: Путь 'career2', так как файл называется career2.js
+        const res = await api.apiRequest('career2', 'POST', { 
             action: 'complete_level', 
+            initData: window.Telegram.WebApp.initData, // Явно передаем данные авторизации
             level: levelId 
         });
 
-        if (res && res.success) {
-            // Обновляем max_level в state
-            state.user.max_level = Math.max(state.user.max_level, levelId + 1);
-            
-            // Награда (сервер пришлет, сколько мы заработали)
-            if (res.reward_coins) state.coins += res.reward_coins;
-            if (res.reward_crystals) state.crystals += res.reward_crystals;
+        console.log("Server response:", res);
 
-            updateGlobalUI();
+        if (res && res.success) {
+            // Обновляем прогресс локально
+            if (state.user) {
+                state.user.max_level = res.new_max_level || (levelId + 1);
+            }
             
-            tg?.showConfirm(`Уровень ${levelId} пройден! 🏆`, () => {
-                showRoom('careerMap'); 
-            });
+            // Награда
+            state.coins += (res.reward || 10); 
+            
+            updateGlobalUI();
+
+            // Вместо tg.showConfirm (который может блокировать поток), 
+            // используем стандартный alert или кастомное окно победы
+            alert(`Уровень ${levelId} пройден! +10 🟡`);
+            showRoom('careerMap'); 
+        } else {
+            console.error("Server refused to save level:", res.error);
+            showRoom('careerMap');
         }
     } catch (e) {
-        console.error("Ошибка завершения уровня:", e);
+        console.error("Critical API Error in handleCareerWin:", e);
+        // Если сервер упал, всё равно возвращаем игрока на карту, чтобы он не висел
         showRoom('careerMap');
     }
 }
