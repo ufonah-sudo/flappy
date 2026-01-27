@@ -1,34 +1,23 @@
-/**
- * career.js - ИНТЕГРИРОВАННЫЙ ДВИЖОК КАРЬЕРЫ
- * Наследует всё от классического движка, добавляя условия победы.
- */
-import { Game } from './game.js'; // Импортируем твой основной движок
-
 export class CareerGame extends Game {
     constructor(canvas, onWin, onLose) {
-        // Вызываем конструктор классического Game
         super(canvas, (score, reviveUsed) => {
-            // Если игра вызвала GameOver, перенаправляем в onLose карьеры
             if (onLose) onLose(score);
         });
         
         this.onWin = onWin;
         this.targetScore = 0;
         this.currentLevelConfig = null;
+        this.isFinished = false; // ПРЕДОХРАНИТЕЛЬ
     }
 
-    /**
-     * Запуск конкретного уровня
-     * @param {Object} config - данные уровня (targetScore, pipeSpeed и т.д.)
-     */
     startLevel(config) {
         if (!config) return console.error("Career: No config provided!");
-
+        
+        this.isFinished = false; // Сбрасываем при старте
         this.currentLevelConfig = config;
         this.targetScore = config.targetScore || 10;
         
-        // 1. Сбрасываем состояние через родительский метод
-        // (но не вызываем start сразу, чтобы настроить параметры)
+        // Сброс анимации
         if (this.animationId) cancelAnimationFrame(this.animationId);
         
         this.score = 0;
@@ -40,16 +29,12 @@ export class CareerGame extends Game {
         this.reviveUsed = false;
         this.isGhost = false;
 
-        // 2. Устанавливаем специфические настройки уровня
-        // Если в конфиге нет параметров, используем адаптивные из resize()
         this.pipeSpeed = config.pipeSpeed || this.pipeSpeed;
         this.pipeSpawnThreshold = config.spawnInterval || this.pipeSpawnThreshold;
         
-        // 3. Запускаем
         this.isRunning = true;
         this.updateScoreUI();
         
-        // Генерируем событие старта
         window.dispatchEvent(new CustomEvent('game_event', { 
             detail: { type: 'career_level_started', levelId: config.id } 
         }));
@@ -57,40 +42,38 @@ export class CareerGame extends Game {
         this.loop();
     }
 
-    // Переопределяем update, чтобы добавить проверку победы
     update() {
-        if (!this.isRunning || this.isPaused) return;
+        if (!this.isRunning || this.isPaused || this.isFinished) return;
 
-        // Вызываем базовую физику из game.js (движение, коллизии, очки)
         super.update();
 
-        // ПРОВЕРКА ПОБЕДЫ
-        if (this.isRunning && this.score >= this.targetScore) {
+        // Проверяем победу только если уровень еще не закончен
+        if (!this.isFinished && this.score >= this.targetScore) {
             this.handleWin();
         }
     }
 
     handleWin() {
+        this.isFinished = true; // Мгновенно блокируем повторный вход
         this.isRunning = false;
-        if (this.animationId) cancelAnimationFrame(this.animationId);
+        
+        cancelAnimationFrame(this.animationId); // Останавливаем цикл отрисовки
 
-        // Вибрация успеха для Telegram
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
 
+        console.log("Career: Win detected, calling onWin");
+
         if (this.onWin) {
+            // Вызываем колбек (который идет в API)
             this.onWin(this.currentLevelConfig.id);
         }
     }
 
-    // Добавляем отрисовку прогресс-бара поверх классики
     draw() {
-        // Отрисовка всего из классического движка
         super.draw();
-
-        // Если игра идет, рисуем полоску прогресса
-        if (this.isRunning) {
+        if (this.isRunning || this.isFinished) {
             this.drawProgressBar();
         }
     }
